@@ -2,6 +2,7 @@ package rocks.inspectit.server.diagnosis.engine.session;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
 import rocks.inspectit.server.diagnosis.engine.rule.ConditionFailure;
 import rocks.inspectit.server.diagnosis.engine.rule.RuleOutput;
 import rocks.inspectit.server.diagnosis.engine.tag.TagState;
@@ -20,10 +21,13 @@ public class DefaultSessionResultCollector<I> implements ISessionResultCollector
 	// Interface Implementation: ISessionResultCollector
 	//-------------------------------------------------------------
 
+	public DefaultSessionResultCollector() {
+	}
+
 	@Override
 	public DefaultSessionResult<I> collect(SessionContext<I> context) {
 		Multimap<String, ConditionFailure> conditionFailures = ArrayListMultimap.create();
-		//unpack condition errors
+		// unpack condition errors
 		for (RuleOutput output : context.getStorage().getAllOutputsWithConditionFailures().values()) {
 			conditionFailures.putAll(output.getRuleName(), output.getConditionFailures());
 		}

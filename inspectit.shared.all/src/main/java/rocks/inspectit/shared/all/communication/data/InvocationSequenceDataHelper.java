@@ -9,7 +9,7 @@ import org.apache.commons.lang.mutable.MutableDouble;
 
 /**
  * Helper class to easier query {@link InvocationSequenceData} objects.
- * 
+ *
  * @author Stefan Siegl
  */
 public final class InvocationSequenceDataHelper {
@@ -22,7 +22,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks if the invocation sequence data object itself contains parameters.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return if this data object contains captured parameters.
@@ -34,7 +34,7 @@ public final class InvocationSequenceDataHelper {
 	/**
 	 * Checks whether the invocation sequence data object itself or some nested data element
 	 * (timerdata) provides captured parameters.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether the invocation sequence data object itself or some nested data element
@@ -49,7 +49,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Returns the captured data of the invocation sequence.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @param sorted
@@ -90,7 +90,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object contains a timer data object of some sort.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object contains a timer data object.
@@ -101,7 +101,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object contains a http timer data object.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object contains a http timer data object.
@@ -112,7 +112,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object contains a <code>LoggingData</code> object.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object contains a logging data object.
@@ -123,7 +123,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object contains exception data.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object contains exception data.
@@ -134,7 +134,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object contains SQL data.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object contains SQL data.
@@ -145,7 +145,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object has a parent element.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object has a parent element.
@@ -156,7 +156,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object is the root element of the invocation.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return whether this data object is the root element of the invocation.
@@ -167,7 +167,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object has nested SQL statements.
-	 * 
+	 *
 	 * @param data
 	 *            {@link InvocationSequenceData}
 	 * @return True if it has nested SQLs, false otherwise.
@@ -178,7 +178,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Checks whether this data object has nested SQL statements.
-	 * 
+	 *
 	 * @param data
 	 *            {@link InvocationSequenceData}
 	 * @return True if it has nested SQLs, false otherwise.
@@ -189,7 +189,7 @@ public final class InvocationSequenceDataHelper {
 
 	/**
 	 * Calculates the duration starting from this invocation sequence data element.
-	 * 
+	 *
 	 * @param data
 	 *            the <code>InvocationSequenceData</code> object.
 	 * @return the duration starting from this invocation sequence data element.
@@ -207,8 +207,34 @@ public final class InvocationSequenceDataHelper {
 	}
 
 	/**
+	 * Calculates the exclusive time of this invocation sequence data element.
+	 *
+	 * @param data
+	 *            the <code>InvocationSequenceData</code> object.
+	 * @return the exclusive time of this invocation sequence data element.
+	 */
+	public static double calculateExclusiveTime(InvocationSequenceData data) {
+		TimerData timerData;
+		if (InvocationSequenceDataHelper.hasTimerData(data)) {
+			timerData = data.getTimerData();
+		} else if (InvocationSequenceDataHelper.hasSQLData(data)) {
+			timerData = data.getSqlStatementData();
+		} else if (InvocationSequenceDataHelper.isRootElementInSequence(data)) {
+			return data.getDuration() - computeNestedDuration(data);
+		} else {
+			return 0.0;
+		}
+
+		if (timerData.isExclusiveTimeDataAvailable()) {
+			return timerData.getExclusiveDuration();
+		} else {
+			return timerData.getDuration() - computeNestedDuration(data);
+		}
+	}
+
+	/**
 	 * Computes the duration of the nested invocation elements.
-	 * 
+	 *
 	 * @param data
 	 *            The data objects which is inspected for its nested elements.
 	 * @return The duration of all nested sequences (with their nested sequences as well).
@@ -220,7 +246,7 @@ public final class InvocationSequenceDataHelper {
 
 		double nestedDuration = 0d;
 		boolean added = false;
-		for (InvocationSequenceData nestedData : (List<InvocationSequenceData>) data.getNestedSequences()) {
+		for (InvocationSequenceData nestedData : data.getNestedSequences()) {
 			if (hasTimerData(nestedData)) {
 				nestedDuration = nestedDuration + nestedData.getTimerData().getDuration();
 				added = true;
@@ -243,7 +269,7 @@ public final class InvocationSequenceDataHelper {
 	/**
 	 * Processes all the {@link SqlStatementData}s in the given invocations creating the list of the
 	 * existing statement and calculating the total duration of the statements.
-	 * 
+	 *
 	 * @param invocationSequenceDataList
 	 *            Input as list of invocations
 	 * @param sqlStatementDataList
