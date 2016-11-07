@@ -3,7 +3,7 @@ package rocks.inspectit.agent.java.eum.instrumentation;
 import java.io.PrintWriter;
 import java.util.Locale;
 
-import rocks.inspectit.agent.java.eum.html.HTMLScriptInjector;
+import rocks.inspectit.agent.java.eum.html.StreamedHTMLScriptInjector;
 
 /**
  * A PrintWriter which injects the given tag on the fly into the head (or another appropriate)
@@ -20,9 +20,9 @@ public class TagInjectionPrintWriter extends PrintWriter {
 	private static final String NL = System.getProperty("line.separator");
 
 	/**
-	 * The HTML parser used ofr injecting the tag.
+	 * The HTML parser used for injecting the tag.
 	 */
-	private HTMLScriptInjector parser;
+	private StreamedHTMLScriptInjector injector;
 
 	/**
 	 * The writer to pass the data to.
@@ -40,7 +40,7 @@ public class TagInjectionPrintWriter extends PrintWriter {
 	public TagInjectionPrintWriter(PrintWriter originalWriter, String tagToInject) {
 		super(originalWriter);
 		this.originalWriter = originalWriter;
-		parser = new HTMLScriptInjector(tagToInject);
+		injector = new StreamedHTMLScriptInjector(tagToInject);
 
 	}
 
@@ -61,125 +61,245 @@ public class TagInjectionPrintWriter extends PrintWriter {
 
 	@Override
 	public void write(int c) {
-		originalWriter.write(parser.performInjection(String.valueOf(((char) c))));
+		String newValue = injector.performInjection(String.valueOf((char) c));
+		if (newValue == null) {
+			originalWriter.write(c);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void write(char[] buf, int off, int len) {
-		originalWriter.write(parser.performInjection(String.valueOf(buf, off, len)));
+		String newValue = injector.performInjection(String.valueOf(buf, off, len));
+		if (newValue == null) {
+			originalWriter.write(buf, off, len);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	@SuppressWarnings({ "PMD", "UseVarags" })
 	public void write(char[] buf) {
-		originalWriter.write(parser.performInjection(String.valueOf(buf)));
+		String newValue = injector.performInjection(String.valueOf(buf));
+		if (newValue == null) {
+			originalWriter.write(buf);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void write(String s, int off, int len) {
-		originalWriter.write(parser.performInjection(s.substring(off, off + len)));
+		String newValue = injector.performInjection(s.substring(off, off + len));
+		if (newValue == null) {
+			originalWriter.write(s, off, len);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void write(String s) {
-		originalWriter.write(parser.performInjection(s));
+		String newValue = injector.performInjection(s);
+		if (newValue == null) {
+			originalWriter.write(s);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(boolean b) {
-		originalWriter.write(parser.performInjection(String.valueOf(b)));
+		String newValue = injector.performInjection(String.valueOf(b));
+		if (newValue == null) {
+			originalWriter.print(b);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(char c) {
-		originalWriter.write(parser.performInjection(String.valueOf(c)));
+		String newValue = injector.performInjection(String.valueOf(c));
+		if (newValue == null) {
+			originalWriter.print(c);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(int i) {
-		originalWriter.write(parser.performInjection(String.valueOf(i)));
+		String newValue = injector.performInjection(String.valueOf(i));
+		if (newValue == null) {
+			originalWriter.print(i);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(long l) {
-		originalWriter.write(parser.performInjection(String.valueOf(l)));
+		String newValue = injector.performInjection(String.valueOf(l));
+		if (newValue == null) {
+			originalWriter.print(l);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(float f) {
-		originalWriter.write(parser.performInjection(String.valueOf(f)));
+		String newValue = injector.performInjection(String.valueOf(f));
+		if (newValue == null) {
+			originalWriter.print(f);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(double d) {
-		originalWriter.write(parser.performInjection(String.valueOf(d)));
+		String newValue = injector.performInjection(String.valueOf(d));
+		if (newValue == null) {
+			originalWriter.print(d);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	@SuppressWarnings({ "PMD", "UseVarags" })
 	public void print(char[] s) {
-		originalWriter.write(parser.performInjection(String.valueOf(s)));
+		String newValue = injector.performInjection(String.valueOf(s));
+		if (newValue == null) {
+			originalWriter.print(s);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(String s) {
-		originalWriter.write(parser.performInjection(s));
+		String newValue = injector.performInjection(s);
+		if (newValue == null) {
+			originalWriter.print(s);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void print(Object obj) {
-		originalWriter.write(parser.performInjection(String.valueOf(obj)));
+		String newValue = injector.performInjection(String.valueOf(obj));
+		if (newValue == null) {
+			originalWriter.print(obj);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println() {
-		originalWriter.write(parser.performInjection(NL));
+		String newValue = injector.performInjection(NL);
+		if (newValue == null) {
+			originalWriter.println();
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(boolean x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(char x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(int x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(long x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(float x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(double x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	@SuppressWarnings({ "PMD", "UseVarags" })
 	public void println(char[] x) {
-		originalWriter.write(parser.performInjection(new String(x) + NL));
+		String newValue = injector.performInjection(String.valueOf(x) + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(String x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
 	public void println(Object x) {
-		originalWriter.write(parser.performInjection(x + NL));
+		String newValue = injector.performInjection(x + NL);
+		if (newValue == null) {
+			originalWriter.println(x);
+		} else {
+			originalWriter.write(newValue);
+		}
 	}
 
 	@Override
@@ -194,31 +314,56 @@ public class TagInjectionPrintWriter extends PrintWriter {
 
 	@Override
 	public PrintWriter format(String format, Object... args) {
-		originalWriter.write(parser.performInjection(String.format(format, args)));
+		String newValue = injector.performInjection(String.format(format, args));
+		if (newValue == null) {
+			originalWriter.format(format, args);
+		} else {
+			originalWriter.write(newValue);
+		}
 		return this;
 	}
 
 	@Override
 	public PrintWriter format(Locale l, String format, Object... args) {
-		originalWriter.write(parser.performInjection(String.format(l, format, args)));
+		String newValue = injector.performInjection(String.format(l, format, args));
+		if (newValue == null) {
+			originalWriter.format(l, format, args);
+		} else {
+			originalWriter.write(newValue);
+		}
 		return this;
 	}
 
 	@Override
 	public PrintWriter append(CharSequence csq) {
-		originalWriter.append(parser.performInjection(csq.toString()));
+		String newValue = injector.performInjection(csq);
+		if (newValue == null) {
+			originalWriter.append(csq);
+		} else {
+			originalWriter.write(newValue);
+		}
 		return this;
 	}
 
 	@Override
 	public PrintWriter append(CharSequence csq, int start, int end) {
-		originalWriter.append(parser.performInjection(csq.subSequence(start, end).toString()));
+		String newValue = injector.performInjection(csq.subSequence(start, end));
+		if (newValue == null) {
+			originalWriter.append(csq, start, end);
+		} else {
+			originalWriter.write(newValue);
+		}
 		return this;
 	}
 
 	@Override
 	public PrintWriter append(char c) {
-		originalWriter.append(parser.performInjection(String.valueOf(c)));
+		String newValue = injector.performInjection(String.valueOf(c));
+		if (newValue == null) {
+			originalWriter.append(c);
+		} else {
+			originalWriter.write(newValue);
+		}
 		return this;
 	}
 

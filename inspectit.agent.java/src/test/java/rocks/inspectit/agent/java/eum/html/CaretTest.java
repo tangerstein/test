@@ -5,28 +5,27 @@ import static org.hamcrest.Matchers.equalTo;
 
 import org.testng.annotations.Test;
 
-import rocks.inspectit.agent.java.eum.html.Carret;
 import rocks.inspectit.shared.all.testbase.TestBase;
 
 /**
  * @author Jonas Kunz
  *
  */
-public class CarretTest extends TestBase {
+public class CaretTest extends TestBase {
 
-	public static class Get extends CarretTest {
+	public static class Get extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "0123456789";
-			Carret c1 = new Carret(test);
+			Caret c1 = new Caret(test);
 			assertThat(c1.get(0), equalTo('0'));
 			assertThat(c1.get(3), equalTo('3'));
 
-			Carret c2 = new Carret(test, 5);
+			Caret c2 = new Caret(test, 5);
 			assertThat(c2.get(1), equalTo('6'));
 
-			Carret c3 = c2.copy();
+			Caret c3 = c2.copy();
 			assertThat(c3.get(2), equalTo('7'));
 
 			c3.goN(2);
@@ -34,13 +33,13 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class GoN extends CarretTest {
+	public static class GoN extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "0123456789";
 
-			Carret c1 = new Carret(test);
+			Caret c1 = new Caret(test);
 			c1.goN(2);
 			assertThat(c1.get(0), equalTo('2'));
 
@@ -49,13 +48,13 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class GoTo extends CarretTest {
+	public static class GoTo extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "0123456789";
 
-			Carret c1 = new Carret(test, 5);
+			Caret c1 = new Caret(test, 5);
 			c1.goTo(2);
 			assertThat(c1.get(0), equalTo('2'));
 
@@ -64,12 +63,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class GetOffset extends CarretTest {
+	public static class GetOffset extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "0123456789";
-			Carret c1 = new Carret(test, 2);
+			Caret c1 = new Caret(test, 2);
 
 			c1.goN(1);
 			assertThat(c1.getOffset(), equalTo(3));
@@ -79,12 +78,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WayToEnd extends CarretTest {
+	public static class WayToEnd extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "0123456789";
-			Carret c1 = new Carret(test, 2);
+			Caret c1 = new Caret(test, 2);
 
 			c1.goN(1);
 			assertThat(c1.wayToEnd(), equalTo(7));
@@ -97,12 +96,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class EndReached extends CarretTest {
+	public static class EndReached extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "0123456789";
-			Carret c1 = new Carret(test, 2);
+			Caret c1 = new Caret(test, 2);
 
 			assertThat(c1.endReached(), equalTo(false));
 
@@ -114,12 +113,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkAfterCharCheckCase extends CarretTest {
+	public static class WalkAfterCharCheckCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefg";
-			Carret c = new Carret(test);
+			Caret c = new Caret(test);
 
 			assertThat(c.walkAfterCharCheckCase('C'), equalTo(true));
 			assertThat(c.get(0), equalTo('D'));
@@ -134,12 +133,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkToCharCheckCase extends CarretTest {
+	public static class WalkToCharCheckCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefg";
-			Carret c = new Carret(test);
+			Caret c = new Caret(test);
 
 			assertThat(c.walkToCharCheckCase('C'), equalTo(true));
 			assertThat(c.get(0), equalTo('C'));
@@ -154,12 +153,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkAfterWhitespace extends CarretTest {
+	public static class WalkAfterWhitespace extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r \nabcdefg  ";
-			Carret c = new Carret(test);
+			Caret c = new Caret(test);
 
 			c.walkAfterWhitespaces();
 			assertThat(c.get(0), equalTo('A'));
@@ -177,13 +176,13 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkBackBeforeWhitespaces extends CarretTest {
+	public static class WalkBackBeforeWhitespaces extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r \nabcdefg";
 
-			Carret c = new Carret(test);
+			Caret c = new Caret(test);
 			c.walkToCharCheckCase('A');
 
 			c.walkBackBeforeWhitespaces();
@@ -200,12 +199,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class StartsWithIgnoreCase extends CarretTest {
+	public static class StartsWithIgnoreCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefg";
-			Carret c = new Carret(test, 4);
+			Caret c = new Caret(test, 4);
 
 			assertThat(c.startsWithIgnoreCase("def"), equalTo(false));
 			assertThat(c.startsWithIgnoreCase("cdef"), equalTo(true));
@@ -213,12 +212,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class StartsWithCheckCase extends CarretTest {
+	public static class StartsWithCheckCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefg";
-			Carret c = new Carret(test, 4);
+			Caret c = new Caret(test, 4);
 
 			assertThat(c.startsWithCheckCase("def"), equalTo(false));
 			assertThat(c.startsWithCheckCase("cdef"), equalTo(false));
@@ -226,12 +225,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkToMatchCheckCase extends CarretTest {
+	public static class WalkToMatchCheckCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefgh";
-			Carret c = new Carret(test, 0);
+			Caret c = new Caret(test, 0);
 
 			assertThat(c.walkToMatchCheckCase("cdefg"), equalTo(true));
 			assertThat(c.get(0), equalTo('c'));
@@ -241,12 +240,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkToMatchIgnoreCase extends CarretTest {
+	public static class WalkToMatchIgnoreCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefgh";
-			Carret c = new Carret(test, 0);
+			Caret c = new Caret(test, 0);
 
 			assertThat(c.walkToMatchIgnoreCase("cdefg"), equalTo(true));
 			assertThat(c.get(0), equalTo('C'));
@@ -260,12 +259,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkAfterMatchCheckCase extends CarretTest {
+	public static class WalkAfterMatchCheckCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefgh";
-			Carret c = new Carret(test, 0);
+			Caret c = new Caret(test, 0);
 
 			assertThat(c.walkAfterMatchCheckCase("cdefg"), equalTo(true));
 			assertThat(c.get(0), equalTo('h'));
@@ -275,12 +274,12 @@ public class CarretTest extends TestBase {
 		}
 	}
 
-	public static class WalkAfterMatchIgnoreCase extends CarretTest {
+	public static class WalkAfterMatchIgnoreCase extends CaretTest {
 
 		@Test
 		public void test() {
 			String test = "  ABCDEFGH\t\r\nabcdefgh";
-			Carret c = new Carret(test, 0);
+			Caret c = new Caret(test, 0);
 
 			assertThat(c.walkAfterMatchIgnoreCase("cdefg"), equalTo(true));
 			assertThat(c.get(0), equalTo('H'));

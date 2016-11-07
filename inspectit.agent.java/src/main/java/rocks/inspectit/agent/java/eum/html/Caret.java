@@ -2,43 +2,43 @@ package rocks.inspectit.agent.java.eum.html;
 
 /**
  *
- * Utiltiy method for performing some text searching on a given text. A carret just represents a
+ * Utiltiy method for performing some text searching on a given text. A caret just represents a
  * position within this text and can be moved around.
  *
  * @author Jonas Kunz
  */
-public class Carret {
+public class Caret {
 
 	/**
-	 * The text this carret opperates on.
+	 * The text this caret opperates on.
 	 */
 	private CharSequence src;
 
 	/**
-	 * The current position of the carret, as an offset from the text beginning.
+	 * The current position of the caret, as an offset from the text beginning.
 	 */
 	private int offset;
 
 	/**
-	 * Creates a new carret.
+	 * Creates a new caret.
 	 *
 	 * @param src
 	 *            the sourcetext
 	 * @param offset
-	 *            the carret position
+	 *            the caret position
 	 */
-	public Carret(CharSequence src, int offset) {
+	public Caret(CharSequence src, int offset) {
 		this.src = src;
 		this.offset = offset;
 	}
 
 	/**
-	 * Creates a carret pointing to the beginning of the given text.
+	 * Creates a caret pointing to the beginning of the given text.
 	 *
 	 * @param src
 	 *            the text
 	 */
-	public Carret(CharSequence src) {
+	public Caret(CharSequence src) {
 		this(src, 0);
 	}
 
@@ -46,9 +46,9 @@ public class Carret {
 	 * Copy-Constructor.
 	 *
 	 * @param copyOf
-	 *            the carret to copy.
+	 *            the caret to copy.
 	 */
-	public Carret(Carret copyOf) {
+	public Caret(Caret copyOf) {
 		this.src = copyOf.src;
 		this.offset = copyOf.offset;
 	}
@@ -58,7 +58,7 @@ public class Carret {
 	}
 
 	/**
-	 * Moves the carret n characters.
+	 * Moves the caret n characters.
 	 *
 	 * @param n
 	 *            the number of characters to move (negative values for walking backwards)
@@ -69,18 +69,18 @@ public class Carret {
 	}
 
 	/**
-	 * returns the character at the given offset from this carret.
+	 * returns the character at the given offset from this caret.
 	 *
 	 * @param additionOff
 	 *            the additional offset
-	 * @return the character at (carret-position + additionOff)
+	 * @return the character at (caret-position + additionOff)
 	 */
 	public char get(int additionOff) {
 		return src.charAt(offset + additionOff);
 	}
 
 	/**
-	 * @return the number of "steps" the carret has to walk until it points behind the last
+	 * @return the number of "steps" the caret has to walk until it points behind the last
 	 *         character.
 	 */
 	public int wayToEnd() {
@@ -88,14 +88,14 @@ public class Carret {
 	}
 
 	/**
-	 * @return an identical copy of this carret, identical to calling the copy constructor.
+	 * @return an identical copy of this caret, identical to calling the copy constructor.
 	 */
-	public Carret copy() {
-		return new Carret(this);
+	public Caret copy() {
+		return new Caret(this);
 	}
 
 	/**
-	 * Walks forward with the carret until it points at the given character. Case-Sensitive
+	 * Walks forward with the caret until it points at the given character. Case-Sensitive
 	 * comparison is used.
 	 *
 	 * @param c
@@ -111,7 +111,7 @@ public class Carret {
 	}
 
 	/**
-	 * Walks forward with the carret until it points at the given character. Then advances the
+	 * Walks forward with the caret until it points at the given character. Then advances the
 	 * position by one. Case-Sensitive comparison is used.
 	 *
 	 * @param c
@@ -128,7 +128,7 @@ public class Carret {
 	}
 
 	/**
-	 * Walks forward with the carret until it points at a position which matches the given string.
+	 * Walks forward with the caret until it points at a position which matches the given string.
 	 * Case-Insensitive comparison is used.
 	 *
 	 * @param strToMatch
@@ -144,7 +144,7 @@ public class Carret {
 	}
 
 	/**
-	 * Walks forward with the carret until it points at a position which matches the given string.
+	 * Walks forward with the caret until it points at a position which matches the given string.
 	 * Case-sensitive comparison is used.
 	 *
 	 * @param strToMatch
@@ -160,7 +160,7 @@ public class Carret {
 	}
 
 	/**
-	 * Walks forward with the carret until it points at a position which matches the given string.
+	 * Walks forward with the caret until it points at a position which matches the given string.
 	 * Then advances the position after this string. Case-Insensitive comparison is used.
 	 *
 	 * @param strToMatch
@@ -177,7 +177,7 @@ public class Carret {
 	}
 
 	/**
-	 * Walks forward with the carret until it points at a position which matches the given string.
+	 * Walks forward with the caret until it points at a position which matches the given string.
 	 * Then advances the position after this string. Case-Sensitive comparison is used.
 	 *
 	 * @param strToMatch
@@ -194,7 +194,7 @@ public class Carret {
 	}
 
 	/**
-	 * Checks if the substring of the source text starting at the carrets position starts with the
+	 * Checks if the substring of the source text starting at the carets position starts with the
 	 * give String. Case-Insensitive Comparison is used.
 	 *
 	 * @param strToMatch
@@ -203,11 +203,14 @@ public class Carret {
 	 */
 	public boolean startsWithIgnoreCase(String strToMatch) {
 		int len = strToMatch.length();
-		return src.subSequence(offset, Math.min(src.length(), offset + len)).toString().equalsIgnoreCase(strToMatch);
+		if (len > wayToEnd()) {
+			return false;
+		}
+		return CharSequenceUtil.checkEqualIgnoreCase(src, offset, len, strToMatch, 0, len);
 	}
 
 	/**
-	 * Checks if the substring of the source text starting at the carrets position starts with the
+	 * Checks if the substring of the source text starting at the carets position starts with the
 	 * give String. Case-Sensitive Comparison is used.
 	 *
 	 * @param strToMatch
@@ -216,12 +219,14 @@ public class Carret {
 	 */
 	public boolean startsWithCheckCase(String strToMatch) {
 		int len = strToMatch.length();
-		String subseq = src.subSequence(offset, Math.min(src.length(), offset + len)).toString();
-		return subseq.equals(strToMatch);
+		if (len > wayToEnd()) {
+			return false;
+		}
+		return CharSequenceUtil.checkEqualCheckCase(src, offset, len, strToMatch, 0, len);
 	}
 
 	/**
-	 * Walks backwards until the carret points at a non-whitespace character.
+	 * Walks backwards until the caret points at a non-whitespace character.
 	 */
 	public void walkBackBeforeWhitespaces() {
 		while ((offset > 0) && Character.isWhitespace(src.charAt(offset))) {
@@ -230,7 +235,7 @@ public class Carret {
 	}
 
 	/**
-	 * Walks forward until the carret points at a non-whitespace character.
+	 * Walks forward until the caret points at a non-whitespace character.
 	 */
 	public void walkAfterWhitespaces() {
 		while (!endReached() && Character.isWhitespace(src.charAt(offset))) {
@@ -239,7 +244,19 @@ public class Carret {
 	}
 
 	/**
-	 * @return true if the end was reached (the carret points after the last character)
+	 * Walks forward until the caret points at a whitespace character.
+	 *
+	 * @return true if a whitespace character was found
+	 */
+	public boolean walkToWhitespace() {
+		while (!endReached() && !Character.isWhitespace(src.charAt(offset))) {
+			offset++;
+		}
+		return !endReached();
+	}
+
+	/**
+	 * @return true if the end was reached (the caret points after the last character)
 	 *
 	 */
 	public boolean endReached() {
@@ -247,7 +264,7 @@ public class Carret {
 	}
 
 	/**
-	 * Moves the carret to the given position.
+	 * Moves the caret to the given position.
 	 *
 	 * @param offset2
 	 *            the offset from the beginning of the text
@@ -258,7 +275,7 @@ public class Carret {
 
 	@Override
 	public String toString() {
-		return "Carret [..." + src.subSequence(Math.max(offset - 100, 0), offset) + "~C~" + src.subSequence(offset, Math.min(offset + 100, src.length())) + "]";
+		return "Caret [..." + src.subSequence(Math.max(offset - 100, 0), offset) + "~C~" + src.subSequence(offset, Math.min(offset + 100, src.length())) + "]";
 	}
 
 }

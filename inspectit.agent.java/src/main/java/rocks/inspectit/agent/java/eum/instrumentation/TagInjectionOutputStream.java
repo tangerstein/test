@@ -4,7 +4,7 @@ package rocks.inspectit.agent.java.eum.instrumentation;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import rocks.inspectit.agent.java.eum.html.HTMLScriptInjector;
+import rocks.inspectit.agent.java.eum.html.DecodingHtmlScriptInjector;
 import rocks.inspectit.agent.java.eum.reflection.WServletOutputStream;
 import rocks.inspectit.agent.java.proxy.IProxySubject;
 import rocks.inspectit.agent.java.proxy.IRuntimeLinker;
@@ -21,6 +21,11 @@ import rocks.inspectit.agent.java.proxy.ProxyMethod;
 public class TagInjectionOutputStream extends OutputStream implements IProxySubject {
 
 	/**
+	 * The default encoding used by the servlet api.
+	 */
+	private static final String DEFAULT_ENCODING = "ISO-8859-1";
+
+	/**
 	 * The actual stream to which the data will be written.
 	 */
 	private WServletOutputStream originalStream;
@@ -28,7 +33,7 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	/**
 	 * The parser used for inejcting the tag.
 	 */
-	private HTMLScriptInjector parser;
+	private DecodingHtmlScriptInjector injector;
 
 	/**
 	 * The new-line character.
@@ -46,7 +51,7 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	public TagInjectionOutputStream(Object originalStream, String tagToInject) {
 		this.originalStream = WServletOutputStream.wrap(originalStream);
-		parser = new HTMLScriptInjector(tagToInject);
+		injector = new DecodingHtmlScriptInjector(tagToInject, DEFAULT_ENCODING);
 	}
 
 	@Override
@@ -68,7 +73,7 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 * @param charsetName the name of the encoding
 	 */
 	public void setEncoding(String charsetName) {
-		parser.setEncoding(charsetName);
+		injector.setCharacterEncoding(charsetName);
 	}
 
 	/**
@@ -81,7 +86,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(boolean arg0) throws IOException {
-		originalStream.print(parser.performInjection(String.valueOf(arg0)));
+		String newValue = injector.performInjection(String.valueOf(arg0));
+		if (newValue == null) {
+			originalStream.print(arg0);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -94,7 +104,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(char c) throws IOException {
-		originalStream.print(parser.performInjection(String.valueOf(c)));
+		String newValue = injector.performInjection(String.valueOf(c));
+		if (newValue == null) {
+			originalStream.print(c);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -107,7 +122,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(double d) throws IOException {
-		originalStream.print(parser.performInjection(String.valueOf(d)));
+		String newValue = injector.performInjection(String.valueOf(d));
+		if (newValue == null) {
+			originalStream.print(d);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -120,7 +140,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(float f) throws IOException {
-		originalStream.print(parser.performInjection(String.valueOf(f)));
+		String newValue = injector.performInjection(String.valueOf(f));
+		if (newValue == null) {
+			originalStream.print(f);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -133,7 +158,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(int i) throws IOException {
-		originalStream.print(parser.performInjection(String.valueOf(i)));
+		String newValue = injector.performInjection(String.valueOf(i));
+		if (newValue == null) {
+			originalStream.print(i);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -146,7 +176,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(long l) throws IOException {
-		originalStream.print(parser.performInjection(String.valueOf(l)));
+		String newValue = injector.performInjection(String.valueOf(l));
+		if (newValue == null) {
+			originalStream.print(l);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -159,7 +194,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void print(String arg0) throws IOException {
-		originalStream.print(parser.performInjection(arg0));
+		String newValue = injector.performInjection(String.valueOf(arg0));
+		if (newValue == null) {
+			originalStream.print(arg0);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -170,7 +210,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println() throws IOException {
-		originalStream.print(parser.performInjection(NL));
+		String newValue = injector.performInjection(NL);
+		if (newValue == null) {
+			originalStream.println();
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -183,7 +228,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(boolean b) throws IOException {
-		originalStream.print(parser.performInjection(b + NL));
+		String newValue = injector.performInjection(b + NL);
+		if (newValue == null) {
+			originalStream.println(b);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -196,7 +246,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(char c) throws IOException {
-		originalStream.print(parser.performInjection(c + NL));
+		String newValue = injector.performInjection(c + NL);
+		if (newValue == null) {
+			originalStream.println(c);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -209,7 +264,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(double d) throws IOException {
-		originalStream.print(parser.performInjection(d + NL));
+		String newValue = injector.performInjection(d + NL);
+		if (newValue == null) {
+			originalStream.println(d);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -222,7 +282,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(float f) throws IOException {
-		originalStream.print(parser.performInjection(f + NL));
+		String newValue = injector.performInjection(f + NL);
+		if (newValue == null) {
+			originalStream.println(f);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -235,7 +300,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(int i) throws IOException {
-		originalStream.print(parser.performInjection(i + NL));
+		String newValue = injector.performInjection(i + NL);
+		if (newValue == null) {
+			originalStream.println(i);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -248,7 +318,12 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(long l) throws IOException {
-		originalStream.print(parser.performInjection(l + NL));
+		String newValue = injector.performInjection(l + NL);
+		if (newValue == null) {
+			originalStream.println(l);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 	/**
@@ -261,28 +336,46 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 	 */
 	@ProxyMethod
 	public void println(String s) throws IOException {
-		originalStream.print(parser.performInjection(s + NL));
+		String newValue = injector.performInjection(s + NL);
+		if (newValue == null) {
+			originalStream.println(s);
+		} else {
+			originalStream.print(newValue);
+		}
 	}
 
 
 	@Override
 	@ProxyMethod
 	public void write(int b) throws IOException {
-		originalStream.write(parser.performInjection(new byte[] { (byte) b }));
+		byte[] newValue = injector.performInjection(new byte[] { (byte) b });
+		if (newValue == null) {
+			originalStream.write(b);
+		} else {
+			originalStream.write(newValue);
+		}
 	}
 
 	@Override
 	@ProxyMethod
 	public void write(byte[] b) throws IOException {
-		originalStream.write(parser.performInjection(b));
+		byte[] newValue = injector.performInjection(b);
+		if (newValue == null) {
+			originalStream.write(b);
+		} else {
+			originalStream.write(newValue);
+		}
 	}
 
 	@Override
 	@ProxyMethod
 	public void write(byte[] b, int off, int len) throws IOException {
-		byte[] copiedData = new byte[len];
-		System.arraycopy(b, off, copiedData, 0, len);
-		originalStream.write(parser.performInjection(copiedData));
+		byte[] newValue = injector.performInjection(b, off, len);
+		if (newValue == null) {
+			originalStream.write(b, off, len);
+		} else {
+			originalStream.write(newValue);
+		}
 	}
 
 	@Override
@@ -300,7 +393,7 @@ public class TagInjectionOutputStream extends OutputStream implements IProxySubj
 
 	/**
 	 * Proxy method for isReady method of the OutputStream.
-	 * 
+	 *
 	 * @return the ready state
 	 */
 	@ProxyMethod(isOptional = true)
