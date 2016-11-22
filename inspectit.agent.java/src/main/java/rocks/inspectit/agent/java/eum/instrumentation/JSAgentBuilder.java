@@ -39,7 +39,7 @@ public final class JSAgentBuilder {
 	/**
 	 * Javascript code which starts the execution at the end when all plugins are loaded.
 	 */
-	private static final String EXECUTE_START_JAVASCRIPT = "inspectIT.start();";
+	private static final String EXECUTE_START_JAVASCRIPT = "inspectIT.init();";
 
 	/**
 	 * the path to the javascript in the resources.

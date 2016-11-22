@@ -167,9 +167,7 @@ public class EUMInstrumentationHook implements ISpecialHook {
 				Matcher beaconURLMatcher = beaconURLRegEx.matcher(path);
 				if (beaconURLMatcher.matches()) {
 					// send everything ok response
-					res.setStatus(200);
-					res.getWriter().flush();
-					receiveBeacon(req);
+					receiveBeacon(req, res);
 					return true;
 				}
 
@@ -194,16 +192,21 @@ public class EUMInstrumentationHook implements ISpecialHook {
 	 * @param req
 	 *            the beacon request
 	 */
-	private void receiveBeacon(WHttpServletRequest req) {
+	private void receiveBeacon(WHttpServletRequest req, WHttpServletResponse res) {
 		BufferedReader reader = req.getReader();
+
+		res.setStatus(200);
+		PrintWriter writer = res.getWriter();
 
 		String contentData;
 		try {
 			contentData = CharStreams.toString(reader);
-			dataHandler.insertBeacon(contentData);
+			String response = dataHandler.insertBeacon(contentData);
+			writer.write(response);
 		} catch (IOException e) {
 			LOG.error("Error receiving beacon!", e);
 		}
+		writer.flush();
 	}
 
 	/**
@@ -268,7 +271,6 @@ public class EUMInstrumentationHook implements ISpecialHook {
 	 * @return the new session ID cookie, or null if it is already set.
 	 */
 	private Object generateSessionIDCookie(Object httpRequestObj) {
-
 		// check if it already has an id set, if yes reuse it and renew session expiration
 		WHttpServletRequest request = WHttpServletRequest.wrap(httpRequestObj);
 		Object[] cookies = request.getCookies();

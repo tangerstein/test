@@ -12,5 +12,5 @@ public interface IDataHandler {
 	 * @param data
 	 *            the beacon which should get parsed and processed
 	 */
-	void insertBeacon(String data);
+	String insertBeacon(String data);
 }
