@@ -1,5 +1,6 @@
 package rocks.inspectit.shared.all.communication.data.eum;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
@@ -8,7 +9,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  * @author David Monschein
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class UserSessionInfo extends AbstractEUMData {
+public class UserSessionInfo extends AbstractEUMElement {
 
 	/**
 	 * serial Version UID.
@@ -34,25 +35,6 @@ public class UserSessionInfo extends AbstractEUMData {
 	 * Creates a new user session containing no information about the user.
 	 */
 	public UserSessionInfo() {
-	}
-
-	/**
-	 * Creates a new user session with all information about the user initialized.
-	 *
-	 * @param browser
-	 *            the browser which is used
-	 * @param device
-	 *            the device of the user
-	 * @param lang
-	 *            the language of he users browser
-	 * @param id
-	 *            an unique id representing this user
-	 */
-	public UserSessionInfo(String browser, String device, String lang, String id) {
-		super(id);
-		this.browser = browser;
-		this.device = device;
-		this.language = lang;
 	}
 
 	/**
@@ -112,56 +94,15 @@ public class UserSessionInfo extends AbstractEUMData {
 		this.language = language;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = (prime * result) + ((this.browser == null) ? 0 : this.browser.hashCode());
-		result = (prime * result) + ((this.device == null) ? 0 : this.device.hashCode());
-		result = (prime * result) + ((this.language == null) ? 0 : this.language.hashCode());
-		return result;
+	@JsonIgnore
+	public void setLocalID(long localId) {
+
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!super.equals(obj)) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		UserSessionInfo other = (UserSessionInfo) obj;
-		if (this.browser == null) {
-			if (other.browser != null) {
-				return false;
-			}
-		} else if (!this.browser.equals(other.browser)) {
-			return false;
-		}
-		if (this.device == null) {
-			if (other.device != null) {
-				return false;
-			}
-		} else if (!this.device.equals(other.device)) {
-			return false;
-		}
-		if (this.language == null) {
-			if (other.language != null) {
-				return false;
-			}
-		} else if (!this.language.equals(other.language)) {
-			return false;
-		}
-		return true;
+	@JsonIgnore
+	public void setTabID(long sessionId) {
 	}
 
 }

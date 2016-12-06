@@ -1,4 +1,4 @@
-package rocks.inspectit.shared.all.communication.data.eum;
+package rocks.inspectit.shared.all.communication.data.eum.old;
 
 import java.util.List;
 

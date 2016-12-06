@@ -19,8 +19,8 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 
 import rocks.inspectit.server.influx.builder.IPointBuilder;
-import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMData;
-import rocks.inspectit.shared.all.communication.data.eum.UserSessionInfo;
+import rocks.inspectit.shared.all.communication.data.eum.old.AbstractEUMData;
+import rocks.inspectit.shared.all.communication.data.eum.old.UserSessionInfo;
 import rocks.inspectit.shared.all.util.Pair;
 
 /**

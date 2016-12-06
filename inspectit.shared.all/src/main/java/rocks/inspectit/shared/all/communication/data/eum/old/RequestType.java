@@ -1,4 +1,4 @@
-package rocks.inspectit.shared.all.communication.data.eum;
+package rocks.inspectit.shared.all.communication.data.eum.old;
 
 /**
  * Enum which contains all request types implemented in this version.

@@ -7,8 +7,8 @@ import org.influxdb.dto.Point.Builder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import rocks.inspectit.server.influx.builder.IPointBuilder;
-import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMData;
-import rocks.inspectit.shared.all.communication.data.eum.UserSessionInfo;
+import rocks.inspectit.shared.all.communication.data.eum.old.AbstractEUMData;
+import rocks.inspectit.shared.all.communication.data.eum.old.UserSessionInfo;
 
 /**
  * A buidler collecting EUM data requiring session information.

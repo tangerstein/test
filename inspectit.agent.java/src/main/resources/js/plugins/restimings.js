@@ -3,57 +3,52 @@
  * Module for dealing with the Resoure Timings API.
  * Collects the loaded Resources and hands the data over the Action module.
  */
-window.inspectIT.restimings = (function () {
-	if(typeof window.inspectIT.plugins.resTimings === "undefined") {
+window.inspectIT.registerPlugin("resTimings", function() {
+
+	var inspectIT = window.inspectIT;
+	
+	var resTimingsSupported = ("performance" in window) && ("getEntriesByType" in window.performance);
+	
+	/**
+	 * Starts the child action for gathering the loaded Resources.
+	 */
+	function collectResourceTimings() {
 		
-		var resourceTimingsBlock = -1;
-		
-		/**
-		 * Starts the child action for gathering the loaded Resources.
-		 */
-		function collectResourceTimings() {
-			if (("performance" in window) && ("getEntriesByType" in window.performance) && (window.performance.getEntriesByType("resource") instanceof Array)) {
-				resourceTimingsBlock = inspectIT.action.enterChild();
-				//increase the buffer size to make sure everythin is captured
-				window.performance.setResourceTimingBufferSize(500);
-			}
-		}
-		
-		/**
-		 * Collects the loaded Resources, ends the Child action
-		 * and hands over the data to the action module.
-		 */
-		function sendAndClearTimings() {
-			//add event listener, which is called after the site has fully finished loading
-			if (("performance" in window) && ("getEntriesByType" in window.performance) && (window.performance.getEntriesByType("resource") instanceof Array)) {
-				var timingsList = [];
-				var resourceList = window.performance.getEntriesByType("resource");
-				for ( i = 0; i < resourceList.length; i++) {
-					timingsList.push({
-						url : resourceList[i].name,
-						startTime : Math.round(resourceList[i].startTime),
-						endTime : Math.round(resourceList[i].responseEnd),
-						initiatorType : resourceList[i].initiatorType,
-						transferSize : resourceList[i].decodedBodySize,
-						initiatorUrl : window.location.href
-					});
-				}
-				if (timingsList.length > 0) {
-					for (var i = 0; i < timingsList.length; i++) {
-						timingsList[i].type = "ResourceLoadRequest";
-						inspectIT.action.submitData(resourceTimingsBlock, timingsList[i]);
-					}
-				}
-				//clear the timings to make space for new ones
-				window.performance.clearResourceTimings();
+		if (resTimingsSupported &&  (window.performance.getEntriesByType("resource") instanceof Array)) {
+			
+			inspectIT.instrumentation.runWithout(function(){
+				var onLoadCallback = inspectIT.instrumentation.disableFor(function(){
+					setTimeout(inspectIT.instrumentation.disableFor(function(){
+						
+						var timingsList = [];
+						var resourceList = window.performance.getEntriesByType("resource");
+						
+						for ( i = 0; i < resourceList.length; i++) {
+							var resourceRequest = inspectIT.createEUMElement("resourceLoadRequest")
+							resourceRequest.require("resTimings");
+							resourceRequest.markRelevant();
+							
+							resourceRequest.setParent(inspectIT.pageLoadAction);
+							
+							resourceRequest.url = resourceList[i].name;
+							resourceRequest.startTime = Math.round(resourceList[i].startTime);
+							resourceRequest.endTime = Math.round(resourceList[i].responseEnd);
+							resourceRequest.initiatorType = resourceList[i].initiatorType;
+							resourceRequest.transferSize = resourceList[i].decodedBodySize;
+							
+							resourceRequest.markComplete("resTimings");
+							
+						}
+						//clear the timings to make space for new ones
+						window.performance.clearResourceTimings();
+						
+					}), 100);
+				});
+				window.addEventListener("load", onLoadCallback);
 				
-				inspectIT.action.leaveChild(resourceTimingsBlock);
-			}
+			});
 		}
-		
-		window.inspectIT.plugins.resTimings = {
-			init : collectResourceTimings,
-			onload : sendAndClearTimings
-		};
 	}
-})();
+	
+	return collectResourceTimings;
+});

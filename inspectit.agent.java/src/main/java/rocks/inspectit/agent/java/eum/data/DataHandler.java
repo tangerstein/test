@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import rocks.inspectit.shared.all.communication.data.eum.Beacon;
 import rocks.inspectit.shared.all.spring.logger.Log;
 
 
@@ -41,12 +42,21 @@ public class DataHandler implements IDataHandler {
 		try {
 			Beacon beacon = jsonMapper.readValue(data, Beacon.class);
 			ObjectNode response = nodeFactory.objectNode();
-			if(beacon.getSessionID() == -1) {
-				response.put("sessionID", idGenerator.generateSessionID());
+
+			long sessionID = beacon.getSessionID();
+			long tabID = beacon.getTabID();
+
+			if (sessionID == Beacon.REQUEST_NEW_SESSION_ID_MARKER) {
+				sessionID = idGenerator.generateSessionID();
+				response.put("sessionID", sessionID);
 			}
-			if(beacon.getTabID() == -1) {
-				response.put("tabID", idGenerator.generateTabID());
+			if (beacon.getTabID() == Beacon.REQUEST_NEW_TAB_ID_MARKER) {
+				tabID = idGenerator.generateTabID();
+				response.put("tabID", tabID);
 			}
+			// even needed if the IDs were all known, as this also assigns the ids to all stored
+			// AbstractEUMElements.
+			beacon.assignIDs(sessionID, tabID);
 			return jsonMapper.writeValueAsString(response);
 
 		} catch (Exception e) {

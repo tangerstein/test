@@ -14,14 +14,14 @@ import org.springframework.stereotype.Component;
 import rocks.inspectit.server.influx.constants.Series;
 import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 import rocks.inspectit.shared.all.cmr.service.ICachedDataService;
-import rocks.inspectit.shared.all.communication.data.eum.AjaxRequest;
-import rocks.inspectit.shared.all.communication.data.eum.ClickAction;
-import rocks.inspectit.shared.all.communication.data.eum.PageLoadAction;
-import rocks.inspectit.shared.all.communication.data.eum.PageLoadRequest;
-import rocks.inspectit.shared.all.communication.data.eum.Request;
-import rocks.inspectit.shared.all.communication.data.eum.ResourceLoadRequest;
-import rocks.inspectit.shared.all.communication.data.eum.UserAction;
-import rocks.inspectit.shared.all.communication.data.eum.UserSessionInfo;
+import rocks.inspectit.shared.all.communication.data.eum.old.AjaxRequest;
+import rocks.inspectit.shared.all.communication.data.eum.old.ClickAction;
+import rocks.inspectit.shared.all.communication.data.eum.old.PageLoadAction;
+import rocks.inspectit.shared.all.communication.data.eum.old.PageLoadRequest;
+import rocks.inspectit.shared.all.communication.data.eum.old.Request;
+import rocks.inspectit.shared.all.communication.data.eum.old.ResourceLoadRequest;
+import rocks.inspectit.shared.all.communication.data.eum.old.UserAction;
+import rocks.inspectit.shared.all.communication.data.eum.old.UserSessionInfo;
 
 /**
  * Creates Points based on the different types of user actions.

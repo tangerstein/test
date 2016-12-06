@@ -3,7 +3,6 @@ package rocks.inspectit.agent.java.sensor.method.special;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +16,7 @@ import rocks.inspectit.agent.java.config.StorageException;
 import rocks.inspectit.agent.java.config.impl.SpecialSensorConfig;
 import rocks.inspectit.agent.java.eum.data.DataHandler;
 import rocks.inspectit.agent.java.eum.data.IDataHandler;
+import rocks.inspectit.agent.java.eum.data.IdGenerator;
 import rocks.inspectit.agent.java.eum.instrumentation.JSAgentBuilder;
 import rocks.inspectit.agent.java.eum.instrumentation.TagInjectionResponseWrapper;
 import rocks.inspectit.agent.java.eum.reflection.WCookie;
@@ -49,20 +49,12 @@ public class EUMInstrumentationHook implements ISpecialHook {
 	 */
 	private IDataHandler dataHandler;
 
+	private IdGenerator idGenerator;
+
 	/**
 	 * The logger.
 	 */
 	private static final Logger LOG = LoggerFactory.getLogger(EUMInstrumentationHook.class);;
-
-	/**
-	 * A unique prefix for EUM session IDs.
-	 */
-	private String sessionIDPrefix;
-
-	/**
-	 * Atomic long for assigning session ids.
-	 */
-	private AtomicLong sessionIdCounter;
 
 	/**
 	 * A matcher for the beacon URL.
@@ -100,10 +92,11 @@ public class EUMInstrumentationHook implements ISpecialHook {
 	 * @param config
 	 *            the configuration storage containing the EUM config.
 	 */
-	public EUMInstrumentationHook(IRuntimeLinker linker, IDataHandler dataHandler, IConfigurationStorage config) {
+	public EUMInstrumentationHook(IRuntimeLinker linker, IdGenerator idGenerator, IDataHandler dataHandler, IConfigurationStorage config) {
 		super();
 		this.linker = linker;
 		this.dataHandler = dataHandler;
+		this.idGenerator = idGenerator;
 		initConfig(config);
 	}
 
@@ -283,7 +276,7 @@ public class EUMInstrumentationHook implements ISpecialHook {
 			}
 		}
 
-		String sessionID = generateUserSessionID();
+		String sessionID = "" + idGenerator.generateSessionID();
 
 		// otherwise generate the cookie
 		Object cookie = WCookie.newInstance(httpRequestObj.getClass().getClassLoader(), JSAgentBuilder.SESSION_ID_COOKIE_NAME, sessionID);
@@ -295,15 +288,6 @@ public class EUMInstrumentationHook implements ISpecialHook {
 	}
 
 	/**
-	 * Generates a unique ID to identify the user session.
-	 *
-	 * @return the generated id.
-	 */
-	private String generateUserSessionID() {
-		return sessionIDPrefix + sessionIdCounter.incrementAndGet(); // will be unique
-	}
-
-	/**
 	 * Initializes the URL configuration using the given configuration storage.
 	 *
 	 * @param configurationStorage
@@ -311,9 +295,6 @@ public class EUMInstrumentationHook implements ISpecialHook {
 	 */
 	public void initConfig(IConfigurationStorage configurationStorage) {
 		try {
-			sessionIDPrefix = configurationStorage.getAgentName() + "_" + System.currentTimeMillis() + "_";
-			sessionIdCounter = new AtomicLong();
-
 			String base = configurationStorage.getEndUserMonitoringConfig().getScriptBaseUrl();
 			beaconURLRegEx = Pattern.compile(Pattern.quote(base + JSAgentModule.BEACON_SUB_PATH), Pattern.CASE_INSENSITIVE);
 

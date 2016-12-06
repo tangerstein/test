@@ -19,8 +19,8 @@ import org.testng.annotations.Test;
 import rocks.inspectit.agent.java.core.ICoreService;
 import rocks.inspectit.agent.java.core.IPlatformManager;
 import rocks.inspectit.agent.java.core.IdNotAvailableException;
-import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMData;
-import rocks.inspectit.shared.all.communication.data.eum.UserSessionInfo;
+import rocks.inspectit.shared.all.communication.data.eum.old.AbstractEUMData;
+import rocks.inspectit.shared.all.communication.data.eum.old.UserSessionInfo;
 import rocks.inspectit.shared.all.testbase.TestBase;
 
 @SuppressWarnings({ "PMD" })

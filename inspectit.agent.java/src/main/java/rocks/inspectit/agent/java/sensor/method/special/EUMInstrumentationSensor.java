@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import rocks.inspectit.agent.java.config.IConfigurationStorage;
 import rocks.inspectit.agent.java.eum.data.IDataHandler;
+import rocks.inspectit.agent.java.eum.data.IdGenerator;
 import rocks.inspectit.agent.java.hooking.IHook;
 import rocks.inspectit.agent.java.proxy.IRuntimeLinker;
 import rocks.inspectit.agent.java.sensor.method.AbstractMethodSensor;
@@ -36,6 +37,12 @@ public class EUMInstrumentationSensor extends AbstractMethodSensor implements IM
 	private IConfigurationStorage config;
 
 	/**
+	 * Configuration Storage.
+	 */
+	@Autowired
+	private IdGenerator idGenerator;
+
+	/**
 	 * The EUM instrumentation hook initialised by this sensor.
 	 */
 	private EUMInstrumentationHook hook;
@@ -53,7 +60,7 @@ public class EUMInstrumentationSensor extends AbstractMethodSensor implements IM
 	 */
 	@Override
 	protected void initHook(Map<String, Object> parameters) {
-		hook = new EUMInstrumentationHook(linker, dataHandler, config);
+		hook = new EUMInstrumentationHook(linker, idGenerator, dataHandler, config);
 	}
 
 }

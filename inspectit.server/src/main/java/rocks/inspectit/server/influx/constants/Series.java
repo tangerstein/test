@@ -1,8 +1,8 @@
 package rocks.inspectit.server.influx.constants;
 
-import rocks.inspectit.shared.all.communication.data.eum.AjaxRequest;
-import rocks.inspectit.shared.all.communication.data.eum.PageLoadRequest;
-import rocks.inspectit.shared.all.communication.data.eum.ResourceLoadRequest;
+import rocks.inspectit.shared.all.communication.data.eum.old.AjaxRequest;
+import rocks.inspectit.shared.all.communication.data.eum.old.PageLoadRequest;
+import rocks.inspectit.shared.all.communication.data.eum.old.ResourceLoadRequest;
 
 /**
  * Constants for all the series that we save to the influxDB. These include series name, as well as

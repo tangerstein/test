@@ -1,4 +1,46 @@
+window.inspectIT.registerPlugin("speedIndex", function() {
+	
+	
+	var inspectIT = window.inspectIT;
+	
+	var navTimingBlock = -1;
+	
+	var navTimingsSupported = ("performance" in window) && ("timing" in window.performance);
+	
+	/**
+	 * Collects the navigation timings and stores them in the pageloadrequest.
+	 */
+	function collectSpeedIndex() {
+		if (navTimingsSupported) {
+			inspectIT.instrumentation.runWithout(function(){
 
+				//force the beacon service to wait until we have collected the data
+				inspectIT.pageLoadRequest.require("speedIndex");
+				
+				var onLoadCallback = inspectIT.instrumentation.disableFor(function(){
+					setTimeout(inspectIT.instrumentation.disableFor(function(){
+						inspectIT.pageLoadRequest.navigationTimings = inspectIT.pageLoadRequest.navigationTimings || {};
+						
+						var rumSI = RUMSpeedIndex();
+						
+						inspectIT.pageLoadRequest.navigationTimings.navigationStartW = window.performance.timing.navigationStart;
+						
+						if(rumSI.si != 0 && rumSI.fp != 0) {
+							inspectIT.pageLoadRequest.navigationTimings.speedIndex = rumSI.si;
+							inspectIT.pageLoadRequest.navigationTimings.firstPaint = window.performance.timing.navigationStart + Math.round(rumSI.fp);
+						}
+						
+						inspectIT.pageLoadRequest.markComplete("speedIndex");
+					}), 100);
+				});
+					
+				
+				window.addEventListener("load", onLoadCallback);
+			});
+		}
+	}
+	
+	
 /******************************************************************************
 Copyright (c) 2014, Google Inc.
 All rights reserved.
@@ -44,7 +86,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************
 ******************************************************************************/
 
-window.inspectIT.RUMSpeedIndex = function(win) {
+var RUMSpeedIndex = function(win) {
   win = win || window;
   var doc = win.document;
     
@@ -270,3 +312,8 @@ window.inspectIT.RUMSpeedIndex = function(win) {
 	  fp : firstPaint
   }
 };
+
+
+//init call returned
+return collectSpeedIndex;
+});

@@ -1,4 +1,4 @@
-package rocks.inspectit.shared.all.communication.data.eum;
+package rocks.inspectit.shared.all.communication.data.eum.old;
 
 /**
  * Interface for getting information about an executed Javascript method.
