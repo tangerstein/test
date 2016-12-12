@@ -158,4 +158,13 @@ public class StorageInvocationDataAccessService extends AbstractStorageService<I
 	public List<InvocationSequenceData> getInvocationSequenceOverview(String alertId, int limit, ResultComparator<InvocationSequenceData> resultComparator) {
 		throw new UnsupportedOperationException();
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public List<InvocationSequenceData> getInvocationSequenceDetail(long traceId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
