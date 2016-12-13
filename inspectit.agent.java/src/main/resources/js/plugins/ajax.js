@@ -97,13 +97,16 @@ window.inspectIT.registerPlugin("ajaxInstrumentation", function() {
 		function ajaxListenerInstrumentation(executeOriginalListener, attachmentTarget, originalCallback, event) {
 			
 			var ajax = event.target;
-			if("_inspectIT_ajax_record" in ajax) {
+			if("_inspectIT_ajax_record" in ajax) { //check if the ajax was instrumented
 				var ajaxRecord = ajax._inspectIT_ajax_record();
 				var listenerRecord = inspectIT.createEUMElement("listenerExecution");
 				listenerRecord.require("listenerData");
 				listenerRecord.setParent(ajaxRecord, true);
 				
-				listenerRecord.functionName = inspectIT.util.getFunctionName(originalCallback);
+				var funcName = inspectIT.util.getFunctionName(originalCallback);
+				if(funcName != "") {
+					listenerRecord.functionName = funcName;
+				}
 				listenerRecord.eventType = event.type;
 				
 				//execute the lsitener while build the trace

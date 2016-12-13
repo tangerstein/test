@@ -1,32 +1,56 @@
 package rocks.inspectit.shared.all.communication.data.eum;
 
+import java.io.Serializable;
+
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 
 /**
- * @author Jonas Kunz
+ * Represents the initial request responsible for loadign hte page showed in this tab. This request
+ * is always a direct child of the corresponding {@link PageLoadAction}.
+ *
+ * @author David Monschein, Jonas Kunz
  *
  */
-public class PageLoadRequest extends Request {
+public class PageLoadRequest extends AbstractRequest {
 
 	/**
 	 * Serial Version UID.
 	 */
 	private static final long serialVersionUID = -2379341294938690998L;
 
+	/**
+	 * If the capturing of the navigation timings or the speedindex was enabled, this field will
+	 * hold the measured values.
+	 */
 	@JsonSerialize(include = Inclusion.NON_NULL)
 	@JsonProperty
 	private NavigationTimings navigationTimings;
 
 	/**
-	 * All timestamps are in MS relative to the epoche.
+	 * Stores the number of resources this pageload request laoded explicitly.
+	 */
+	@JsonSerialize(include = Inclusion.NON_DEFAULT)
+	@JsonProperty
+	private int resourceCount = -1;
+
+	/**
+	 * Stores the navigation timings and the speedindex if the corresponding modules are enabled.
+	 * All timing fields store timestamps in milliseconds relative to the epoche.
 	 *
+	 * if a certain timing was not available, the corresponding field holds a zero value isntead.
 	 *
 	 * @author Jonas Kunz
 	 *
 	 */
-	public static class NavigationTimings {
+	public static class NavigationTimings implements Serializable {
+
+		/**
+		 * serial version UID.
+		 */
+		private static final long serialVersionUID = 102220423619146599L;
+
 		/**
 		 * refers to @see <a href=
 		 * "https://www.w3.org/TR/navigation-timing/#sec-navigation-timing-interface">Navigation
@@ -231,442 +255,394 @@ public class PageLoadRequest extends Request {
 		private long firstPaint = 0;
 
 		/**
-		 * Gets {@link #navigationStartW}.
+		 * Gets {@link #navigationStart}.
 		 *
-		 * @return {@link #navigationStartW}
+		 * @return {@link #navigationStart}
 		 */
 		public long getNavigationStart() {
 			return this.navigationStart;
 		}
 
 		/**
-		 * Sets {@link #navigationStartW}.
+		 * Gets {@link #unloadEventStart}.
 		 *
-		 * @param navigationStartW
-		 *            New value for {@link #navigationStartW}
-		 */
-		public void setNavigationStart(long navigationStart) {
-			this.navigationStart = navigationStart;
-		}
-
-		/**
-		 * Gets {@link #unloadEventStartW}.
-		 *
-		 * @return {@link #unloadEventStartW}
+		 * @return {@link #unloadEventStart}
 		 */
 		public long getUnloadEventStart() {
 			return this.unloadEventStart;
 		}
 
 		/**
-		 * Sets {@link #unloadEventStartW}.
+		 * Gets {@link #unloadEventEnd}.
 		 *
-		 * @param unloadEventStartW
-		 *            New value for {@link #unloadEventStartW}
-		 */
-		public void setUnloadEventStart(long unloadEventStart) {
-			this.unloadEventStart = unloadEventStart;
-		}
-
-		/**
-		 * Gets {@link #unloadEventEndW}.
-		 *
-		 * @return {@link #unloadEventEndW}
+		 * @return {@link #unloadEventEnd}
 		 */
 		public long getUnloadEventEnd() {
 			return this.unloadEventEnd;
 		}
 
 		/**
-		 * Sets {@link #unloadEventEndW}.
+		 * Gets {@link #redirectStart}.
 		 *
-		 * @param unloadEventEndW
-		 *            New value for {@link #unloadEventEndW}
-		 */
-		public void setUnloadEventEnd(long unloadEventEnd) {
-			this.unloadEventEnd = unloadEventEnd;
-		}
-
-		/**
-		 * Gets {@link #redirectStartW}.
-		 *
-		 * @return {@link #redirectStartW}
+		 * @return {@link #redirectStart}
 		 */
 		public long getRedirectStart() {
 			return this.redirectStart;
 		}
 
 		/**
-		 * Sets {@link #redirectStartW}.
+		 * Gets {@link #redirectEnd}.
 		 *
-		 * @param redirectStartW
-		 *            New value for {@link #redirectStartW}
-		 */
-		public void setRedirectStart(long redirectStart) {
-			this.redirectStart = redirectStart;
-		}
-
-		/**
-		 * Gets {@link #redirectEndW}.
-		 *
-		 * @return {@link #redirectEndW}
+		 * @return {@link #redirectEnd}
 		 */
 		public long getRedirectEnd() {
 			return this.redirectEnd;
 		}
 
 		/**
-		 * Sets {@link #redirectEndW}.
+		 * Gets {@link #fetchStart}.
 		 *
-		 * @param redirectEndW
-		 *            New value for {@link #redirectEndW}
-		 */
-		public void setRedirectEnd(long redirectEnd) {
-			this.redirectEnd = redirectEnd;
-		}
-
-		/**
-		 * Gets {@link #fetchStartW}.
-		 *
-		 * @return {@link #fetchStartW}
+		 * @return {@link #fetchStart}
 		 */
 		public long getFetchStart() {
 			return this.fetchStart;
 		}
 
 		/**
-		 * Sets {@link #fetchStartW}.
+		 * Gets {@link #domainLookupStart}.
 		 *
-		 * @param fetchStartW
-		 *            New value for {@link #fetchStartW}
-		 */
-		public void setFetchStart(long fetchStart) {
-			this.fetchStart = fetchStart;
-		}
-
-		/**
-		 * Gets {@link #domainLookupStartW}.
-		 *
-		 * @return {@link #domainLookupStartW}
+		 * @return {@link #domainLookupStart}
 		 */
 		public long getDomainLookupStart() {
 			return this.domainLookupStart;
 		}
 
 		/**
-		 * Sets {@link #domainLookupStartW}.
+		 * Gets {@link #domainLookupEnd}.
 		 *
-		 * @param domainLookupStartW
-		 *            New value for {@link #domainLookupStartW}
-		 */
-		public void setDomainLookupStart(long domainLookupStart) {
-			this.domainLookupStart = domainLookupStart;
-		}
-
-		/**
-		 * Gets {@link #domainLookupEndW}.
-		 *
-		 * @return {@link #domainLookupEndW}
+		 * @return {@link #domainLookupEnd}
 		 */
 		public long getDomainLookupEnd() {
 			return this.domainLookupEnd;
 		}
 
 		/**
-		 * Sets {@link #domainLookupEndW}.
+		 * Gets {@link #connectStart}.
 		 *
-		 * @param domainLookupEndW
-		 *            New value for {@link #domainLookupEndW}
-		 */
-		public void setDomainLookupEnd(long domainLookupEnd) {
-			this.domainLookupEnd = domainLookupEnd;
-		}
-
-		/**
-		 * Gets {@link #connectStartW}.
-		 *
-		 * @return {@link #connectStartW}
+		 * @return {@link #connectStart}
 		 */
 		public long getConnectStart() {
 			return this.connectStart;
 		}
 
 		/**
-		 * Sets {@link #connectStartW}.
+		 * Gets {@link #connectEnd}.
 		 *
-		 * @param connectStartW
-		 *            New value for {@link #connectStartW}
-		 */
-		public void setConnectStart(long connectStart) {
-			this.connectStart = connectStart;
-		}
-
-		/**
-		 * Gets {@link #connectEndW}.
-		 *
-		 * @return {@link #connectEndW}
+		 * @return {@link #connectEnd}
 		 */
 		public long getConnectEnd() {
 			return this.connectEnd;
 		}
 
 		/**
-		 * Sets {@link #connectEndW}.
+		 * Gets {@link #secureConnectionStart}.
 		 *
-		 * @param connectEndW
-		 *            New value for {@link #connectEndW}
-		 */
-		public void setConnectEnd(long connectEnd) {
-			this.connectEnd = connectEnd;
-		}
-
-		/**
-		 * Gets {@link #secureConnectionStartW}.
-		 *
-		 * @return {@link #secureConnectionStartW}
+		 * @return {@link #secureConnectionStart}
 		 */
 		public long getSecureConnectionStart() {
 			return this.secureConnectionStart;
 		}
 
 		/**
-		 * Sets {@link #secureConnectionStartW}.
+		 * Gets {@link #requestStart}.
 		 *
-		 * @param secureConnectionStartW
-		 *            New value for {@link #secureConnectionStartW}
-		 */
-		public void setSecureConnectionStart(long secureConnectionStart) {
-			this.secureConnectionStart = secureConnectionStart;
-		}
-
-		/**
-		 * Gets {@link #requestStartW}.
-		 *
-		 * @return {@link #requestStartW}
+		 * @return {@link #requestStart}
 		 */
 		public long getRequestStart() {
 			return this.requestStart;
 		}
 
 		/**
-		 * Sets {@link #requestStartW}.
+		 * Gets {@link #responseStart}.
 		 *
-		 * @param requestStartW
-		 *            New value for {@link #requestStartW}
-		 */
-		public void setRequestStart(long requestStart) {
-			this.requestStart = requestStart;
-		}
-
-		/**
-		 * Gets {@link #responseStartW}.
-		 *
-		 * @return {@link #responseStartW}
+		 * @return {@link #responseStart}
 		 */
 		public long getResponseStart() {
 			return this.responseStart;
 		}
 
 		/**
-		 * Sets {@link #responseStartW}.
+		 * Gets {@link #responseEnd}.
 		 *
-		 * @param responseStartW
-		 *            New value for {@link #responseStartW}
-		 */
-		public void setResponseStart(long responseStart) {
-			this.responseStart = responseStart;
-		}
-
-		/**
-		 * Gets {@link #responseEndW}.
-		 *
-		 * @return {@link #responseEndW}
+		 * @return {@link #responseEnd}
 		 */
 		public long getResponseEnd() {
 			return this.responseEnd;
 		}
 
 		/**
-		 * Sets {@link #responseEndW}.
+		 * Gets {@link #domLoading}.
 		 *
-		 * @param responseEndW
-		 *            New value for {@link #responseEndW}
-		 */
-		public void setResponseEnd(long responseEnd) {
-			this.responseEnd = responseEnd;
-		}
-
-		/**
-		 * Gets {@link #domLoadingW}.
-		 *
-		 * @return {@link #domLoadingW}
+		 * @return {@link #domLoading}
 		 */
 		public long getDomLoading() {
 			return this.domLoading;
 		}
 
 		/**
-		 * Sets {@link #domLoadingW}.
+		 * Gets {@link #domInteractive}.
 		 *
-		 * @param domLoadingW
-		 *            New value for {@link #domLoadingW}
-		 */
-		public void setDomLoading(long domLoading) {
-			this.domLoading = domLoading;
-		}
-
-		/**
-		 * Gets {@link #domInteractiveW}.
-		 *
-		 * @return {@link #domInteractiveW}
+		 * @return {@link #domInteractive}
 		 */
 		public long getDomInteractive() {
 			return this.domInteractive;
 		}
 
 		/**
-		 * Sets {@link #domInteractiveW}.
+		 * Gets {@link #domContentLoadedEventStart}.
 		 *
-		 * @param domInteractiveW
-		 *            New value for {@link #domInteractiveW}
-		 */
-		public void setDomInteractive(long domInteractive) {
-			this.domInteractive = domInteractive;
-		}
-
-		/**
-		 * Gets {@link #domContentLoadedEventStartW}.
-		 *
-		 * @return {@link #domContentLoadedEventStartW}
+		 * @return {@link #domContentLoadedEventStart}
 		 */
 		public long getDomContentLoadedEventStart() {
 			return this.domContentLoadedEventStart;
 		}
 
 		/**
-		 * Sets {@link #domContentLoadedEventStartW}.
+		 * Gets {@link #domContentLoadedEventEnd}.
 		 *
-		 * @param domContentLoadedEventStartW
-		 *            New value for {@link #domContentLoadedEventStartW}
-		 */
-		public void setDomContentLoadedEventStart(long domContentLoadedEventStart) {
-			this.domContentLoadedEventStart = domContentLoadedEventStart;
-		}
-
-		/**
-		 * Gets {@link #domContentLoadedEventEndW}.
-		 *
-		 * @return {@link #domContentLoadedEventEndW}
+		 * @return {@link #domContentLoadedEventEnd}
 		 */
 		public long getDomContentLoadedEventEnd() {
 			return this.domContentLoadedEventEnd;
 		}
 
 		/**
-		 * Sets {@link #domContentLoadedEventEndW}.
+		 * Gets {@link #domComplete}.
 		 *
-		 * @param domContentLoadedEventEndW
-		 *            New value for {@link #domContentLoadedEventEndW}
-		 */
-		public void setDomContentLoadedEventEnd(long domContentLoadedEventEnd) {
-			this.domContentLoadedEventEnd = domContentLoadedEventEnd;
-		}
-
-		/**
-		 * Gets {@link #domCompleteW}.
-		 *
-		 * @return {@link #domCompleteW}
+		 * @return {@link #domComplete}
 		 */
 		public long getDomComplete() {
 			return this.domComplete;
 		}
 
 		/**
-		 * Sets {@link #domCompleteW}.
+		 * Gets {@link #loadEventStart}.
 		 *
-		 * @param domCompleteW
-		 *            New value for {@link #domCompleteW}
-		 */
-		public void setDomComplete(long domComplete) {
-			this.domComplete = domComplete;
-		}
-
-		/**
-		 * Gets {@link #loadEventStartW}.
-		 *
-		 * @return {@link #loadEventStartW}
+		 * @return {@link #loadEventStart}
 		 */
 		public long getLoadEventStart() {
 			return this.loadEventStart;
 		}
 
 		/**
-		 * Sets {@link #loadEventStartW}.
+		 * Gets {@link #loadEventEnd}.
 		 *
-		 * @param loadEventStartW
-		 *            New value for {@link #loadEventStartW}
-		 */
-		public void setLoadEventStart(long loadEventStart) {
-			this.loadEventStart = loadEventStart;
-		}
-
-		/**
-		 * Gets {@link #loadEventEndW}.
-		 *
-		 * @return {@link #loadEventEndW}
+		 * @return {@link #loadEventEnd}
 		 */
 		public long getLoadEventEnd() {
 			return this.loadEventEnd;
 		}
 
 		/**
-		 * Sets {@link #loadEventEndW}.
+		 * Gets {@link #speedIndex}.
 		 *
-		 * @param loadEventEndW
-		 *            New value for {@link #loadEventEndW}
-		 */
-		public void setLoadEventEnd(long loadEventEnd) {
-			this.loadEventEnd = loadEventEnd;
-		}
-
-		/**
-		 * Gets {@link #speedindex}.
-		 *
-		 * @return {@link #speedindex}
+		 * @return {@link #speedIndex}
 		 */
 		public double getSpeedIndex() {
 			return this.speedIndex;
 		}
 
 		/**
-		 * Sets {@link #speedindex}.
+		 * Gets {@link #firstPaint}.
 		 *
-		 * @param speedindex
-		 *            New value for {@link #speedindex}
-		 */
-		public void setSpeedIndex(double speedIndex) {
-			this.speedIndex = speedIndex;
-		}
-
-		/**
-		 * Gets {@link #firstpaint}.
-		 *
-		 * @return {@link #firstpaint}
+		 * @return {@link #firstPaint}
 		 */
 		public long getFirstPaint() {
 			return this.firstPaint;
 		}
 
 		/**
-		 * Sets {@link #firstpaint}.
-		 *
-		 * @param firstpaint
-		 *            New value for {@link #firstpaint}
+		 * {@inheritDoc}
 		 */
-		public void setFirstPaint(long firstpaint) {
-			this.firstPaint = firstpaint;
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = (prime * result) + (int) (this.connectEnd ^ (this.connectEnd >>> 32));
+			result = (prime * result) + (int) (this.connectStart ^ (this.connectStart >>> 32));
+			result = (prime * result) + (int) (this.domComplete ^ (this.domComplete >>> 32));
+			result = (prime * result) + (int) (this.domContentLoadedEventEnd ^ (this.domContentLoadedEventEnd >>> 32));
+			result = (prime * result) + (int) (this.domContentLoadedEventStart ^ (this.domContentLoadedEventStart >>> 32));
+			result = (prime * result) + (int) (this.domInteractive ^ (this.domInteractive >>> 32));
+			result = (prime * result) + (int) (this.domLoading ^ (this.domLoading >>> 32));
+			result = (prime * result) + (int) (this.domainLookupEnd ^ (this.domainLookupEnd >>> 32));
+			result = (prime * result) + (int) (this.domainLookupStart ^ (this.domainLookupStart >>> 32));
+			result = (prime * result) + (int) (this.fetchStart ^ (this.fetchStart >>> 32));
+			result = (prime * result) + (int) (this.firstPaint ^ (this.firstPaint >>> 32));
+			result = (prime * result) + (int) (this.loadEventEnd ^ (this.loadEventEnd >>> 32));
+			result = (prime * result) + (int) (this.loadEventStart ^ (this.loadEventStart >>> 32));
+			result = (prime * result) + (int) (this.navigationStart ^ (this.navigationStart >>> 32));
+			result = (prime * result) + (int) (this.redirectEnd ^ (this.redirectEnd >>> 32));
+			result = (prime * result) + (int) (this.redirectStart ^ (this.redirectStart >>> 32));
+			result = (prime * result) + (int) (this.requestStart ^ (this.requestStart >>> 32));
+			result = (prime * result) + (int) (this.responseEnd ^ (this.responseEnd >>> 32));
+			result = (prime * result) + (int) (this.responseStart ^ (this.responseStart >>> 32));
+			result = (prime * result) + (int) (this.secureConnectionStart ^ (this.secureConnectionStart >>> 32));
+			long temp;
+			temp = Double.doubleToLongBits(this.speedIndex);
+			result = (prime * result) + (int) (temp ^ (temp >>> 32));
+			result = (prime * result) + (int) (this.unloadEventEnd ^ (this.unloadEventEnd >>> 32));
+			result = (prime * result) + (int) (this.unloadEventStart ^ (this.unloadEventStart >>> 32));
+			return result;
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (getClass() != obj.getClass()) {
+				return false;
+			}
+			NavigationTimings other = (NavigationTimings) obj;
+			if (this.connectEnd != other.connectEnd) {
+				return false;
+			}
+			if (this.connectStart != other.connectStart) {
+				return false;
+			}
+			if (this.domComplete != other.domComplete) {
+				return false;
+			}
+			if (this.domContentLoadedEventEnd != other.domContentLoadedEventEnd) {
+				return false;
+			}
+			if (this.domContentLoadedEventStart != other.domContentLoadedEventStart) {
+				return false;
+			}
+			if (this.domInteractive != other.domInteractive) {
+				return false;
+			}
+			if (this.domLoading != other.domLoading) {
+				return false;
+			}
+			if (this.domainLookupEnd != other.domainLookupEnd) {
+				return false;
+			}
+			if (this.domainLookupStart != other.domainLookupStart) {
+				return false;
+			}
+			if (this.fetchStart != other.fetchStart) {
+				return false;
+			}
+			if (this.firstPaint != other.firstPaint) {
+				return false;
+			}
+			if (this.loadEventEnd != other.loadEventEnd) {
+				return false;
+			}
+			if (this.loadEventStart != other.loadEventStart) {
+				return false;
+			}
+			if (this.navigationStart != other.navigationStart) {
+				return false;
+			}
+			if (this.redirectEnd != other.redirectEnd) {
+				return false;
+			}
+			if (this.redirectStart != other.redirectStart) {
+				return false;
+			}
+			if (this.requestStart != other.requestStart) {
+				return false;
+			}
+			if (this.responseEnd != other.responseEnd) {
+				return false;
+			}
+			if (this.responseStart != other.responseStart) {
+				return false;
+			}
+			if (this.secureConnectionStart != other.secureConnectionStart) {
+				return false;
+			}
+			if (Double.doubleToLongBits(this.speedIndex) != Double.doubleToLongBits(other.speedIndex)) {
+				return false;
+			}
+			if (this.unloadEventEnd != other.unloadEventEnd) {
+				return false;
+			}
+			if (this.unloadEventStart != other.unloadEventStart) { // NOPMD
+				return false;
+			}
+			return true;
+		}
+
+
 	}
+
+	/**
+	 * Gets {@link #navigationTimings}.
+	 *
+	 * @return {@link #navigationTimings}
+	 */
+	public NavigationTimings getNavigationTimings() {
+		return this.navigationTimings;
+	}
+
+	/**
+	 * Gets {@link #resourceCount}.
+	 * 
+	 * @return {@link #resourceCount}
+	 */
+	public int getResourceCount() {
+		return this.resourceCount;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = (prime * result) + ((this.navigationTimings == null) ? 0 : this.navigationTimings.hashCode());
+		result = (prime * result) + this.resourceCount;
+		return result;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		PageLoadRequest other = (PageLoadRequest) obj;
+		if (this.navigationTimings == null) {
+			if (other.navigationTimings != null) {
+				return false;
+			}
+		} else if (!this.navigationTimings.equals(other.navigationTimings)) {
+			return false;
+		}
+		if (this.resourceCount != other.resourceCount) {
+			return false;
+		}
+		return true;
+	}
+
 
 }

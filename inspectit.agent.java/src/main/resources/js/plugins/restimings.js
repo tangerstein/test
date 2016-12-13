@@ -15,6 +15,8 @@ window.inspectIT.registerPlugin("resTimings", function() {
 	function collectResourceTimings() {
 		
 		if (resTimingsSupported &&  (window.performance.getEntriesByType("resource") instanceof Array)) {
+
+			inspectIT.pageLoadRequest.require("resTimings");
 			
 			inspectIT.instrumentation.runWithout(function(){
 				var onLoadCallback = inspectIT.instrumentation.disableFor(function(){
@@ -22,6 +24,8 @@ window.inspectIT.registerPlugin("resTimings", function() {
 						
 						var timingsList = [];
 						var resourceList = window.performance.getEntriesByType("resource");
+						inspectIT.pageLoadRequest.resourceCount = resourceList.length;
+						inspectIT.pageLoadRequest.markComplete("resTimings");
 						
 						for ( i = 0; i < resourceList.length; i++) {
 							var resourceRequest = inspectIT.createEUMElement("resourceLoadRequest")
@@ -31,14 +35,16 @@ window.inspectIT.registerPlugin("resTimings", function() {
 							resourceRequest.setParent(inspectIT.pageLoadAction);
 							
 							resourceRequest.url = resourceList[i].name;
-							resourceRequest.startTime = Math.round(resourceList[i].startTime);
-							resourceRequest.endTime = Math.round(resourceList[i].responseEnd);
+							resourceRequest.setEnterTimestamp(Math.round(resourceList[i].startTime));
+							resourceRequest.setExitTimestamp(Math.round(resourceList[i].responseEnd));
 							resourceRequest.initiatorType = resourceList[i].initiatorType;
 							resourceRequest.transferSize = resourceList[i].decodedBodySize;
 							
 							resourceRequest.markComplete("resTimings");
 							
 						}
+						
+						
 						//clear the timings to make space for new ones
 						window.performance.clearResourceTimings();
 						

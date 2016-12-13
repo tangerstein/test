@@ -3,30 +3,51 @@ package rocks.inspectit.shared.all.communication.data.eum;
 import java.io.Serializable;
 
 /**
+ * ID object used for globally identifying EUM elements uniquely. The ID consists of three
+ * sub-parts:
+ * <ul>
+ * <li>The session ID, identifying a user session.</li>
+ * <li>The tab ID, uniquely identifying a tab (or more precisely, a javascript interpreter instance)
+ * within a session.</li>
+ * <li>The local ID, uniquely identifying a element within a tab.</li>
+ * </ul>
+ *
  * @author Jonas Kunz
  *
  */
 public class EUMElementID implements Serializable {
 
 	/**
-	 * Serialization UUID.
+	 * Serialization UID.
 	 */
 	private static final long serialVersionUID = -7396170537157406276L;
 
+	/**
+	 * The session ID, uniquely identifying the user session..
+	 */
 	private long sessionID;
+
+	/**
+	 * The tab ID, uniquely identifying the tab (or more precisely, the javascript interpreter
+	 * instance) within the session. Can be zero if the element is tab independent, e.g.
+	 * {@link UserSessionInfo}.
+	 */
 	private long tabID;
+
+	/**
+	 * The local ID, uniquely identifying an individual element within a tab. Can be zero if the
+	 * element is not required to be referenceable, e.g. a {@link UserSessionInfo}.
+	 */
 	private long localID;
 
 	/**
-	 * @param sessionID
-	 * @param tabID
-	 * @param elementID
+	 * Default Constructor, zeroes all IDs.
+	 *
 	 */
-	public EUMElementID(long sessionID, long tabID, long localID) {
-		super();
-		this.sessionID = sessionID;
-		this.tabID = tabID;
-		this.localID = localID;
+	public EUMElementID() {
+		this.sessionID = 0;
+		this.tabID = 0;
+		this.localID = 0;
 	}
 
 	/**
@@ -63,7 +84,7 @@ public class EUMElementID implements Serializable {
 		if (this.sessionID != other.sessionID) {
 			return false;
 		}
-		if (this.tabID != other.tabID) {
+		if (this.tabID != other.tabID) { // NOPMD
 			return false;
 		}
 		return true;

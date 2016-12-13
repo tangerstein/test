@@ -4,6 +4,7 @@ var capturedActions = [];
 var pageLoadAction = null;
 
 QUnit.config.autostart = false;
+QUnit.config.reorder = false;
 
 // instrument action bundler
 inspectIT.actionBundler.addAction = function(a) {

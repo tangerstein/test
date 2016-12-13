@@ -34,6 +34,7 @@
 		}
 		
 		//TODO: maybe optionally disable this call, as it possibly can have a performance impact
+		// (not the call itself, but the listener instrumentation)
 		instrumentation.initListenerInstrumentation();
 		
 		beaconService.init();
@@ -51,7 +52,10 @@
 				listenerRecord.require("listenerData");
 				listenerRecord.setParent(pageLoadAction);
 
-				listenerRecord.functionName = inspectIT.util.getFunctionName(originalCallback);
+				var funcName = inspectIT.util.getFunctionName(originalCallback);
+				if(funcName != "") {
+					listenerRecord.functionName = funcName;
+				}
 				listenerRecord.eventType = event.type;
 				
 				//execute the lsitener while build the trace
@@ -223,8 +227,8 @@
 		var lastDataCollectionTimestamp = null;
 		var firstDataCollectionTimestamp = null;
 		
-		var sessionID = -1;
-		var tabID = -1;
+		var sessionID = "-1";
+		var tabID = "-1";
 		
 		
 		var awaitingResponse = false;
@@ -241,7 +245,7 @@
 				forceBeaconSend();
 			} else {
 				//session cookie available- read it
-				sessionID = parseInt(sessionCookie);			
+				sessionID = sessionCookie;			
 			}
 		}
 		
@@ -297,7 +301,7 @@
 					sessionID : sessionID,
 				}
 				
-				if(sessionID === -1) {
+				if(sessionID == "-1") {
 					//we have to request a new session ID, as this page was probably cached
 					//we therefore will send an empty beacon instead
 					beaconObj.data = [];
@@ -309,31 +313,31 @@
 				}
 				
 				//use the beacon API if we do not care about the response
-				if ( BEACON_API_SUPPORTED && sessionID !== -1 && tabID !== -1) {
+				if ( BEACON_API_SUPPORTED && sessionID != "-1" && tabID != "-1") {
 					navigator.sendBeacon(BEACON_URL, JSON.stringify(beaconObj));
 				} else {
 					var xhrPost = new XMLHttpRequest();
 					xhrPost.open("POST", BEACON_URL, true);
-					xhrPost.addEventListener("load", function() {
+					xhrPost.addEventListener("loadend", function() {
 						inspectIT.instrumentation.runWithout(function() {
 							if (xhrPost.status === 200) {
 								var responseObj = JSON.parse(xhrPost.responseText);
 								
-								if(tabID === -1) {
+								if(tabID == "-1") {
 									tabID = responseObj.tabID;
 								}
-								if(sessionID === -1) {
+								if(sessionID == "-1") {
 									var sessionCookie = inspectIT.util.getCookie(SESSION_COOKIE_NAME);
 									if(sessionCookie !== null){
 										//ignore the received id and instead use the stored one
-										sessionID = parseInt(sessionCookie);
+										sessionID = sessionCookie;
 									} else {
 										//possible race condition between multiple tabs here
 										//we just wait a moment and then take the winner of this race condition
 										document.cookie = SESSION_COOKIE_NAME+"="+responseObj.sessionID+"; path=/"
 										setTimeout(function() {
 											inspectIT.instrumentation.runWithout(function() {
-												sessionID = parseInt(inspectIT.util.getCookie(SESSION_COOKIE_NAME));
+												sessionID = inspectIT.util.getCookie(SESSION_COOKIE_NAME);
 												awaitingResponse = false;
 												checkBeaconSendTimeout();
 											});
@@ -405,7 +409,7 @@
 		function uninstrumentEventListener(instrumentationFunc) {
 			var index = listenerInstrumentations.indexOf(instrumentationFunc);
 			if (index != -1) {
-				listenerInstrumentations = listenerInstrumentations.splice(index,1);
+				listenerInstrumentations.splice(index,1);
 			}
 		}
 		
@@ -464,7 +468,7 @@
 								for(var i=0; i<storedMappings.length; i++) {
 									var mapping = storedMappings[i];
 									if(mapping.target === target && mapping.type == type && mapping.capture == capture) {
-										storedMappings = storedMappings.splice(i,1);
+										storedMappings.splice(i,1);
 										return mapping.instrumentedCallback;
 									}
 								}

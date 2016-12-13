@@ -4,9 +4,11 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
- * Containing informations about an user session. A session should be unique for every user.
+ * Stores information about an user session. This element will be sent for every new tab openend,
+ * however as the ifnormation is consistent across tabs duplciate userSessionInfos received can be
+ * safely ignored.
  *
- * @author David Monschein
+ * @author David Monschein, Jonas Kunz
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserSessionInfo extends AbstractEUMElement {
@@ -32,28 +34,12 @@ public class UserSessionInfo extends AbstractEUMElement {
 	private String language;
 
 	/**
-	 * Creates a new user session containing no information about the user.
-	 */
-	public UserSessionInfo() {
-	}
-
-	/**
 	 * Gets {@link #browser}.
 	 *
 	 * @return {@link #browser}
 	 */
 	public String getBrowser() {
-		return browser;
-	}
-
-	/**
-	 * Sets {@link #browser}.
-	 *
-	 * @param browser
-	 *            New value for {@link #browser}
-	 */
-	public void setBrowser(String browser) {
-		this.browser = browser;
+		return this.browser;
 	}
 
 	/**
@@ -62,17 +48,7 @@ public class UserSessionInfo extends AbstractEUMElement {
 	 * @return {@link #device}
 	 */
 	public String getDevice() {
-		return device;
-	}
-
-	/**
-	 * Sets {@link #device}.
-	 *
-	 * @param device
-	 *            New value for {@link #device}
-	 */
-	public void setDevice(String device) {
-		this.device = device;
+		return this.device;
 	}
 
 	/**
@@ -81,28 +57,78 @@ public class UserSessionInfo extends AbstractEUMElement {
 	 * @return {@link #language}
 	 */
 	public String getLanguage() {
-		return language;
+		return this.language;
 	}
 
 	/**
-	 * Sets {@link #language}.
-	 *
-	 * @param language
-	 *            New value for {@link #language}
+	 * {@link UserSessionInfo} isntances are not referenceable, therefore calls to this method are
+	 * ignored.
 	 */
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
 	@Override
 	@JsonIgnore
 	public void setLocalID(long localId) {
 
 	}
 
+	/**
+	 * {@link UserSessionInfo} instances are cross-tab elements, therefore calls to this method are
+	 * ignored.
+	 */
 	@Override
 	@JsonIgnore
 	public void setTabID(long sessionId) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = (prime * result) + ((this.browser == null) ? 0 : this.browser.hashCode());
+		result = (prime * result) + ((this.device == null) ? 0 : this.device.hashCode());
+		result = (prime * result) + ((this.language == null) ? 0 : this.language.hashCode());
+		return result;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		UserSessionInfo other = (UserSessionInfo) obj;
+		if (this.browser == null) {
+			if (other.browser != null) {
+				return false;
+			}
+		} else if (!this.browser.equals(other.browser)) {
+			return false;
+		}
+		if (this.device == null) {
+			if (other.device != null) {
+				return false;
+			}
+		} else if (!this.device.equals(other.device)) {
+			return false;
+		}
+		if (this.language == null) {
+			if (other.language != null) {
+				return false;
+			}
+		} else if (!this.language.equals(other.language)) {
+			return false;
+		}
+		return true;
 	}
 
 }

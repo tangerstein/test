@@ -14,8 +14,11 @@ window.inspectIT.registerPlugin("listenerInstrumentation", function() {
 				
 				var listenerRecord = inspectIT.createEUMElement("domListenerExecution");
 				listenerRecord.require("listenerData");
-				
-				listenerRecord.functionName = inspectIT.util.getFunctionName(originalCallback);
+
+				var funcName = inspectIT.util.getFunctionName(originalCallback);
+				if(funcName != "") {
+					listenerRecord.functionName = funcName;
+				}
 				listenerRecord.eventType = event.type;
 				
 				listenerRecord.elementType = event.target.nodeName;
