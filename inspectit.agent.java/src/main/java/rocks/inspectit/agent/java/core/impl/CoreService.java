@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ import rocks.inspectit.agent.java.connection.ServerUnavailableException;
 import rocks.inspectit.agent.java.core.ICoreService;
 import rocks.inspectit.agent.java.core.IObjectStorage;
 import rocks.inspectit.agent.java.core.IPlatformManager;
+import rocks.inspectit.agent.java.core.IdNotAvailableException;
 import rocks.inspectit.agent.java.core.ListListener;
 import rocks.inspectit.agent.java.sending.ISendingStrategy;
 import rocks.inspectit.agent.java.sensor.jmx.IJmxSensor;
@@ -33,6 +35,7 @@ import rocks.inspectit.shared.all.communication.MethodSensorData;
 import rocks.inspectit.shared.all.communication.SystemSensorData;
 import rocks.inspectit.shared.all.communication.data.ExceptionSensorData;
 import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
+import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMElement;
 import rocks.inspectit.shared.all.spring.logger.Log;
 import rocks.inspectit.shared.all.util.ExecutorServiceUtils;
 
@@ -162,6 +165,11 @@ public class CoreService implements ICoreService, InitializingBean, DisposableBe
 	private boolean sendingExceptionNotice = false;
 
 	/**
+	 * Coutner for assigning unique map ids to eum objects.
+	 */
+	private AtomicLong eumDataCounter = new AtomicLong(0);
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -269,6 +277,22 @@ public class CoreService implements ICoreService, InitializingBean, DisposableBe
 		builder.append('.');
 		builder.append(sensorTypeIdent);
 		return (MethodSensorData) sensorDataObjects.get(builder.toString());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void addEUMData(AbstractEUMElement eumData) {
+		StringBuilder idBuilder = new StringBuilder("EUMDATA_");
+		idBuilder.append(eumDataCounter.incrementAndGet());
+		try {
+			eumData.setPlatformIdent(platformManager.getPlatformId());
+		} catch (IdNotAvailableException e) {
+			eumData.setPlatformIdent(0);
+		}
+		sensorDataObjects.put(idBuilder.toString(), eumData);
+		notifyListListeners();
 	}
 
 	/**
