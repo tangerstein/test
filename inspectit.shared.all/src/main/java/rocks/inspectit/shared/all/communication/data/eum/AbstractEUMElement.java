@@ -3,7 +3,6 @@ package rocks.inspectit.shared.all.communication.data.eum;
 import java.io.Serializable;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonSubTypes;
 import org.codehaus.jackson.annotate.JsonSubTypes.Type;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
@@ -27,7 +26,9 @@ import rocks.inspectit.shared.all.communication.DefaultData;
 	@Type(name = "metaInfo", value = UserSessionInfo.class),
 	@Type(name = "timerExecution", value = JSTimerExecution.class),
 	@Type(name = "listenerExecution", value = JSEventListenerExecution.class),
-	@Type(name = "domListenerExecution", value = JSDomEventListenerExecution.class)
+		@Type(name = "domListenerExecution", value = JSDomEventListenerExecution.class),
+		@Type(name = "IOSMeasuredUseCase", value = MobileIOSElement.class)
+
 })
 public class AbstractEUMElement extends DefaultData implements Serializable {
 
@@ -40,13 +41,13 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 	 * The ID globally unique ID of this element.
 	 */
 	@JsonIgnore
-	private EUMElementID id;
+	private EUMElementID euElementId;
 
 	/**
 	 * Default constructs, assigns a null-id to this object.
 	 */
 	public AbstractEUMElement() {
-		id = new EUMElementID();
+		euElementId = new EUMElementID();
 	}
 
 	/**
@@ -56,9 +57,9 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 	 * @param localId
 	 *            the localID to set
 	 */
-	@JsonProperty(value = "id")
+	@JsonIgnore
 	public void setLocalID(long localId) {
-		this.id.setLocalID(localId);
+		this.euElementId.setLocalID(localId);
 	}
 
 	/**
@@ -69,7 +70,7 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 	 */
 	@JsonIgnore
 	public void setTabID(long tabId) {
-		this.id.setTabID(tabId);
+		this.euElementId.setTabID(tabId);
 	}
 
 	/**
@@ -80,7 +81,7 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 	 */
 	@JsonIgnore
 	public void setSessionID(long sessionId) {
-		this.id.setSessionID(sessionId);
+		this.euElementId.setSessionID(sessionId);
 	}
 
 	/**
@@ -90,7 +91,7 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 	 */
 	@JsonIgnore
 	public EUMElementID getID() {
-		return this.id;
+		return this.euElementId;
 	}
 
 	/**
@@ -100,7 +101,7 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = (prime * result) + ((this.id == null) ? 0 : this.id.hashCode());
+		result = (prime * result) + ((this.euElementId == null) ? 0 : this.euElementId.hashCode());
 		return result;
 	}
 
@@ -119,11 +120,11 @@ public class AbstractEUMElement extends DefaultData implements Serializable {
 			return false;
 		}
 		AbstractEUMElement other = (AbstractEUMElement) obj;
-		if (this.id == null) {
-			if (other.id != null) {
+		if (this.euElementId == null) {
+			if (other.euElementId != null) {
 				return false;
 			}
-		} else if (!this.id.equals(other.id)) {
+		} else if (!this.euElementId.equals(other.euElementId)) {
 			return false;
 		}
 		return true;

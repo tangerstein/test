@@ -1,8 +1,5 @@
 package rocks.inspectit.shared.all.communication.data.eum;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
@@ -27,7 +24,7 @@ import org.codehaus.jackson.map.ser.std.ToStringSerializer;
  * @author Jonas Kunz
  *
  */
-public class Beacon {
+public class Beacon extends AbstractBacon {
 
 	/**
 	 * Special ID for marking that the JS Agent requires a new session ID.
@@ -53,20 +50,14 @@ public class Beacon {
 	@JsonProperty
 	private long tabID;
 
-	/**
-	 * The contents of this beacon.
-	 */
-	@JsonSerialize(include = Inclusion.NON_EMPTY)
-	@JsonProperty
-	private List<AbstractEUMElement> data;
 
 	/**
 	 * Default cosntructor.
 	 */
 	public Beacon() {
+		super();
 		sessionID = REQUEST_NEW_SESSION_ID_MARKER;
 		tabID = REQUEST_NEW_TAB_ID_MARKER;
-		data = new ArrayList<AbstractEUMElement>();
 	}
 
 	/**
@@ -88,15 +79,6 @@ public class Beacon {
 	}
 
 	/**
-	 * Gets {@link #data}.
-	 *
-	 * @return {@link #data}
-	 */
-	public List<AbstractEUMElement> getData() {
-		return this.data;
-	}
-
-	/**
 	 * Assigns an ID to this beacon and all contained elements.
 	 *
 	 * @param sessionID
@@ -107,7 +89,7 @@ public class Beacon {
 	public void assignIDs(long sessionID, long tabID) {
 		this.sessionID = sessionID;
 		this.tabID = tabID;
-		for (AbstractEUMElement element : data) {
+		for (AbstractEUMElement element : getData()) {
 			element.setSessionID(sessionID);
 			element.setTabID(tabID);
 		}
@@ -120,7 +102,7 @@ public class Beacon {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = (prime * result) + ((this.data == null) ? 0 : this.data.hashCode());
+		result = (prime * result) + ((this.getData() == null) ? 0 : this.getData().hashCode());
 		result = (prime * result) + (int) (this.sessionID ^ (this.sessionID >>> 32));
 		result = (prime * result) + (int) (this.tabID ^ (this.tabID >>> 32));
 		return result;
@@ -141,11 +123,11 @@ public class Beacon {
 			return false;
 		}
 		Beacon other = (Beacon) obj;
-		if (this.data == null) {
-			if (other.data != null) {
+		if (this.getData() == null) {
+			if (other.getData() != null) {
 				return false;
 			}
-		} else if (!this.data.equals(other.data)) {
+		} else if (!this.getData().equals(other.getData())) {
 			return false;
 		}
 		if (this.sessionID != other.sessionID) {
