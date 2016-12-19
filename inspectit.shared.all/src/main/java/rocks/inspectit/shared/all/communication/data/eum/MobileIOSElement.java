@@ -5,13 +5,15 @@ import java.util.List;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
-public class MobileIOSElement extends AbstractEUMElement {
+import rocks.inspectit.shared.all.communication.DefaultData;
+
+public class MobileIOSElement extends DefaultData {
 	/**
 	 * S
 	 */
 	private static final long serialVersionUID = -8835803943354776498L;
 
-	public MobileIOSElement(String usecaseDescription, String usecaseID, List<MobileIOSMeasurement> measurements) {
+	public MobileIOSElement(String usecaseDescription, String usecaseID, List<MobileMeasurement> measurements) {
 		super();
 		this.usecaseDescription = usecaseDescription;
 		this.usecaseID = usecaseID;
@@ -25,7 +27,7 @@ public class MobileIOSElement extends AbstractEUMElement {
 	private String usecaseID;
 
 	@JsonProperty(value = "measurements")
-	private List<MobileIOSMeasurement> measurements;
+	private List<MobileMeasurement> measurements;
 
 	public String getUsecaseDescription() {
 		return usecaseDescription;
@@ -35,7 +37,7 @@ public class MobileIOSElement extends AbstractEUMElement {
 		return usecaseID;
 	}
 
-	public List<MobileIOSMeasurement> getMeasurements() {
+	public List<MobileMeasurement> getMeasurements() {
 		return measurements;
 	}
 

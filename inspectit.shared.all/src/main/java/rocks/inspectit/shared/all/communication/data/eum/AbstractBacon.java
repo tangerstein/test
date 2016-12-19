@@ -7,27 +7,29 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 
+import rocks.inspectit.shared.all.communication.DefaultData;
+
 public class AbstractBacon {
 	/**
 	 * The contents of this beacon.
 	 */
 	@JsonSerialize(include = Inclusion.NON_EMPTY)
 	@JsonProperty
-	private List<AbstractEUMElement> data;
+	private List<DefaultData> data;
 
 	/**
 	 * Default constructor
 	 */
 	public AbstractBacon() {
-		data = new ArrayList<AbstractEUMElement>();
+		data = new ArrayList<DefaultData>();
 	}
 
 	/**
 	 * Gets {@link #data}.
 	 *
-	 * @return {@link #data}
+	 * @return {@link #data}f
 	 */
-	public List<AbstractEUMElement> getData() {
+	public List<DefaultData> getData() {
 		return this.data;
 	}
 }

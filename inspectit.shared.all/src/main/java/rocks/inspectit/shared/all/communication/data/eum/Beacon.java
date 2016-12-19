@@ -5,6 +5,8 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 import org.codehaus.jackson.map.ser.std.ToStringSerializer;
 
+import rocks.inspectit.shared.all.communication.DefaultData;
+
 /**
  * Definition of the format of beacons sent by the EUM JS Agent.
  *
@@ -89,9 +91,12 @@ public class Beacon extends AbstractBacon {
 	public void assignIDs(long sessionID, long tabID) {
 		this.sessionID = sessionID;
 		this.tabID = tabID;
-		for (AbstractEUMElement element : getData()) {
-			element.setSessionID(sessionID);
-			element.setTabID(tabID);
+		for (DefaultData element : getData()) {
+			if(element instanceof AbstractEUMElement){
+				((AbstractEUMElement)element).setSessionID(sessionID);
+				((AbstractEUMElement) element).setTabID(tabID);
+				;
+			}
 		}
 	}
 
