@@ -1,5 +1,6 @@
 package rocks.inspectit.shared.all.communication.data.eum;
 
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,8 +14,10 @@ public class MobileIOSElement extends DefaultData {
 	 */
 	private static final long serialVersionUID = -8835803943354776498L;
 
-	public MobileIOSElement(String usecaseDescription, String usecaseID, List<MobileMeasurement> measurements) {
+	public MobileIOSElement(String usecaseDescription, String usecaseID, List<MobileMeasurement> measurements,
+			long timeStamp) {
 		super();
+		super.setTimeStamp(new Timestamp(timeStamp));
 		this.usecaseDescription = usecaseDescription;
 		this.usecaseID = usecaseID;
 		this.measurements = measurements;

@@ -21,12 +21,14 @@ import com.google.gson.JsonElement;
 import io.gsonfire.GsonFireBuilder;
 import io.gsonfire.TypeSelector;
 import rocks.inspectit.server.service.rest.error.JsonError;
+import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.eum.AbstractBacon;
-import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMElement;
 import rocks.inspectit.shared.all.communication.data.eum.MobileBacon;
 import rocks.inspectit.shared.all.communication.data.eum.MobileIOSElement;
 import rocks.inspectit.shared.all.communication.data.eum.MobileIOSMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.MobileMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.RemoteCallMeasurement;
 
 /**
  * Restful service provider for detail {@link InvocationSequenceData}
@@ -63,16 +65,33 @@ public class AgentRestfulService {
 	}
 
 	private Gson getGson() {
-		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(AbstractEUMElement.class,
-				new TypeSelector<AbstractEUMElement>() {
-			@Override
-					public Class<? extends AbstractEUMElement> getClassForElement(JsonElement readElement) {
-				String type = readElement.getAsJsonObject().get("type").getAsString();
+		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(DefaultData.class,
+				new TypeSelector<DefaultData>() {
+					@Override
+					public Class<? extends DefaultData> getClassForElement(JsonElement readElement) {
+						String type = readElement.getAsJsonObject().get("type").getAsString();
 						if (type.equals("IOSMeasuredUseCase")) {
 							return MobileIOSElement.class;
+						} else {
+							return null; // returning null will trigger Gson's
+											// default
+											// behavior
+						}
+					}
+				});
+		builder.registerTypeSelector(MobileMeasurement.class, new TypeSelector<MobileMeasurement>() {
+
+			@Override
+			public Class<? extends MobileMeasurement> getClassForElement(JsonElement readElement) {
+				String type = readElement.getAsJsonObject().get("type").getAsString();
+
+				if (type.equals("remoteCallMeasurement")) {
+					return RemoteCallMeasurement.class;
+				} else if (type.equals("IOSMeasurement")) {
+					return MobileIOSMeasurement.class;
 				} else {
 					return null; // returning null will trigger Gson's default
-									// behavior
+					// behavior
 				}
 			}
 		});
@@ -88,11 +107,14 @@ public class AgentRestfulService {
 	public AbstractBacon getNewMobileBeacon() {
 		AbstractBacon bacon = new MobileBacon();
 		MobileIOSMeasurement measurement = new MobileIOSMeasurement(23423452345L, 234523453245L, 2423234524L);
-		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", "sasdgfs76aedt", new ArrayList<MobileIOSMeasurement>(Arrays.asList(new MobileIOSMeasurement[]{measurement})));
+		RemoteCallMeasurement measurement2 = new RemoteCallMeasurement("sdfsdfsdfsdf", 234523452345L);
+		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", "sasdgfs76aedt",
+				new ArrayList<MobileMeasurement>(Arrays.asList(new MobileMeasurement[] { measurement, measurement2 })),
+				3456345634L);
+		bacon.getData().add(mobileIOSElement);
 		bacon.getData().add(mobileIOSElement);
 		return bacon;
 	}
-
 
 	/**
 	 * Header information for swagger requests.

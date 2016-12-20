@@ -3,7 +3,15 @@ package rocks.inspectit.shared.all.communication.data.eum;
 import java.io.Serializable;
 
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonSubTypes;
+import org.codehaus.jackson.annotate.JsonSubTypes.Type;
+import org.codehaus.jackson.annotate.JsonTypeInfo;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({ @Type(name = "remoteCallMeasurement", value = RemoteCallMeasurement.class),
+		@Type(name = "IOSMeasurement", value = MobileIOSMeasurement.class)
+
+})
 public class MobileMeasurement implements Serializable, Comparable<MobileMeasurement> {
 
 	/**

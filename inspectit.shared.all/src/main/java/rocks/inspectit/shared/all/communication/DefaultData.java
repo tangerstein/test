@@ -13,7 +13,21 @@ import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 import javax.validation.constraints.NotNull;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonSubTypes;
+import org.codehaus.jackson.annotate.JsonSubTypes.Type;
+import org.codehaus.jackson.annotate.JsonTypeInfo;
+
 import rocks.inspectit.shared.all.cmr.cache.IObjectSizes;
+import rocks.inspectit.shared.all.communication.data.eum.AjaxRequest;
+import rocks.inspectit.shared.all.communication.data.eum.JSDomEventListenerExecution;
+import rocks.inspectit.shared.all.communication.data.eum.JSEventListenerExecution;
+import rocks.inspectit.shared.all.communication.data.eum.JSTimerExecution;
+import rocks.inspectit.shared.all.communication.data.eum.MobileIOSElement;
+import rocks.inspectit.shared.all.communication.data.eum.PageLoadAction;
+import rocks.inspectit.shared.all.communication.data.eum.PageLoadRequest;
+import rocks.inspectit.shared.all.communication.data.eum.ResourceLoadRequest;
+import rocks.inspectit.shared.all.communication.data.eum.UserSessionInfo;
 import rocks.inspectit.shared.all.indexing.IIndexQuery;
 
 /**
@@ -33,6 +47,17 @@ import rocks.inspectit.shared.all.indexing.IIndexQuery;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @NamedQuery(name = DefaultData.DELETE_FOR_PLATFORM_ID, query = "DELETE FROM DefaultData d WHERE d.platformIdent=:platformIdent")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({ @Type(name = "pageLoadAction", value = PageLoadAction.class),
+		@Type(name = "pageLoadRequest", value = PageLoadRequest.class),
+		@Type(name = "resourceLoadRequest", value = ResourceLoadRequest.class),
+		@Type(name = "ajaxRequest", value = AjaxRequest.class), @Type(name = "metaInfo", value = UserSessionInfo.class),
+		@Type(name = "timerExecution", value = JSTimerExecution.class),
+		@Type(name = "listenerExecution", value = JSEventListenerExecution.class),
+		@Type(name = "domListenerExecution", value = JSDomEventListenerExecution.class),
+		@Type(name = "IOSMeasuredUseCase", value = MobileIOSElement.class)
+
+})
 public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
@@ -67,6 +92,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 	 * The timestamp which shows when this information was created on the Agent.
 	 */
 	@NotNull
+	@JsonProperty(value = "timestamp")
 	private Timestamp timeStamp;
 
 	/**

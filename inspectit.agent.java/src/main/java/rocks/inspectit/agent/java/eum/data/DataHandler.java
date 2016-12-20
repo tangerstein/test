@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import rocks.inspectit.agent.java.core.ICoreService;
+import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMElement;
 import rocks.inspectit.shared.all.communication.data.eum.Beacon;
 import rocks.inspectit.shared.all.spring.logger.Log;
@@ -84,7 +85,14 @@ public class DataHandler implements IDataHandler {
 			beacon.assignIDs(sessionID, tabID);
 
 			// send the received elements to the CMR
-			for (AbstractEUMElement eumElement : beacon.getData()) {
+			for (DefaultData defaultDataElement : beacon.getData()) {
+				// TODO refactor dirty code
+				AbstractEUMElement eumElement = null;
+				if (defaultDataElement instanceof AbstractEUMElement) {
+					eumElement = (AbstractEUMElement) defaultDataElement;
+				} else {
+					throw new Exception("unexpected Subtype of DefaultData");
+				}
 				coreService.addEUMData(eumElement);
 			}
 

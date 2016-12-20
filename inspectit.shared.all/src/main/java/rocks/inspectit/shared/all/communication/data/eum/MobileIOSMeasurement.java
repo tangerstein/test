@@ -4,19 +4,17 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 public class MobileIOSMeasurement extends MobileMeasurement {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8195087403345499757L;
+
 	@JsonProperty(value = "longitude")
 	private float longitude;
 
 	@JsonProperty(value = "latitude")
 	private float latitude;
 
-
-	// ...
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8423161562303980627L;
 
 	public MobileIOSMeasurement(float longitude, float latitude, long timestamp) {
 		super(timestamp);
