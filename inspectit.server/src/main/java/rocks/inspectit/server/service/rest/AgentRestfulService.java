@@ -24,11 +24,10 @@ import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.eum.AbstractBacon;
-import rocks.inspectit.shared.all.communication.data.eum.MobileBacon;
-import rocks.inspectit.shared.all.communication.data.eum.MobileIOSElement;
-import rocks.inspectit.shared.all.communication.data.eum.MobileIOSMeasurement;
-import rocks.inspectit.shared.all.communication.data.eum.MobileMeasurement;
-import rocks.inspectit.shared.all.communication.data.eum.RemoteCallMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBacon;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
 
 /**
  * Restful service provider for detail {@link InvocationSequenceData}
@@ -65,11 +64,13 @@ public class AgentRestfulService {
 	}
 
 	private Gson getGson() {
-		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(DefaultData.class,
-				new TypeSelector<DefaultData>() {
+		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(
+				DefaultData.class, new TypeSelector<DefaultData>() {
 					@Override
-					public Class<? extends DefaultData> getClassForElement(JsonElement readElement) {
-						String type = readElement.getAsJsonObject().get("type").getAsString();
+					public Class<? extends DefaultData> getClassForElement(
+							JsonElement readElement) {
+						String type = readElement.getAsJsonObject().get("type")
+								.getAsString();
 						if (type.equals("IOSMeasuredUseCase")) {
 							return MobileIOSElement.class;
 						} else {
@@ -79,38 +80,42 @@ public class AgentRestfulService {
 						}
 					}
 				});
-		builder.registerTypeSelector(MobileMeasurement.class, new TypeSelector<MobileMeasurement>() {
+		builder.registerTypeSelector(MobileMeasurement.class,
+				new TypeSelector<MobileMeasurement>() {
 
-			@Override
-			public Class<? extends MobileMeasurement> getClassForElement(JsonElement readElement) {
-				String type = readElement.getAsJsonObject().get("type").getAsString();
+					@Override
+					public Class<? extends MobileMeasurement> getClassForElement(
+							JsonElement readElement) {
+						String type = readElement.getAsJsonObject().get("type")
+								.getAsString();
 
-				if (type.equals("remoteCallMeasurement")) {
-					return RemoteCallMeasurement.class;
-				} else if (type.equals("IOSMeasurement")) {
-					return MobileIOSMeasurement.class;
-				} else {
-					return null; // returning null will trigger Gson's default
-					// behavior
-				}
-			}
-		});
+						if (type.equals("IOSMeasurement")) {
+							return MobileIOSMeasurement.class;
+						} else {
+							return null; // returning null will trigger Gson's
+											// default
+							// behavior
+						}
+					}
+				});
 		Gson gson = builder.createGson();
 		return gson;
 	}
 
 	/**
-	 * TODO
+	 * Test method
 	 */
 	@RequestMapping(method = POST, value = "/defaultJSON")
 	@ResponseBody
 	public AbstractBacon getNewMobileBeacon() {
 		AbstractBacon bacon = new MobileBacon();
-		MobileIOSMeasurement measurement = new MobileIOSMeasurement(23423452345L, 234523453245L, 2423234524L);
-		RemoteCallMeasurement measurement2 = new RemoteCallMeasurement("sdfsdfsdfsdf", 234523452345L);
-		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", "sasdgfs76aedt",
-				new ArrayList<MobileMeasurement>(Arrays.asList(new MobileMeasurement[] { measurement, measurement2 })),
-				3456345634L);
+		MobileIOSMeasurement measurement = new MobileIOSMeasurement(
+				23423452345L, 234523453245L, 2423234524L, 234324, "hh",
+				81236218F, 8324683246F);
+
+		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login",
+				"sasdgfs76aedt", new ArrayList<MobileMeasurement>(
+						Arrays.asList(new MobileMeasurement[] { measurement})), 3456345634L);
 		bacon.getData().add(mobileIOSElement);
 		bacon.getData().add(mobileIOSElement);
 		return bacon;
@@ -125,6 +130,7 @@ public class AgentRestfulService {
 	@ModelAttribute
 	public void setVaryResponseHeader(HttpServletResponse response) {
 		response.setHeader("Access-Control-Allow-Origin", "*");
-		response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+		response.setHeader("Access-Control-Allow-Headers",
+				"Origin, X-Requested-With, Content-Type, Accept");
 	}
 }

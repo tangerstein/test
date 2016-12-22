@@ -1,4 +1,4 @@
-package rocks.inspectit.shared.all.communication.data.eum;
+package rocks.inspectit.shared.all.communication.data.eum.mobile;
 
 import java.sql.Timestamp;
 import java.util.Collections;

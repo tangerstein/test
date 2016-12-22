@@ -1,6 +1,8 @@
-package rocks.inspectit.shared.all.communication.data.eum;
+package rocks.inspectit.shared.all.communication.data.eum.mobile;
 
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import rocks.inspectit.shared.all.communication.data.eum.AbstractBacon;
 
 public class MobileBacon extends AbstractBacon {
 	/**
