@@ -23,11 +23,11 @@ import rocks.inspectit.shared.all.communication.data.eum.AjaxRequest;
 import rocks.inspectit.shared.all.communication.data.eum.JSDomEventListenerExecution;
 import rocks.inspectit.shared.all.communication.data.eum.JSEventListenerExecution;
 import rocks.inspectit.shared.all.communication.data.eum.JSTimerExecution;
-import rocks.inspectit.shared.all.communication.data.eum.MobileIOSElement;
 import rocks.inspectit.shared.all.communication.data.eum.PageLoadAction;
 import rocks.inspectit.shared.all.communication.data.eum.PageLoadRequest;
 import rocks.inspectit.shared.all.communication.data.eum.ResourceLoadRequest;
 import rocks.inspectit.shared.all.communication.data.eum.UserSessionInfo;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
 import rocks.inspectit.shared.all.indexing.IIndexQuery;
 
 /**
