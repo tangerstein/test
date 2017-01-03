@@ -9,7 +9,12 @@ import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 
 import rocks.inspectit.shared.all.communication.DefaultData;
 
-public class AbstractBacon {
+/**
+ * 
+ * @author Tobias Angerstein, Alper Hidiroglu, Manuel Palenga
+ *
+ */
+public class AbstractBeacon {
 	/**
 	 * The contents of this beacon.
 	 */
@@ -20,7 +25,7 @@ public class AbstractBacon {
 	/**
 	 * Default constructor
 	 */
-	public AbstractBacon() {
+	public AbstractBeacon() {
 		data = new ArrayList<DefaultData>();
 	}
 

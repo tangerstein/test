@@ -68,6 +68,12 @@ public class InvocationSequenceData extends MethodSensorData {
 	private LoggingData loggingData;
 
 	/**
+	 * The associated mobile data. Can be <code>null</code>.
+	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+	private MobileData mobileData;
+	
+	/**
 	 * The position if parent sequence is not <code>null</code>.
 	 */
 	@JsonIgnore
@@ -232,6 +238,25 @@ public class InvocationSequenceData extends MethodSensorData {
 	 */
 	public void setLoggingData(LoggingData loggingData) {
 		this.loggingData = loggingData;
+	}
+	
+	/**
+	 * Gets {@link #mobileData}.
+	 *
+	 * @return {@link #mobileData}
+	 */
+	public MobileData getMobileData() {
+		return mobileData;
+	}
+
+	/**
+	 * Sets {@link #mobileData}.
+	 *
+	 * @param mobileData
+	 *            New value for {@link #mobileData}
+	 */
+	public void setMobileData(MobileData mobileData) {
+		this.mobileData = mobileData;
 	}
 
 	/**
@@ -431,6 +456,7 @@ public class InvocationSequenceData extends MethodSensorData {
 		result = (prime * result) + ((sqlStatementData == null) ? 0 : sqlStatementData.hashCode());
 		result = (prime * result) + ((timerData == null) ? 0 : timerData.hashCode());
 		result = (prime * result) + ((loggingData == null) ? 0 : loggingData.hashCode());
+		result = (prime * result) + ((mobileData == null) ? 0 : mobileData.hashCode());
 		result = (prime * result) + applicationId;
 		result = (prime * result) + businessTransactionId;
 		return result;
@@ -479,6 +505,13 @@ public class InvocationSequenceData extends MethodSensorData {
 		} else if (!loggingData.equals(other.loggingData)) {
 			return false;
 		}
+		if (mobileData == null) {
+			if (other.mobileData != null) {
+				return false;
+			}
+		} else if (!mobileData.equals(other.mobileData)) {
+			return false;
+		}
 		if (applicationId != other.applicationId) {
 			return false;
 		}
@@ -497,6 +530,7 @@ public class InvocationSequenceData extends MethodSensorData {
 		size += objectSizes.getPrimitiveTypesSize(8, 0, 2, 0, 2, 3);
 		size += objectSizes.getSizeOf(timerData);
 		size += objectSizes.getSizeOf(loggingData);
+		size += objectSizes.getSizeOf(mobileData);
 		size += objectSizes.getSizeOf(sqlStatementData);
 		if (nestedSequences instanceof ArrayList) {
 			size += objectSizes.getSizeOf(nestedSequences, 0);
@@ -548,6 +582,7 @@ public class InvocationSequenceData extends MethodSensorData {
 		clone.setLoggingData(this.getLoggingData());
 		clone.setApplicationId(this.getApplicationId());
 		clone.setBusinessTransactionId(this.getBusinessTransactionId());
+		clone.setMobileData(this.getMobileData());
 		return clone;
 	}
 

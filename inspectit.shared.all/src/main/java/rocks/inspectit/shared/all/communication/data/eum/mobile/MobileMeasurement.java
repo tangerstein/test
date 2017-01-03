@@ -11,6 +11,11 @@ import org.codehaus.jackson.annotate.JsonTypeInfo;
 @JsonSubTypes({ @Type(name = "IOSMeasurement", value = MobileIOSMeasurement.class)
 
 })
+/**
+ * 
+ * @author Tobias Angerstein, Alper Hidiroglu, Manuel Palenga
+ *
+ */
 public class MobileMeasurement implements Serializable,
 		Comparable<MobileMeasurement> {
 

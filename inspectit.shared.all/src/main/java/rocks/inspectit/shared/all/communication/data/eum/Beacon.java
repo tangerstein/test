@@ -26,7 +26,7 @@ import rocks.inspectit.shared.all.communication.DefaultData;
  * @author Jonas Kunz
  *
  */
-public class Beacon extends AbstractBacon {
+public class Beacon extends AbstractBeacon {
 
 	/**
 	 * Special ID for marking that the JS Agent requires a new session ID.

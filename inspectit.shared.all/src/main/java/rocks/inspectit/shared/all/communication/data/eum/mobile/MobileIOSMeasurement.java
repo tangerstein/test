@@ -74,7 +74,7 @@ public class MobileIOSMeasurement extends MobileMeasurement {
 	/**
 	 * @return the latitude
 	 */
-	public float getCPU() {
+	public float getCpu() {
 		return cpu;
 	}
 	

@@ -8,36 +8,48 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import rocks.inspectit.shared.all.communication.DefaultData;
 
+/**
+ * 
+ * @author Tobias Angerstein, Alper Hidiroglu, Manuel Palenga
+ *
+ */
 public class MobileIOSElement extends DefaultData {
-	/**
-	 * S
-	 */
+	
+	/** Serial version id. */
 	private static final long serialVersionUID = -8835803943354776498L;
 
-	public MobileIOSElement(String usecaseDescription, String usecaseID, List<MobileMeasurement> measurements,
-			long timeStamp) {
-		super();
-		super.setTimeStamp(new Timestamp(timeStamp));
-		this.usecaseDescription = usecaseDescription;
-		this.usecaseID = usecaseID;
-		this.measurements = measurements;
-	}
-
 	@JsonProperty(value = "useCaseDescription")
-	private String usecaseDescription;
+	private String useCaseDescription;
 
 	@JsonProperty(value = "useCaseID")
-	private String usecaseID;
+	private String useCaseID;
 
 	@JsonProperty(value = "measurements")
 	private List<MobileMeasurement> measurements;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param useCaseDescription
+	 * @param useCaseID
+	 * @param measurements
+	 * @param timeStamp
+	 */
+	public MobileIOSElement(String useCaseDescription, String useCaseID, List<MobileMeasurement> measurements,
+			long timeStamp) {
+		super();
+		super.setTimeStamp(new Timestamp(timeStamp));
+		this.useCaseDescription = useCaseDescription;
+		this.useCaseID = useCaseID;
+		this.measurements = measurements;
+	}
+	
 	public String getUsecaseDescription() {
-		return usecaseDescription;
+		return useCaseDescription;
 	}
 
 	public String getUsecaseID() {
-		return usecaseID;
+		return useCaseID;
 	}
 
 	public List<MobileMeasurement> getMeasurements() {
@@ -56,8 +68,8 @@ public class MobileIOSElement extends DefaultData {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = (prime * result) + ((this.usecaseDescription == null) ? 0 : this.usecaseDescription.hashCode());
-		result = (prime * result) + ((this.usecaseID == null) ? 0 : this.usecaseID.hashCode());
+		result = (prime * result) + ((this.useCaseDescription == null) ? 0 : this.useCaseDescription.hashCode());
+		result = (prime * result) + ((this.useCaseID == null) ? 0 : this.useCaseID.hashCode());
 		result = (prime * result) + ((this.measurements == null) ? 0 : this.measurements.hashCode());
 		return result;
 	}
