@@ -9,31 +9,39 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class MobileIOSMeasurement extends MobileMeasurement {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8195087403345499757L;
-
-	@JsonProperty(value = "longitude")
-	private float longitude;
-
-	@JsonProperty(value = "latitude")
-	private float latitude;
-
-	@JsonProperty(value = "power")
-	private int power;
 
 	@JsonProperty(value = "networkConnection")
 	private String networkConnection;
 	
+	@JsonProperty(value = "longitude")
+	private double longitude;
+
+	@JsonProperty(value = "latitude")
+	private double latitude;
+
+	@JsonProperty(value = "power")
+	private double power;
+	
 	@JsonProperty(value = "cpu")
-	private float cpu;
+	private double cpu;
 	
 	@JsonProperty(value = "memory")
-	private float memory;
+	private double memory;
 
-	public MobileIOSMeasurement(float longitude, float latitude,
-			long timestamp, int power, String networkConnection, float cpu, float memory) {
+	/**
+	 * Constructor.
+	 * 
+	 * @param longitude
+	 * @param latitude
+	 * @param timestamp
+	 * @param power
+	 * @param networkConnection
+	 * @param cpu
+	 * @param memory
+	 */
+	public MobileIOSMeasurement(double longitude, double latitude,
+			long timestamp, double power, String networkConnection, double cpu, double memory) {
 		super(timestamp);
 		this.longitude = longitude;
 		this.latitude = latitude;
@@ -46,21 +54,21 @@ public class MobileIOSMeasurement extends MobileMeasurement {
 	/**
 	 * @return the longitude
 	 */
-	public float getLongitude() {
+	public double getLongitude() {
 		return longitude;
 	}
 
 	/**
 	 * @return the latitude
 	 */
-	public float getLatitude() {
+	public double getLatitude() {
 		return latitude;
 	}
 	
 	/**
 	 * @return the power
 	 */
-	public int getPower() {
+	public double getPower() {
 		return power;
 	}
 	
@@ -72,16 +80,16 @@ public class MobileIOSMeasurement extends MobileMeasurement {
 	}
 	
 	/**
-	 * @return the latitude
+	 * @return the cpu
 	 */
-	public float getCpu() {
+	public double getCpu() {
 		return cpu;
 	}
 	
 	/**
-	 * @return the latitude
+	 * @return the memory
 	 */
-	public float getMemory() {
+	public double getMemory() {
 		return memory;
 	}
 }

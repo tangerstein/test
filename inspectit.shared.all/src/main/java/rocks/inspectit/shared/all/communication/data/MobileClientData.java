@@ -15,24 +15,24 @@ public class MobileClientData extends MobileData {
 	/** The description of the use case. */
 	private String useCaseDescription;
 	
-	/** The longitude that was measured. */
-	private float longitude;
-
-	/** The latitude that was measured. */
-	private float latitude;
-
-	/** The power that was measured. */
-	private int power;
-
 	/** The connection of the network that was measured. */
 	private String networkConnection;
 	
-	/** The cpu that was measured. */
-	private float cpu;
-	
-	/** The memory that was measured. */
-	private float memory;
+	/** The longitude that was measured. */
+	private double longitude;
 
+	/** The latitude that was measured. */
+	private double latitude;
+
+	/** The battery power that was measured. */
+	private double batteryPower;
+	
+	/** The cpu usage that was measured. */
+	private double cpuUsage;
+	
+	/** The memory usage that was measured. */
+	private double memoryUsage;
+	
 	/**
 	 * Default constructor.
 	 */
@@ -54,7 +54,7 @@ public class MobileClientData extends MobileData {
 	 *
 	 * @return {@link #longitude}
 	 */
-	public float getLongitude() {
+	public double getLongitude() {
 		return longitude;
 	}
 
@@ -64,7 +64,7 @@ public class MobileClientData extends MobileData {
 	 * @param longitude
 	 *            New value for {@link #longitude}
 	 */
-	public void setLongitude(float longitude) {
+	public void setLongitude(double longitude) {
 		this.longitude = longitude;
 	}
 
@@ -73,7 +73,7 @@ public class MobileClientData extends MobileData {
 	 *
 	 * @return {@link #latitude}
 	 */
-	public float getLatitude() {
+	public double getLatitude() {
 		return latitude;
 	}
 
@@ -83,27 +83,27 @@ public class MobileClientData extends MobileData {
 	 * @param latitude
 	 *            New value for {@link #latitude}
 	 */
-	public void setLatitude(float latitude) {
+	public void setLatitude(double latitude) {
 		this.latitude = latitude;
 	}
 
 	/**
-	 * Gets {@link #power}.
+	 * Gets {@link #batteryPower}.
 	 *
-	 * @return {@link #power}
+	 * @return {@link #batteryPower}
 	 */
-	public int getPower() {
-		return power;
+	public double getBatteryPower() {
+		return batteryPower;
 	}
 
 	/**
-	 * Sets {@link #power}.
+	 * Sets {@link #batteryPower}.
 	 *
-	 * @param power
-	 *            New value for {@link #power}
+	 * @param batteryPower
+	 *            New value for {@link #batteryPower}
 	 */
-	public void setPower(int power) {
-		this.power = power;
+	public void setBatteryPower(double batteryPower) {
+		this.batteryPower = batteryPower;
 	}
 
 	/**
@@ -126,41 +126,41 @@ public class MobileClientData extends MobileData {
 	}
 
 	/**
-	 * Gets {@link #cpu}.
+	 * Gets {@link #cpuUsage}.
 	 *
-	 * @return {@link #cpu}
+	 * @return {@link #cpuUsage}
 	 */
-	public float getCpu() {
-		return cpu;
+	public double getCpuUsage() {
+		return cpuUsage;
 	}
 
 	/**
-	 * Sets {@link #cpu}.
+	 * Sets {@link #cpuUsage}.
 	 *
-	 * @param cpu
-	 *            New value for {@link #cpu}
+	 * @param cpuUsage
+	 *            New value for {@link #cpuUsage}
 	 */
-	public void setCpu(float cpu) {
-		this.cpu = cpu;
+	public void setCpuUsage(double cpuUsage) {
+		this.cpuUsage = cpuUsage;
 	}
 
 	/**
-	 * Gets {@link #memory}.
+	 * Gets {@link #memoryUsage}.
 	 *
-	 * @return {@link #memory}
+	 * @return {@link #memoryUsage}
 	 */
-	public float getMemory() {
-		return memory;
+	public double getMemoryUsage() {
+		return memoryUsage;
 	}
 
 	/**
-	 * Sets {@link #memory}.
+	 * Sets {@link #memoryUsage}.
 	 *
-	 * @param memory
-	 *            New value for {@link #memory}
+	 * @param memoryUsage
+	 *            New value for {@link #memoryUsage}
 	 */
-	public void setMemory(float memory) {
-		this.memory = memory;
+	public void setMemoryUsage(double memoryUsage) {
+		this.memoryUsage = memoryUsage;
 	}
 	
 	/**
@@ -183,6 +183,15 @@ public class MobileClientData extends MobileData {
 	}
 	
 	/**
+	 * Get if {@link #networkConnection} is wlan.
+	 *
+	 * @return If {@link #networkConnection} is wlan
+	 */
+	public boolean hasWlan() {
+		return (networkConnection != null && networkConnection.equalsIgnoreCase("WLAN"));
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -197,13 +206,19 @@ public class MobileClientData extends MobileData {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
+		long temp;
 		result = (prime * result) + ((networkConnection == null) ? 0 : networkConnection.hashCode());
 		result = (prime * result) + ((useCaseDescription == null) ? 0 : useCaseDescription.hashCode());
-		result = (prime * result) + (int) (power ^ (power >>> 32));
-		result = (prime * result) + Float.floatToIntBits(longitude);
-		result = (prime * result) + Float.floatToIntBits(latitude);
-		result = (prime * result) + Float.floatToIntBits(cpu);
-		result = (prime * result) + Float.floatToIntBits(memory);
+		temp = Double.doubleToLongBits(batteryPower);
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(longitude);
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(latitude);
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(cpuUsage);
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(memoryUsage);
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
 		return result;
 	}
 
@@ -242,13 +257,13 @@ public class MobileClientData extends MobileData {
 		if (latitude != other.latitude) {
 			return false;
 		}
-		if (power != other.power) {
+		if (batteryPower != other.batteryPower) {
 			return false;
 		}
-		if (cpu != other.cpu) {
+		if (cpuUsage != other.cpuUsage) {
 			return false;
 		}
-		if (memory != other.memory) {
+		if (memoryUsage != other.memoryUsage) {
 			return false;
 		}
 		return true;
@@ -268,7 +283,7 @@ public class MobileClientData extends MobileData {
 	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = super.getObjectSize(objectSizes, doAlign);
-		size += objectSizes.getPrimitiveTypesSize(0, 0, 1, 4, 0, 0);
+		size += objectSizes.getPrimitiveTypesSize(0, 0, 0, 0, 0, 5);
 		size += objectSizes.getSizeOf(networkConnection);
 		size += objectSizes.getSizeOf(useCaseDescription);
 		

@@ -8,9 +8,11 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -19,15 +21,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import rocks.inspectit.server.processor.impl.MobileTraceMerger;
 import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.MobileClientData;
+import rocks.inspectit.shared.all.communication.data.MobileData;
 import rocks.inspectit.shared.all.communication.data.eum.AbstractBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
+import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -43,6 +48,9 @@ import com.google.gson.JsonElement;
 @RequestMapping(value = "/mobile/newinvocation")
 public class AgentRestfulService {
 
+	@Autowired
+	private MobileTraceMerger mobileTraceMerger;
+	
 	/**
 	 * Handling of all the exceptions happening in this controller.
 	 *
@@ -54,13 +62,48 @@ public class AgentRestfulService {
 	public ModelAndView handleAllException(Exception exception) {
 		return new JsonError(exception).asModelAndView();
 	}
+	
+	/**
+	 * The used data access service to access the data on the CMR.
+	 */
+	@Autowired
+	private IInvocationDataAccessService dataAccessService;
 
+	/**
+	 * TODO
+	 */
+	@RequestMapping(method = POST, value = "/createRemoteCall")
+	@ResponseBody
+	public void createRemoteCall() {
+			
+		InvocationSequenceData remoteCall = new InvocationSequenceData();
+		remoteCall.setPlatformIdent(-1);
+		remoteCall.setTimeStamp(new Timestamp((new Random()).nextInt(1000)));
+		MobileData remoteCallServerData = new MobileData();
+		remoteCallServerData.setUseCaseID("XYZ4-1234-90AB");
+		remoteCallServerData.setTimeStamp(new Timestamp(1000000015));
+		remoteCall.setMobileData(remoteCallServerData);
+		mobileTraceMerger.storeTraceOnTree(remoteCall);
+			
+		
+		InvocationSequenceData remoteCall2 = new InvocationSequenceData();
+		remoteCall2.setPlatformIdent(-1);
+		remoteCall2.setTimeStamp(new Timestamp((new Random()).nextInt(1000)));
+		MobileData remoteCallServerData2 = new MobileData();
+		remoteCallServerData2.setUseCaseID("XYZ4-1234-90AB_2");
+		remoteCallServerData2.setTimeStamp(new Timestamp(1000000016));
+		remoteCall2.setMobileData(remoteCallServerData2);
+		mobileTraceMerger.storeTraceOnTree(remoteCall2);
+	}	
+		
+	
 	/**
 	 * TODO
 	 */
 	@RequestMapping(method = POST, value = "")
 	@ResponseBody
 	public List<InvocationSequenceData> addNewMobileBeacon(@RequestBody String json) {
+					
 		Gson gson = getGson();
 		MobileBeacon mobileBeacon = gson.fromJson(json, MobileBeacon.class);
 
@@ -81,6 +124,8 @@ public class AgentRestfulService {
 				rootMobileClientData.setUseCaseDescription(iOSElement.getUsecaseDescription());
 				rootMobileClientData.setUseCaseID(iOSElement.getUsecaseID());
 				rootSequenceData.setMobileData(rootMobileClientData);
+				rootSequenceData.setPlatformIdent(-1);
+				rootSequenceData.setTimeStamp(new Timestamp(0));
 				
 				// Get and set mobile measurement points
 				for (MobileMeasurement mobileMeasurement : iOSElement.getMeasurements()) {
@@ -94,9 +139,9 @@ public class AgentRestfulService {
 					mobileClientData.setTimeStamp(timestamp);
 					
 					// Set mobile measurement data
-					mobileClientData.setPower(iOSMeasurement.getPower());
-					mobileClientData.setCpu(iOSMeasurement.getCpu());
-					mobileClientData.setMemory(iOSMeasurement.getMemory());
+					mobileClientData.setBatteryPower(iOSMeasurement.getPower());
+					mobileClientData.setCpuUsage(iOSMeasurement.getCpu());
+					mobileClientData.setMemoryUsage(iOSMeasurement.getMemory());
 					mobileClientData.setLatitude(iOSMeasurement.getLatitude());
 					mobileClientData.setLongitude(iOSMeasurement.getLongitude());
 					mobileClientData.setNetworkConnection(iOSMeasurement.getNetworkConnection());
@@ -110,6 +155,17 @@ public class AgentRestfulService {
 				}
 				
 			}
+		}
+		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		for (InvocationSequenceData invocationSequenceData : listSequenceDatas) {
+			InvocationSequenceData mergedTrace = mobileTraceMerger.mergeMobileTraceWithServerTraces(invocationSequenceData);
+			mobileTraceMerger.storeTraceOnTree(mergedTrace);
 		}
 		
 		return listSequenceDatas;

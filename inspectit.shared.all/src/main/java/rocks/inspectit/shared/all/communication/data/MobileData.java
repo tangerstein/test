@@ -56,9 +56,9 @@ public class MobileData extends InvocationAwareData {
 	 *
 	 * @return If {@link #mobileTrace} is not empty
 	 */
-	public boolean hasMobileData(){
-		return this.useCaseID != null;
-	}
+	public boolean hasMobileClientData(){
+		return (this instanceof MobileClientData);
+	}	
 
 	/**
 	 * {@inheritDoc}
