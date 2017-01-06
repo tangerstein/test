@@ -32,16 +32,15 @@ import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
-import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
 /**
- * Restful service provider for detail {@link InvocationSequenceData}
+ * Restful service provider for detail {@link MobileBeacon}
  * information.
  *
- * @author Mario Mann
+ * @author Tobias Angerstein, Alper Hidiroglu, Manuel Palenga
  *
  */
 @Controller
@@ -62,40 +61,7 @@ public class AgentRestfulService {
 	public ModelAndView handleAllException(Exception exception) {
 		return new JsonError(exception).asModelAndView();
 	}
-	
-	/**
-	 * The used data access service to access the data on the CMR.
-	 */
-	@Autowired
-	private IInvocationDataAccessService dataAccessService;
 
-	/**
-	 * TODO
-	 */
-	@RequestMapping(method = POST, value = "/createRemoteCall")
-	@ResponseBody
-	public void createRemoteCall() {
-			
-		InvocationSequenceData remoteCall = new InvocationSequenceData();
-		remoteCall.setPlatformIdent(-1);
-		remoteCall.setTimeStamp(new Timestamp((new Random()).nextInt(1000)));
-		MobileData remoteCallServerData = new MobileData();
-		remoteCallServerData.setUseCaseID("XYZ4-1234-90AB");
-		remoteCallServerData.setTimeStamp(new Timestamp(1000000015));
-		remoteCall.setMobileData(remoteCallServerData);
-		mobileTraceMerger.storeTraceOnTree(remoteCall);
-			
-		
-		InvocationSequenceData remoteCall2 = new InvocationSequenceData();
-		remoteCall2.setPlatformIdent(-1);
-		remoteCall2.setTimeStamp(new Timestamp((new Random()).nextInt(1000)));
-		MobileData remoteCallServerData2 = new MobileData();
-		remoteCallServerData2.setUseCaseID("XYZ4-1234-90AB_2");
-		remoteCallServerData2.setTimeStamp(new Timestamp(1000000016));
-		remoteCall2.setMobileData(remoteCallServerData2);
-		mobileTraceMerger.storeTraceOnTree(remoteCall2);
-	}	
-		
 	
 	/**
 	 * TODO
@@ -130,45 +96,50 @@ public class AgentRestfulService {
 				// Get and set mobile measurement points
 				for (MobileMeasurement mobileMeasurement : iOSElement.getMeasurements()) {
 					MobileIOSMeasurement iOSMeasurement = (MobileIOSMeasurement) mobileMeasurement;
-								
-					InvocationSequenceData nestedSequenceData = new InvocationSequenceData();
-					MobileClientData mobileClientData = new MobileClientData();
-					
-					// Set timestamp of the measurement
-					Timestamp timestamp = new Timestamp(iOSMeasurement.getTimestamp());
-					mobileClientData.setTimeStamp(timestamp);
-					
-					// Set mobile measurement data
-					mobileClientData.setBatteryPower(iOSMeasurement.getPower());
-					mobileClientData.setCpuUsage(iOSMeasurement.getCpu());
-					mobileClientData.setMemoryUsage(iOSMeasurement.getMemory());
-					mobileClientData.setLatitude(iOSMeasurement.getLatitude());
-					mobileClientData.setLongitude(iOSMeasurement.getLongitude());
-					mobileClientData.setNetworkConnection(iOSMeasurement.getNetworkConnection());
-					
+					MobileClientData mobileClientData = getMobileDataFromMobileMeasurement(iOSMeasurement);	
+										
 					// Set use case data
 					mobileClientData.setUseCaseDescription(iOSElement.getUsecaseDescription());
 					mobileClientData.setUseCaseID(iOSElement.getUsecaseID());
-					
+							
+					InvocationSequenceData nestedSequenceData = new InvocationSequenceData();
 					nestedSequenceData.setMobileData(mobileClientData);
 					rootSequenceData.getNestedSequences().add(nestedSequenceData);
-				}
-				
+				}		
 			}
 		}
-		
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
+
+		// Merge server sequences with client sequence and store the result on the server
 		for (InvocationSequenceData invocationSequenceData : listSequenceDatas) {
 			InvocationSequenceData mergedTrace = mobileTraceMerger.mergeMobileTraceWithServerTraces(invocationSequenceData);
 			mobileTraceMerger.storeTraceOnTree(mergedTrace);
 		}
 		
 		return listSequenceDatas;
+	}
+	
+	/**
+	 * Delegate values from the provided {@link MobileIOSMeasurement} to {@link MobileClientData}.
+	 * 
+	 * @param iOSMeasurement {@link MobileClientData} to convert
+	 * @return {@link MobileClientData} with values of the provided {@link MobileIOSMeasurement}
+	 */
+	private MobileClientData getMobileDataFromMobileMeasurement(MobileIOSMeasurement iOSMeasurement){
+		MobileClientData mobileClientData = new MobileClientData();
+		
+		// Set timestamp of the measurement
+		Timestamp timestamp = new Timestamp(iOSMeasurement.getTimestamp());
+		mobileClientData.setTimeStamp(timestamp);
+		
+		// Set mobile measurement data
+		mobileClientData.setBatteryPower(iOSMeasurement.getPower());
+		mobileClientData.setCpuUsage(iOSMeasurement.getCpu());
+		mobileClientData.setMemoryUsage(iOSMeasurement.getMemory());
+		mobileClientData.setLatitude(iOSMeasurement.getLatitude());
+		mobileClientData.setLongitude(iOSMeasurement.getLongitude());
+		mobileClientData.setNetworkConnection(iOSMeasurement.getNetworkConnection());
+		
+		return mobileClientData;
 	}
 
 	private Gson getGson() {
@@ -182,9 +153,10 @@ public class AgentRestfulService {
 						if (type.equals("IOSMeasuredUseCase")) {
 							return MobileIOSElement.class;
 						} else {
-							return null; // returning null will trigger Gson's
-											// default
-											// behavior
+							/*
+							 * returning null will trigger Gson's default behavior
+							 */
+							return null;			
 						}
 					}
 				});
@@ -200,9 +172,10 @@ public class AgentRestfulService {
 						if (type.equals("IOSMeasurement")) {
 							return MobileIOSMeasurement.class;
 						} else {
-							return null; // returning null will trigger Gson's
-											// default
-							// behavior
+							/*
+							 * returning null will trigger Gson's default behavior
+							 */
+							return null;
 						}
 					}
 				});
@@ -233,6 +206,33 @@ public class AgentRestfulService {
 		beacon.getData().add(mobileIOSElement2);
 		return beacon;
 	}
+		
+	/**
+	 * Test method
+	 */
+	@RequestMapping(method = POST, value = "/createRemoteCall")
+	@ResponseBody
+	public void createRemoteCall() {
+			
+		InvocationSequenceData remoteCall = new InvocationSequenceData();
+		remoteCall.setPlatformIdent(-1);
+		remoteCall.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
+		MobileData remoteCallServerData = new MobileData();
+		remoteCallServerData.setUseCaseID("XYZ4-1234-90AB");
+		remoteCallServerData.setTimeStamp(new Timestamp(1000000015));
+		remoteCall.setMobileData(remoteCallServerData);
+		mobileTraceMerger.storeTraceOnTree(remoteCall);
+					
+		InvocationSequenceData remoteCall2 = new InvocationSequenceData();
+		remoteCall2.setPlatformIdent(-1);
+		remoteCall2.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
+		MobileData remoteCallServerData2 = new MobileData();
+		remoteCallServerData2.setUseCaseID("XYZ4-1234-90AB_2");
+		remoteCallServerData2.setTimeStamp(new Timestamp(1000000016));
+		remoteCall2.setMobileData(remoteCallServerData2);
+		mobileTraceMerger.storeTraceOnTree(remoteCall2);
+	}	
+		
 
 	/**
 	 * Header information for swagger requests.

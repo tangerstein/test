@@ -8,9 +8,17 @@ import org.springframework.stereotype.Component;
 
 import rocks.inspectit.server.dao.DefaultDataDao;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
+import rocks.inspectit.shared.all.communication.data.MobileClientData;
 import rocks.inspectit.shared.all.communication.data.MobileData;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 
+/**
+ * Added remote server traces {@link InvocationSequenceData} with {@link MobileData}, not {@link MobileClientData},
+ * to client traces {@link InvocationSequenceData} with {@link MobileClientData}.
+ *
+ * @author Tobias Angerstein, Manuel Palenga
+ *
+ */
 @Component
 public class MobileTraceMerger {
 
@@ -28,17 +36,20 @@ public class MobileTraceMerger {
 	private DefaultDataDao defaultDataDao;
 	
 	/**
+	 * Stores the provided {@link InvocationSequenceData} on the server.
 	 * 
-	 * @param trace
+	 * @param trace {@link InvocationSequenceData} to store
 	 */
 	public void storeTraceOnTree(InvocationSequenceData trace){
 		defaultDataDao.saveAll(Arrays.asList(trace));
 	}
 	
 	/**
+	 * Merged the provided clientTrace with serverTraces, stored on the server, when the use case id is equal.
+	 * Return the clientTrace with serverTraces as nestedSequences.
 	 * 
-	 * @param clientTrace
-	 * @return
+	 * @param clientTrace {@link InvocationSequenceData} to merge
+	 * @return Return the provided {@link InvocationSequenceData} with serverTraces as nestedSequences.
 	 */
 	public InvocationSequenceData mergeMobileTraceWithServerTraces(InvocationSequenceData clientTrace){
 
@@ -49,17 +60,18 @@ public class MobileTraceMerger {
 		
 		String useCaseID = clientTrace.getMobileData().getUseCaseID();
 		
+		// Get all sequences which are stored on the server
 		List<InvocationSequenceData> listSequences = dataAccessService.getInvocationSequenceOverview(0, -1, null);
 		for (InvocationSequenceData invocationSequenceData : listSequences) {
 			
 			MobileData mobileData = invocationSequenceData.getMobileData();
 			
 			// Get all mobile server traces from the use case of the client trace
-			if(mobileData != null && !mobileData.hasMobileClientData() && mobileData.getUseCaseID() != null && mobileData.getUseCaseID().equals(useCaseID)){
+			if(checkValidServerMobileData(mobileData) && mobileData.getUseCaseID().equals(useCaseID)){
 				
 				InvocationSequenceData serverTrace = dataAccessService.getInvocationSequenceDetail(invocationSequenceData);
 				
-				// is currently nested sequence?
+				// is already nested sequence?
 				if(serverTrace == null){
 					continue;
 				}
@@ -69,7 +81,7 @@ public class MobileTraceMerger {
 					InvocationSequenceData nestedSequences = clientTrace.getNestedSequences().get(i);
 							
 					if(nestedSequences.getMobileData().getTimeStamp().after(serverTrace.getMobileData().getTimeStamp())){
-						// Note: remote sequence from getInvocationSequenceDetail, not from getInvocationSequenceOverview
+						// Note: remove sequence from getInvocationSequenceDetail, not from getInvocationSequenceOverview
 						clientTrace.getNestedSequences().add(i, serverTrace);
 						break;
 					}				
@@ -78,5 +90,15 @@ public class MobileTraceMerger {
 		}
 		
 		return clientTrace;
+	}
+	
+	/**
+	 * Check whether 1.) the provided mobileData is set, 2.) the mobileData is from the server and 3.) the useCaseID is not null.
+	 * 
+	 * @param mobileData Check this {@link MobileData}
+	 * @return true for a valid mobileData
+	 */
+	private boolean checkValidServerMobileData(MobileData mobileData){
+		return (mobileData != null && !mobileData.hasMobileClientData() && mobileData.getUseCaseID() != null);
 	}
 }
