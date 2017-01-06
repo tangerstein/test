@@ -1,8 +1,5 @@
 package rocks.inspectit.server.influx.builder;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.influxdb.dto.Point.Builder;
 import org.springframework.stereotype.Component;
 
@@ -18,14 +15,14 @@ import rocks.inspectit.shared.all.communication.data.TimerData;
  *
  */
 @Component
-public class TimerPointBuilder extends SinglePointBuilder<TimerData> {
+public class TimerPointBuilder extends DefaultDataPointBuilder<TimerData> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Collection<Class<TimerData>> getDataClasses() {
-		return Collections.singleton(TimerData.class);
+	public Class<TimerData> getDataClass() {
+		return TimerData.class;
 	}
 
 	/**

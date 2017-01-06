@@ -66,13 +66,13 @@ public class InvocationSequenceData extends MethodSensorData {
 	 */
 	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	private LoggingData loggingData;
-
+	
 	/**
 	 * The associated mobile data. Can be <code>null</code>.
 	 */
 	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	private MobileData mobileData;
-	
+
 	/**
 	 * The position if parent sequence is not <code>null</code>.
 	 */
@@ -239,6 +239,7 @@ public class InvocationSequenceData extends MethodSensorData {
 	public void setLoggingData(LoggingData loggingData) {
 		this.loggingData = loggingData;
 	}
+	
 	
 	/**
 	 * Gets {@link #mobileData}.
@@ -582,7 +583,6 @@ public class InvocationSequenceData extends MethodSensorData {
 		clone.setLoggingData(this.getLoggingData());
 		clone.setApplicationId(this.getApplicationId());
 		clone.setBusinessTransactionId(this.getBusinessTransactionId());
-		clone.setMobileData(this.getMobileData());
 		return clone;
 	}
 

@@ -1,8 +1,5 @@
 package rocks.inspectit.server.influx.builder;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.influxdb.dto.Point.Builder;
 import org.springframework.stereotype.Component;
 
@@ -17,14 +14,14 @@ import rocks.inspectit.shared.all.communication.data.MemoryInformationData;
  *
  */
 @Component
-public class MemoryInformationPointBuilder extends SinglePointBuilder<MemoryInformationData> {
+public class MemoryInformationPointBuilder extends DefaultDataPointBuilder<MemoryInformationData> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Collection<Class<MemoryInformationData>> getDataClasses() {
-		return Collections.singleton(MemoryInformationData.class);
+	public Class<MemoryInformationData> getDataClass() {
+		return MemoryInformationData.class;
 	}
 
 	/**

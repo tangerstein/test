@@ -18,7 +18,7 @@ public class StartEndMarker extends ThreadLocal<MutableInteger> {
 	}
 
 	/**
-	 * Decrease the counter.
+	 * Increase the counter.
 	 */
 	public void markEndCall() {
 		super.get().decrease();
@@ -69,9 +69,7 @@ public class StartEndMarker extends ThreadLocal<MutableInteger> {
 		 */
 		private boolean set = false;
 
-		/**
-		 * Constructor.
-		 */
+		/** Constructor. */
 		public MutableInteger() {
 			value = 0;
 		}

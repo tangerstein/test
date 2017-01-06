@@ -1,8 +1,5 @@
 package rocks.inspectit.server.influx.builder;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.influxdb.dto.Point.Builder;
 import org.springframework.stereotype.Component;
 
@@ -17,14 +14,14 @@ import rocks.inspectit.shared.all.communication.data.ThreadInformationData;
  *
  */
 @Component
-public class ThreadInformationPointBuilder extends SinglePointBuilder<ThreadInformationData> {
+public class ThreadInformationPointBuilder extends DefaultDataPointBuilder<ThreadInformationData> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Collection<Class<ThreadInformationData>> getDataClasses() {
-		return Collections.singleton(ThreadInformationData.class);
+	public Class<ThreadInformationData> getDataClass() {
+		return ThreadInformationData.class;
 	}
 
 	/**

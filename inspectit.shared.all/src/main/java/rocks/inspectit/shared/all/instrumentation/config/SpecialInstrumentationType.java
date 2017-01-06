@@ -23,11 +23,6 @@ public enum SpecialInstrumentationType {
 	 * Special instrumentation for the javax.management.MBeanServerFactory to intercept removing of
 	 * MBean servers.
 	 */
-	MBEAN_SERVER_REMOVE,
-
-	/**
-	 * Functional instrumentation for allowing the agent to interact with the client.
-	 */
-	EUM_SERVLET_OR_FILTER_INSPECTION;
+	MBEAN_SERVER_REMOVE;
 
 }

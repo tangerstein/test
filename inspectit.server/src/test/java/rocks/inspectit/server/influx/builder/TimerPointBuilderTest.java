@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.math.RandomUtils;
@@ -79,9 +78,7 @@ public class TimerPointBuilderTest extends AbstractPointBuilderTest {
 			when(data.getCpuMax()).thenReturn(RandomUtils.nextDouble());
 			when(data.getCpuAverage()).thenReturn(RandomUtils.nextDouble());
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.Methods.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -110,9 +107,7 @@ public class TimerPointBuilderTest extends AbstractPointBuilderTest {
 			when(data.getTimeStamp()).thenReturn(new Timestamp(time));
 			when(data.getDuration()).thenReturn(RandomUtils.nextDouble());
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.Methods.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -135,9 +130,7 @@ public class TimerPointBuilderTest extends AbstractPointBuilderTest {
 			when(data.getTimeStamp()).thenReturn(new Timestamp(time));
 			when(data.getDuration()).thenReturn(RandomUtils.nextDouble());
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.Methods.NAME));
 			assertThat(getTime(pointBuilder), is(time));

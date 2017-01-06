@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -82,9 +81,7 @@ public class SystemInformationPointBuilderTest extends AbstractPointBuilderTest 
 			when(data.getVmVendor()).thenReturn("vmvendor");
 			when(data.getVmVersion()).thenReturn("vmversion");
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.SystemInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -119,9 +116,7 @@ public class SystemInformationPointBuilderTest extends AbstractPointBuilderTest 
 			when(data.getPlatformIdent()).thenReturn(PLATFORM_ID);
 			when(data.getTimeStamp()).thenReturn(new Timestamp(time));
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.SystemInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -142,9 +137,7 @@ public class SystemInformationPointBuilderTest extends AbstractPointBuilderTest 
 			vmSet.add(new VmArgumentData("key2", "value2"));
 			when(data.getVmSet()).thenReturn(vmSet );
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.SystemInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -174,9 +167,7 @@ public class SystemInformationPointBuilderTest extends AbstractPointBuilderTest 
 			when(data.getVmVendor()).thenReturn(null);
 			when(data.getVmVersion()).thenReturn(null);
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.SystemInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));

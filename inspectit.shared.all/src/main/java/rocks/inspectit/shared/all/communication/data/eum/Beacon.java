@@ -81,26 +81,6 @@ public class Beacon extends AbstractBeacon {
 	}
 
 	/**
-	 * Assigns an ID to this beacon and all contained elements.
-	 *
-	 * @param sessionID
-	 *            the sessionID to assign
-	 * @param tabID
-	 *            the tabID to assign
-	 */
-	public void assignIDs(long sessionID, long tabID) {
-		this.sessionID = sessionID;
-		this.tabID = tabID;
-		for (DefaultData element : getData()) {
-			if(element instanceof AbstractEUMElement){
-				((AbstractEUMElement)element).setSessionID(sessionID);
-				((AbstractEUMElement) element).setTabID(tabID);
-				;
-			}
-		}
-	}
-
-	/**
 	 * {@inheritDoc}
 	 */
 	@Override

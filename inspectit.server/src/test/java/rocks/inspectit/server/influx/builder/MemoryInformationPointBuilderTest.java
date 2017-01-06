@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.math.RandomUtils;
@@ -71,9 +70,7 @@ public class MemoryInformationPointBuilderTest extends AbstractPointBuilderTest 
 			when(data.getMinUsedNonHeapMemorySize()).thenReturn(RandomUtils.nextLong());
 			when(data.getMaxUsedNonHeapMemorySize()).thenReturn(RandomUtils.nextLong());
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.MemoryInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -101,9 +98,7 @@ public class MemoryInformationPointBuilderTest extends AbstractPointBuilderTest 
 			when(data.getTimeStamp()).thenReturn(new Timestamp(time));
 			when(data.getCount()).thenReturn(1);
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.MemoryInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));
@@ -131,9 +126,7 @@ public class MemoryInformationPointBuilderTest extends AbstractPointBuilderTest 
 			when(data.getMinUsedNonHeapMemorySize()).thenReturn(0L);
 			when(data.getMaxUsedNonHeapMemorySize()).thenReturn(0L);
 
-			Collection<Builder> pointBuilderCol = builder.createBuilders(data);
-			assertThat(pointBuilderCol.size(), is(1));
-			Builder pointBuilder = pointBuilderCol.iterator().next();
+			Builder pointBuilder = builder.createBuilder(data);
 
 			assertThat(getMeasurement(pointBuilder), is(Series.MemoryInformation.NAME));
 			assertThat(getTime(pointBuilder), is(time));

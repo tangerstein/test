@@ -1,8 +1,5 @@
 package rocks.inspectit.server.influx.builder;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.influxdb.dto.Point.Builder;
 import org.springframework.stereotype.Component;
 
@@ -17,14 +14,14 @@ import rocks.inspectit.shared.all.communication.data.ClassLoadingInformationData
  *
  */
 @Component
-public class ClassLoadingPointBuilder extends SinglePointBuilder<ClassLoadingInformationData> {
+public class ClassLoadingPointBuilder extends DefaultDataPointBuilder<ClassLoadingInformationData> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Collection<Class<ClassLoadingInformationData>> getDataClasses() {
-		return Collections.singleton(ClassLoadingInformationData.class);
+	public Class<ClassLoadingInformationData> getDataClass() {
+		return ClassLoadingInformationData.class;
 	}
 
 	/**

@@ -1,8 +1,5 @@
 package rocks.inspectit.server.influx.builder;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.influxdb.dto.Point.Builder;
 import org.springframework.stereotype.Component;
 
@@ -24,14 +21,14 @@ import rocks.inspectit.shared.cs.ci.business.impl.BusinessTransactionDefinition;
  *
  */
 @Component
-public class BusinessTransactionPointBuilder extends SinglePointBuilder<InvocationSequenceData> {
+public class BusinessTransactionPointBuilder extends DefaultDataPointBuilder<InvocationSequenceData> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Collection<Class<InvocationSequenceData>> getDataClasses() {
-		return Collections.singleton(InvocationSequenceData.class);
+	public Class<InvocationSequenceData> getDataClass() {
+		return InvocationSequenceData.class;
 	}
 
 	/**

@@ -39,10 +39,10 @@ import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceDataHelper;
 import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
 import rocks.inspectit.shared.all.communication.data.LoggingData;
+import rocks.inspectit.shared.all.communication.data.MobileData;
 import rocks.inspectit.shared.all.communication.data.ParameterContentData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
-import rocks.inspectit.shared.all.communication.data.eum.AbstractEUMElement;
 import rocks.inspectit.shared.all.instrumentation.config.impl.MethodSensorTypeConfig;
 import rocks.inspectit.shared.all.instrumentation.config.impl.PlatformSensorTypeConfig;
 
@@ -481,7 +481,14 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 		if (dataObject.getClass().equals(HttpTimerData.class)) {
 			// don't overwrite ourself but overwrite timers
 			if ((null == invocationSequenceData.getTimerData()) || invocationSequenceData.getTimerData().getClass().equals(TimerData.class)) {
-				invocationSequenceData.setTimerData((HttpTimerData) dataObject);
+				// For mobile data
+				HttpTimerData httpTimerData = (HttpTimerData) dataObject;
+				invocationSequenceData.setTimerData(httpTimerData);
+				String useCaseID = httpTimerData.getHeaders().get("usecaseID");
+				String timestamp = httpTimerData.getHeaders().get("timestamp");
+				MobileData mobileServerData = new MobileData(useCaseID);
+				mobileServerData.setTimeStamp(new Timestamp(Long.parseLong(timestamp)));
+				invocationSequenceData.setMobileData(mobileServerData);
 			}
 		}
 
@@ -581,6 +588,13 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 		return null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public SystemSensorData getPlatformSensorData(long sensorTypeIdent) {
+		return null;
+	}
+
 	// //////////////////////////////////////////////
 	// All unsupported methods are below from here //
 	// //////////////////////////////////////////////
@@ -665,14 +679,6 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 */
 	@Override
 	public void addJmxSensorValueData(long sensorTypeIdent, String objectName, String attributeName, JmxSensorValueData jmxSensorValueData) {
-		throw new UnsupportedMethodException();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void addEUMData(AbstractEUMElement eumData) {
 		throw new UnsupportedMethodException();
 	}
 

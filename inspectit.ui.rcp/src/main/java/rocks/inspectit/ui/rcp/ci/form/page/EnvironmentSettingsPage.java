@@ -10,11 +10,9 @@ import org.eclipse.ui.forms.editor.FormPage;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
-import org.eclipse.ui.forms.widgets.Section;
 
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
-import rocks.inspectit.ui.rcp.ci.form.part.EUMSettingsPart;
 import rocks.inspectit.ui.rcp.ci.form.part.EnvironmentSettingsPart;
 import rocks.inspectit.ui.rcp.ci.form.part.JmxSensorOptionsPart;
 import rocks.inspectit.ui.rcp.ci.form.part.LoggingSensorOptionsPart;
@@ -82,10 +80,6 @@ public class EnvironmentSettingsPage extends FormPage {
 		EnvironmentSettingsPart environmentSettingsPart = new EnvironmentSettingsPart(this, right, toolkit, ExpandableComposite.TITLE_BAR | ExpandableComposite.TWISTIE);
 		environmentSettingsPart.getSection().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		managedForm.addPart(environmentSettingsPart);
-
-		EUMSettingsPart eumSettingsPart = new EUMSettingsPart(this, right, toolkit, Section.TITLE_BAR | Section.TWISTIE | Section.EXPANDED);
-		eumSettingsPart.getSection().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		managedForm.addPart(eumSettingsPart);
 
 		PlatformSensorSelectionPart platformSensorSelectionPart = new PlatformSensorSelectionPart(this, right, toolkit,
 				ExpandableComposite.TITLE_BAR | ExpandableComposite.TWISTIE | ExpandableComposite.EXPANDED);

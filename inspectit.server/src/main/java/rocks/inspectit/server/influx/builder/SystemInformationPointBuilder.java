@@ -1,8 +1,5 @@
 package rocks.inspectit.server.influx.builder;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.influxdb.dto.Point.Builder;
@@ -20,14 +17,14 @@ import rocks.inspectit.shared.all.communication.data.VmArgumentData;
  *
  */
 @Component
-public class SystemInformationPointBuilder extends SinglePointBuilder<SystemInformationData> {
+public class SystemInformationPointBuilder extends DefaultDataPointBuilder<SystemInformationData> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Collection<Class<SystemInformationData>> getDataClasses() {
-		return Collections.singleton(SystemInformationData.class);
+	public Class<SystemInformationData> getDataClass() {
+		return SystemInformationData.class;
 	}
 
 	/**
