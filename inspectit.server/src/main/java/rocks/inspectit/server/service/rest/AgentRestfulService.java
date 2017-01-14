@@ -1,12 +1,11 @@
 package rocks.inspectit.server.service.rest;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import io.gsonfire.GsonFireBuilder;
-import io.gsonfire.TypeSelector;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -21,8 +20,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
+import io.gsonfire.GsonFireBuilder;
+import io.gsonfire.TypeSelector;
 import rocks.inspectit.server.processor.impl.MobileTraceMerger;
 import rocks.inspectit.server.service.rest.error.JsonError;
+import rocks.inspectit.server.util.PlatformIdentCache;
+import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.MobileClientData;
@@ -32,9 +38,6 @@ import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 /**
  * Restful service provider for detail {@link MobileBeacon}
@@ -47,6 +50,9 @@ import com.google.gson.JsonElement;
 @RequestMapping(value = "/mobile/newinvocation")
 public class AgentRestfulService {
 
+	@Autowired
+	private PlatformIdentCache platformCache;
+	
 	@Autowired
 	private MobileTraceMerger mobileTraceMerger;
 	
@@ -108,13 +114,13 @@ public class AgentRestfulService {
 				}		
 			}
 		}
-
 		// Merge server sequences with client sequence and store the result on the server
 		for (InvocationSequenceData invocationSequenceData : listSequenceDatas) {
 			InvocationSequenceData mergedTrace = mobileTraceMerger.mergeMobileTraceWithServerTraces(invocationSequenceData);
 			mobileTraceMerger.storeTraceOnTree(mergedTrace);
 		}
-		
+		Collection<PlatformIdent> platformIdents = platformCache.getCleanPlatformIdents();
+
 		return listSequenceDatas;
 	}
 	
