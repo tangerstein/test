@@ -2,10 +2,10 @@ package rocks.inspectit.server.cache.impl;
 
 import javax.annotation.PostConstruct;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import rocks.inspectit.server.cache.IBuffer;
+import rocks.inspectit.server.indexing.impl.RootBranchFactory.RootBranch;
 
 /**
  * Thread that invokes the {@link IBuffer#indexNext()} method constantly.
@@ -22,9 +22,8 @@ public class BufferIndexer extends BufferWorker {
 	 * @param buffer
 	 *            Buffer to work on.
 	 */
-	@Autowired
-	public BufferIndexer(IBuffer<?> buffer) {
-		super(buffer, "buffer-indexing-thread");
+	public BufferIndexer() {
+		super("buffer-indexing-thread");
 		setPriority(NORM_PRIORITY);
 	}
 
@@ -33,6 +32,8 @@ public class BufferIndexer extends BufferWorker {
 	 */
 	@Override
 	public void work() throws InterruptedException {
+		System.out.println(((AtomicBuffer) getBuffer()).name + "-> Indexer: "
+				+ ((RootBranch) ((AtomicBuffer) getBuffer()).indexingTree).name);
 		getBuffer().indexNext();
 	}
 
