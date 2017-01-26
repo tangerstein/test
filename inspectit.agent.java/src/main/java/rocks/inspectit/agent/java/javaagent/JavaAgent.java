@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -25,7 +24,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
@@ -96,8 +94,8 @@ public class JavaAgent implements ClassFileTransformer {
 			@SuppressWarnings("resource")
 			InspectItClassLoader classLoader = new InspectItClassLoader(new URL[0]);
 			Class<?> agentClazz = classLoader.loadClass(INSPECTIT_AGENT);
-			Constructor<?> constructor = agentClazz.getConstructor(File.class);
-			Object realAgent = constructor.newInstance(getInspectItAgentJarFileLocation());
+			Constructor<?> constructor = agentClazz.getConstructor(File.class, Instrumentation.class);
+			Object realAgent = constructor.newInstance(getInspectItAgentJarFileLocation(), inst);
 
 			// we can reference the Agent now here because it should have been added to the
 			// bootclasspath and thus available from anywhere in the application
@@ -109,10 +107,17 @@ public class JavaAgent implements ClassFileTransformer {
 
 			LOGGER.info("inspectIT Agent: Initialization complete...");
 
-			// now we are analysing the already loaded classes by the jvm to instrument those
-			// classes, too
-			analyzeAlreadyLoadedClasses();
-			inst.addTransformer(new JavaAgent());
+			boolean retransformClassesSupported = inst.isRetransformClassesSupported();
+			inst.addTransformer(new JavaAgent(), retransformClassesSupported);
+
+			if (retransformClassesSupported) {
+				// now we are analyzing the already loaded classes by the jvm to instrument those
+				// classes, too
+				LOGGER.info("inspectIT Agent: Retransform of classes is supported, trying to instrument already loaded classes...");
+				analyzeAlreadyLoadedClasses();
+			} else {
+				LOGGER.info("inspectIT Agent: Retransform of classes is not supported, already loaded classes will not be instrumented...");
+			}
 		} catch (Exception e) {
 			LOGGER.severe("Something unexpected happened while trying to initialize the Agent, aborting!");
 			e.printStackTrace(); // NOPMD
@@ -124,14 +129,8 @@ public class JavaAgent implements ClassFileTransformer {
 	 */
 	@Override
 	public byte[] transform(ClassLoader classLoader, String className, Class<?> clazz, ProtectionDomain pd, byte[] data) throws IllegalClassFormatException {
-		boolean threadTransformDisabled = Agent.agent.isThreadTransformDisabled();
-		if (threadTransformDisabled) {
-			// if transform is currently disabled for thread trying to transform the class do
-			// nothing
-			return null;
-		}
 		try {
-			if ((null != classLoader) && InspectItClassLoader.class.getCanonicalName().equals(classLoader.getClass().getCanonicalName())) {
+			if ((null != classLoader) && InspectItClassLoader.class.getName().equals(classLoader.getClass().getName())) {
 				// return if the classloader to load the class is our own, we don't want to
 				// instrument these classes.
 				return data;
@@ -149,10 +148,6 @@ public class JavaAgent implements ClassFileTransformer {
 				return data;
 			}
 
-			// set transform disabled from this point for this thread
-			Agent.agent.setThreadTransformDisabled(true);
-			threadTransformDisabled = true;
-
 			// now the real inspectit agent will handle this class
 			String modifiedClassName = className.replaceAll("/", ".");
 			byte[] instrumentedData = Agent.agent.inspectByteCode(data, modifiedClassName, classLoader);
@@ -161,11 +156,6 @@ public class JavaAgent implements ClassFileTransformer {
 			LOGGER.severe("Error occurred while dealing with class: " + className + " " + ex.getMessage());
 			ex.printStackTrace(); // NOPMD
 			return null;
-		} finally {
-			// reset the state of transform disabled if we set it originally
-			if (threadTransformDisabled) {
-				Agent.agent.setThreadTransformDisabled(false);
-			}
 		}
 	}
 
@@ -212,39 +202,38 @@ public class JavaAgent implements ClassFileTransformer {
 	 */
 	private static void analyzeAlreadyLoadedClasses() {
 		try {
-			if (instrumentation.isRedefineClassesSupported()) {
-				if (instrumentCoreClasses) {
-					for (Class<?> loadedClass : instrumentation.getAllLoadedClasses()) {
-						String clazzName = loadedClass.getCanonicalName();
-						if ((null != clazzName) && !selfFirstClasses.contains(clazzName)) {
-							if ((null == loadedClass.getClassLoader()) || !InspectItClassLoader.class.getCanonicalName().equals(loadedClass.getClassLoader().getClass().getCanonicalName())) {
+			if (instrumentCoreClasses) {
+				for (Class<?> loadedClass : instrumentation.getAllLoadedClasses()) {
+					// check if class is modifiable at all
+					if (!instrumentation.isModifiableClass(loadedClass)) {
+						continue;
+					}
+
+					String clazzName = loadedClass.getName();
+					// check it's not self first class
+					if ((null != clazzName) && !selfFirstClasses.contains(clazzName)) {
+						// check that we are not loading with our class loader
+						if ((null == loadedClass.getClassLoader()) || !InspectItClassLoader.class.getName().equals(loadedClass.getClassLoader().getClass().getName())) {
+							// check that class is not ignored by our agent
+							if (!Agent.agent.shouldClassBeIgnored(clazzName)) {
 								try {
-									clazzName = getClassNameForJavassist(loadedClass);
-									byte[] modified = Agent.agent.inspectByteCode(null, clazzName, loadedClass.getClassLoader());
-									if (null != modified) {
-										ClassDefinition classDefinition = new ClassDefinition(loadedClass, modified);
-										instrumentation.redefineClasses(new ClassDefinition[] { classDefinition });
-									}
-								} catch (ClassNotFoundException e) {
-									LOGGER.severe(e.getMessage());
+									instrumentation.retransformClasses(loadedClass);
 								} catch (UnmodifiableClassException e) {
 									LOGGER.severe(e.getMessage());
 								}
 							}
 						}
 					}
-					LOGGER.info("inspectIT Agent: Instrumentation of core classes finished...");
-				} else {
-					LOGGER.info("inspectIT Agent: Core classes cannot be instrumented, please add -Xbootclasspath/a:<path_to_agent.jar> to the JVM parameters!");
 				}
+				LOGGER.info("inspectIT Agent: Instrumentation of already loaded classes finished...");
 			} else {
-				LOGGER.info("Redefinition of Classes is not supported in this JVM!");
+				LOGGER.info("inspectIT Agent: Core classes cannot be instrumented, please add -Xbootclasspath/a:<path_to_agent.jar> to the JVM parameters!");
 			}
 		} catch (Throwable t) { // NOPMD
 			t.printStackTrace(); // NOPMD
 			LOGGER.severe("The process of class redefinitions produced an error: " + t.getMessage());
 			LOGGER.severe("If you are running on an IBM JVM, please ignore this error as the JVM does not support this feature!");
-			LOGGER.throwing(JavaAgent.class.getCanonicalName(), "analyzeAlreadyLoadedClasses", t);
+			LOGGER.throwing(JavaAgent.class.getName(), "analyzeAlreadyLoadedClasses", t);
 		}
 	}
 
@@ -255,31 +244,8 @@ public class JavaAgent implements ClassFileTransformer {
 		LOGGER.info("Preloading classes ...");
 
 		StringIndexOutOfBoundsException.class.getClass();
-		LinkedBlockingQueue.class.getClass();
 
 		LOGGER.info("Preloading classes complete...");
-	}
-
-	/**
-	 * See ClassPool#get(String) why it is needed to replace the '.' with '$' for inner class.
-	 *
-	 * @param clazz
-	 *            The class to get the name from.
-	 * @return the name to be passed to javassist.
-	 */
-	private static String getClassNameForJavassist(Class<?> clazz) {
-		String clazzName = clazz.getCanonicalName();
-		while (null != clazz.getEnclosingClass()) {
-			clazz = clazz.getEnclosingClass();
-		}
-
-		if (!clazzName.equals(clazz.getCanonicalName())) {
-			String enclosingClasses = clazzName.substring(clazz.getCanonicalName().length());
-			enclosingClasses = enclosingClasses.replaceAll("\\.", "\\$");
-			clazzName = clazz.getCanonicalName() + enclosingClasses;
-		}
-
-		return clazzName;
 	}
 
 	/**
@@ -362,21 +328,21 @@ public class JavaAgent implements ClassFileTransformer {
 				}
 			} catch (IOException e) {
 				LOGGER.severe("There was a problem in extracting needed libs for the inspectIT agent: " + e.getMessage());
-				LOGGER.throwing(InspectItClassLoader.class.getCanonicalName(), "InspectItClassLoader", e);
+				LOGGER.throwing(InspectItClassLoader.class.getName(), "InspectItClassLoader", e);
 			}
 
 			// ignore IAgent because this is the interface for the SUD to access the real agent
-			ignoreClasses.add(IAgent.class.getCanonicalName());
-			ignoreClasses.add(IMBeanServerListener.class.getCanonicalName());
-			ignoreClasses.add(Agent.class.getCanonicalName());
+			ignoreClasses.add(IAgent.class.getName());
+			ignoreClasses.add(IMBeanServerListener.class.getName());
+			ignoreClasses.add(Agent.class.getName());
 
 			// ignore hook dispatcher because it is defined in the IAgent interface and thus must be
 			// available in the standard classloader.
-			ignoreClasses.add(IHookDispatcher.class.getCanonicalName());
+			ignoreClasses.add(IHookDispatcher.class.getName());
 
 			// ignore the following classes because they are used in the JavaAgent class
-			ignoreClasses.add(JavaAgent.class.getCanonicalName());
-			ignoreClasses.add(InspectItClassLoader.class.getCanonicalName());
+			ignoreClasses.add(JavaAgent.class.getName());
+			ignoreClasses.add(InspectItClassLoader.class.getName());
 		}
 
 		/**

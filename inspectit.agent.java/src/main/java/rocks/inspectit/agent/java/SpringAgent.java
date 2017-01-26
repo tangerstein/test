@@ -1,7 +1,9 @@
 package rocks.inspectit.agent.java;
 
 import java.io.File;
+import java.lang.instrument.Instrumentation;
 import java.util.Collection;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import rocks.inspectit.agent.java.analyzer.IByteCodeAnalyzer;
 import rocks.inspectit.agent.java.config.IConfigurationStorage;
 import rocks.inspectit.agent.java.hooking.IHookDispatcher;
+import rocks.inspectit.agent.java.instrumentation.IInstrumentationAware;
 import rocks.inspectit.agent.java.logback.LogInitializer;
 import rocks.inspectit.agent.java.spring.SpringConfiguration;
 import rocks.inspectit.shared.all.pattern.IMatchPattern;
@@ -46,23 +49,28 @@ public class SpringAgent implements IAgent {
 	/**
 	 * The hook dispatcher used by the instrumented methods.
 	 */
-	private IHookDispatcher hookDispatcher;
+	IHookDispatcher hookDispatcher;
 
 	/**
 	 * The configuration storage.
 	 */
-	private IConfigurationStorage configurationStorage;
+	IConfigurationStorage configurationStorage;
 
 	/**
 	 * The byte code analyzer.
 	 */
-	private IByteCodeAnalyzer byteCodeAnalyzer;
+	IByteCodeAnalyzer byteCodeAnalyzer;
+
+	/**
+	 * The thread transform helper.
+	 */
+	IThreadTransformHelper threadTransformHelper;
 
 	/**
 	 * Set to <code>true</code> if something happened and we need to disable further
 	 * instrumentation.
 	 */
-	private volatile boolean disableInstrumentation = false;
+	volatile boolean disableInstrumentation = false;
 
 	/**
 	 * Created bean factory.
@@ -72,25 +80,24 @@ public class SpringAgent implements IAgent {
 	/**
 	 * Ignore classes patterns.
 	 */
-	private Collection<IMatchPattern> ignoreClassesPatterns;
+	Collection<IMatchPattern> ignoreClassesPatterns;
 
 	/**
-	 * Thread local to control the instrumentation transform disabled states for threads.
+	 * The used {@link Instrumentation}.
 	 */
-	private ThreadLocal<Boolean> transformDisabledThreadLocal = new ThreadLocal<Boolean>() {
-		@Override
-		protected Boolean initialValue() {
-			return Boolean.FALSE;
-		};
-	};
+	private final Instrumentation instrumentation;
 
 	/**
 	 * Constructor initializing this agent.
 	 *
 	 * @param inspectitJarFile
 	 *            The inspectIT jar file needed for proper logging
+	 * @param instrumentation
+	 *            The {@link Instrumentation} to use
 	 */
-	public SpringAgent(File inspectitJarFile) {
+	public SpringAgent(File inspectitJarFile, Instrumentation instrumentation) {
+		this.instrumentation = instrumentation;
+
 		setInspectITJarFile(inspectitJarFile);
 
 		// init logging
@@ -159,10 +166,16 @@ public class SpringAgent implements IAgent {
 			hookDispatcher = beanFactory.getBean(IHookDispatcher.class);
 			configurationStorage = beanFactory.getBean(IConfigurationStorage.class);
 			byteCodeAnalyzer = beanFactory.getBean(IByteCodeAnalyzer.class);
+			threadTransformHelper = beanFactory.getBean(IThreadTransformHelper.class);
 
 			// load ignore patterns only once
 			ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
 
+			// injecting instrumentation in instrumentation aware beans
+			Map<String, IInstrumentationAware> instrumentationAwareBeans = ctx.getBeansOfType(IInstrumentationAware.class);
+			for (IInstrumentationAware instrumentationAwareBean : instrumentationAwareBeans.values()) {
+				instrumentationAwareBean.setInstrumentation(instrumentation);
+			}
 		} catch (Throwable throwable) { // NOPMD
 			disableInstrumentation = true;
 			LOG.error("inspectIT agent initialization failed. Agent will not be active.", throwable);
@@ -183,19 +196,30 @@ public class SpringAgent implements IAgent {
 			return byteCode;
 		}
 
-		// ignore all classes which fit to the patterns in the configuration
-		for (IMatchPattern matchPattern : ignoreClassesPatterns) {
-			if (matchPattern.match(className)) {
-				return byteCode;
-			}
+		boolean threadTransformDisabled = threadTransformHelper.isThreadTransformDisabled();
+		if (threadTransformDisabled) {
+			// if transform is currently disabled for thread trying to transform the class do
+			// nothing
+			return byteCode;
+		}
+
+		// check if it should be ignored
+		if (shouldClassBeIgnored(className)) {
+			return byteCode;
 		}
 
 		try {
+			// set transform disabled from this point for this thread
+			threadTransformHelper.setThreadTransformDisabled(true);
+
 			byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 			return instrumentedByteCode;
 		} catch (Throwable throwable) { // NOPMD
 			LOG.error("Something unexpected happened while trying to analyze or instrument the bytecode with the class name: " + className, throwable);
 			return byteCode;
+		} finally {
+			// reset the state of transform disabled if we set it originally
+			threadTransformHelper.setThreadTransformDisabled(false);
 		}
 	}
 
@@ -225,16 +249,19 @@ public class SpringAgent implements IAgent {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean isThreadTransformDisabled() {
-		return transformDisabledThreadLocal.get();
-	}
+	public boolean shouldClassBeIgnored(String className) {
+		// if we are in disable instrumentation mode ignore all
+		if (disableInstrumentation) {
+			return true;
+		}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void setThreadTransformDisabled(boolean disabled) {
-		transformDisabledThreadLocal.set(Boolean.valueOf(disabled));
+		// ignore all classes which fit to the patterns in the configuration
+		for (IMatchPattern matchPattern : ignoreClassesPatterns) {
+			if (matchPattern.match(className)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

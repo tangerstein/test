@@ -35,21 +35,13 @@ public interface IAgent {
 	IHookDispatcher getHookDispatcher();
 
 	/**
-	 * Returns if the instrumentation transform method for the thread calling this method is
-	 * currently disabled.
+	 * Defines if the agent should ignore the class with the given name.
 	 *
-	 * @return Returns true if the transform is disabled for current thread, otherwise
-	 *         <code>false</code>.
+	 * @param className
+	 *            name of the class
+	 * @return <code>true</code> if class should be ignored (not byte code changes needed, no
+	 *         re-transformation needed, etc), <code>false</code> otherwise
 	 */
-	boolean isThreadTransformDisabled();
-
-	/**
-	 * Sets if the instrumentation transform method for the thread calling this method is currently
-	 * disabled.
-	 *
-	 * @param disabled
-	 *            <code>true</code> to disable, <code>false</code> otherwise
-	 */
-	void setThreadTransformDisabled(boolean disabled);
+	boolean shouldClassBeIgnored(String className);
 
 }
