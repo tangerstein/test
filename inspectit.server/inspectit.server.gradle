@@ -44,14 +44,7 @@ dependencies {
 	compile project(':inspectit.shared.all')
 	compile project(':inspectit.shared.cs')
 	testCompile project (path: ':inspectit.shared.all', configuration: 'testArchives')
-	compile 'io.gsonfire:gson-fire:1.8.0'
-	compile files('lib/adapters.inspectit.jar')
-	compile files('lib/adapters.shared.jar') 
-	compile files('lib/diagnoseIT.jar')
-	compile files('lib/open.xtrace.api.jar') 
-	 
-	
-}
+	}
 
 /** Compile compatibility to 1.7 for all compile tasks */
 tasks.withType(JavaCompile) { 
