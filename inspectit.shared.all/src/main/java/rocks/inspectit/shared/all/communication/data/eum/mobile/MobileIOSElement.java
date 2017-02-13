@@ -28,10 +28,10 @@ public class MobileIOSElement extends DefaultData {
 	private List<RemoteCallMeasurementContainer> remoteCalls;
 	
 	@JsonProperty(value = "startMeasurement")
-	private MobileIOSMeasurement startMeasurement;
+	private MobilePeriodicMeasurement startMeasurement;
 	
 	@JsonProperty(value = "stopMeasurement")
-	private MobileIOSMeasurement stopMeasurement;
+	private MobilePeriodicMeasurement stopMeasurement;
 
 	/**
 	 * Default constructor.
@@ -49,7 +49,7 @@ public class MobileIOSElement extends DefaultData {
 	 * @param timeStamp
 	 */
 	public MobileIOSElement(String useCaseDescription, String useCaseID, long timeStamp, 
-			List<RemoteCallMeasurementContainer> remoteCalls, MobileIOSMeasurement startMeasurement, MobileIOSMeasurement stopMeasurement) {
+			List<RemoteCallMeasurementContainer> remoteCalls, MobilePeriodicMeasurement startMeasurement, MobilePeriodicMeasurement stopMeasurement) {
 		super();
 		super.setTimeStamp(new Timestamp(timeStamp));
 		this.useCaseDescription = useCaseDescription;
@@ -104,14 +104,14 @@ public class MobileIOSElement extends DefaultData {
 	/**
 	 * @param startMeasurement the startMeasurement to set
 	 */
-	public void setStartMeasurement(MobileIOSMeasurement startMeasurement) {
+	public void setStartMeasurement(MobilePeriodicMeasurement startMeasurement) {
 		this.startMeasurement = startMeasurement;
 	}
 
 	/**
 	 * @param stopMeasurement the stopMeasurement to set
 	 */
-	public void setStopMeasurement(MobileIOSMeasurement stopMeasurement) {
+	public void setStopMeasurement(MobilePeriodicMeasurement stopMeasurement) {
 		this.stopMeasurement = stopMeasurement;
 	}
 	
@@ -123,11 +123,11 @@ public class MobileIOSElement extends DefaultData {
 		return useCaseID;
 	}
 	
-	public MobileIOSMeasurement getStartMeasurement() {
+	public MobilePeriodicMeasurement getStartMeasurement() {
 		return startMeasurement;
 	}
 	
-	public MobileIOSMeasurement getStopMeasurement() {
+	public MobilePeriodicMeasurement getStopMeasurement() {
 		return stopMeasurement;
 	}
 

@@ -18,7 +18,7 @@ public class MobileBeacon extends AbstractBeacon {
 	 * List of measurement points.
 	 */
 	@JsonProperty(value = "measurements")
-	private List<MobileIOSMeasurement> measurements;
+	private List<MobilePeriodicMeasurement> measurements;
 	
 	/**
 	 * ID of the mobile device
@@ -27,14 +27,14 @@ public class MobileBeacon extends AbstractBeacon {
 	private String deviceID;
 
 	public MobileBeacon() {
-		measurements = new ArrayList<MobileIOSMeasurement>();
+		measurements = new ArrayList<MobilePeriodicMeasurement>();
 	}
 	
 	public String getDeviceID() {
 		return deviceID;
 	}
 	
-	public List<MobileIOSMeasurement> getMeasurements() {
+	public List<MobilePeriodicMeasurement> getMeasurements() {
 		return measurements;
 	}
 

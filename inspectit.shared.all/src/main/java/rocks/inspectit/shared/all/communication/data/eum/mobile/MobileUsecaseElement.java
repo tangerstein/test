@@ -15,7 +15,7 @@ public class MobileUsecaseElement extends MobileIOSElement{
 	 * List of measurement points.
 	 */
 	@JsonProperty(value = "measurements")
-	private List<MobileIOSMeasurement> measurements;
+	private List<MobilePeriodicMeasurement> measurements;
 	
 	/**
 	 * ID of the mobile device
@@ -29,8 +29,8 @@ public class MobileUsecaseElement extends MobileIOSElement{
 	
 	public MobileUsecaseElement(String useCaseDescription, String useCaseID,
 			List<RemoteCallMeasurementContainer> remoteCalls, long timeStamp,
-			MobileIOSMeasurement startMeasurement, MobileIOSMeasurement stopMeasurement, 
-			List<MobileIOSMeasurement> measurements, String deviceID) {
+			MobilePeriodicMeasurement startMeasurement, MobilePeriodicMeasurement stopMeasurement, 
+			List<MobilePeriodicMeasurement> measurements, String deviceID) {
 		super(useCaseDescription, useCaseID, timeStamp, remoteCalls, startMeasurement,
 				stopMeasurement);
 		this.measurements = measurements;
@@ -41,7 +41,7 @@ public class MobileUsecaseElement extends MobileIOSElement{
 		this.deviceID = deviceID;
 	}
 	
-	public void setMeasurements(List<MobileIOSMeasurement> measurements) {
+	public void setMeasurements(List<MobilePeriodicMeasurement> measurements) {
 		this.measurements = measurements;
 	}
 	
@@ -49,7 +49,7 @@ public class MobileUsecaseElement extends MobileIOSElement{
 		return deviceID;
 	}
 	
-	public List<MobileIOSMeasurement> getMeasurements() {
+	public List<MobilePeriodicMeasurement> getMeasurements() {
 		return measurements;
 	}
 }

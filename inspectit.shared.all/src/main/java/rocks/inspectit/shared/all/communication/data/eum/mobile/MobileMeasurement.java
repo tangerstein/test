@@ -9,7 +9,7 @@ import org.codehaus.jackson.annotate.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({ 
-	@Type(name = "MetaMeasurement", value = MobileIOSMeasurement.class),
+		@Type(name = "PeriodicMeasurement", value = MobilePeriodicMeasurement.class),
 	@Type(name = "RemoteMeasurement", value = RemoteCallMeasurementContainer.class)
 })
 /**

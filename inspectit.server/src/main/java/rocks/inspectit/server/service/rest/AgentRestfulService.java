@@ -37,7 +37,7 @@ import rocks.inspectit.shared.all.communication.data.MobileData;
 import rocks.inspectit.shared.all.communication.data.eum.AbstractBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileUsecaseElement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.RemoteCallMeasurement;
@@ -115,7 +115,7 @@ public class AgentRestfulService {
 
 				// Get and set mobile measurement points
 				for (MobileMeasurement mobileMeasurement : mobileBeacon.getMeasurements()) {
-					MobileIOSMeasurement iOSMeasurement = (MobileIOSMeasurement) mobileMeasurement;
+					MobilePeriodicMeasurement iOSMeasurement = (MobilePeriodicMeasurement) mobileMeasurement;
 					MobileClientData mobileClientData = getMobileDataFromMobileMeasurement(iOSMeasurement);
 
 					// Set use case data
@@ -157,15 +157,15 @@ public class AgentRestfulService {
 	}
 
 	/**
-	 * Delegate values from the provided {@link MobileIOSMeasurement} to
+	 * Delegate values from the provided {@link MobilePeriodicMeasurement} to
 	 * {@link MobileClientData}.
 	 * 
 	 * @param iOSMeasurement
 	 *            {@link MobileClientData} to convert
 	 * @return {@link MobileClientData} with values of the provided
-	 *         {@link MobileIOSMeasurement}
+	 *         {@link MobilePeriodicMeasurement}
 	 */
-	private MobileClientData getMobileDataFromMobileMeasurement(MobileIOSMeasurement iOSMeasurement) {
+	private MobileClientData getMobileDataFromMobileMeasurement(MobilePeriodicMeasurement iOSMeasurement) {
 		MobileClientData mobileClientData = new MobileClientData();
 
 		// Set timestamp of the measurement
@@ -207,7 +207,7 @@ public class AgentRestfulService {
 				String type = readElement.getAsJsonObject().get("type").getAsString();
 
 				if (type.equals("IOSMeasurement")) {
-					return MobileIOSMeasurement.class;
+					return MobilePeriodicMeasurement.class;
 				} else {
 					/*
 					 * returning null will trigger Gson's default behavior
@@ -227,12 +227,12 @@ public class AgentRestfulService {
 	@ResponseBody
 	public AbstractBeacon getNewMobileBeacon() {
 		MobileBeacon beacon = new MobileBeacon();
-		MobileIOSMeasurement measurement1 = new MobileIOSMeasurement(2423234524L, 12, 81.236218F, 83.24683246F);
-		MobileIOSMeasurement measurement2 = new MobileIOSMeasurement(2423234525L, 23, 96.99F, 10.500000F);
-		MobileIOSMeasurement measurement3 = new MobileIOSMeasurement(2423234726L, 34, 81.236218F, 70.24683246F);
-		MobileIOSMeasurement measurement4 = new MobileIOSMeasurement(2423234727L, 45, 80.99F, 11.500000F);
-		MobileIOSMeasurement measurement5 = new MobileIOSMeasurement(2423244828L, 56, 83.236218F, 82.24683246F);
-		MobileIOSMeasurement measurement6 = new MobileIOSMeasurement(2423244829L, 67, 97.99F, 11.400000F);
+		MobilePeriodicMeasurement measurement1 = new MobilePeriodicMeasurement(2423234524L, 12, 81.236218F, 83.24683246F);
+		MobilePeriodicMeasurement measurement2 = new MobilePeriodicMeasurement(2423234525L, 23, 96.99F, 10.500000F);
+		MobilePeriodicMeasurement measurement3 = new MobilePeriodicMeasurement(2423234726L, 34, 81.236218F, 70.24683246F);
+		MobilePeriodicMeasurement measurement4 = new MobilePeriodicMeasurement(2423234727L, 45, 80.99F, 11.500000F);
+		MobilePeriodicMeasurement measurement5 = new MobilePeriodicMeasurement(2423244828L, 56, 83.236218F, 82.24683246F);
+		MobilePeriodicMeasurement measurement6 = new MobilePeriodicMeasurement(2423244829L, 67, 97.99F, 11.400000F);
 
 		List<RemoteCallMeasurementContainer> listRemoteCallContainer = new ArrayList<RemoteCallMeasurementContainer>();
 		RemoteCallMeasurement remoteMeasurement = new RemoteCallMeasurement(2423234624L, "1234-5678-9012-3456-7890", "On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
