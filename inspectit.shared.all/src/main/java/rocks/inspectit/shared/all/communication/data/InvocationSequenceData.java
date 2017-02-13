@@ -12,6 +12,7 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import rocks.inspectit.shared.all.cmr.cache.IObjectSizes;
 import rocks.inspectit.shared.all.communication.MethodSensorData;
+import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
 /**
  * The invocation sequence data object which is used to store the path of method invocations from
@@ -68,10 +69,11 @@ public class InvocationSequenceData extends MethodSensorData {
 	private LoggingData loggingData;
 	
 	/**
-	 * The associated mobile data. Can be <code>null</code>.
+	 * The information about the span the invocation is belonging to or invocation is calling to.
+	 * Can be <code>null</code>.
 	 */
 	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-	private MobileData mobileData;
+	private SpanIdent spanIdent;
 
 	/**
 	 * The position if parent sequence is not <code>null</code>.
@@ -260,6 +262,25 @@ public class InvocationSequenceData extends MethodSensorData {
 	 */
 	public void setMobileData(MobileData mobileData) {
 		this.mobileData = mobileData;
+	}
+
+	/**
+	 * Gets {@link #spanIdent}.
+	 *
+	 * @return {@link #spanIdent}
+	 */
+	public SpanIdent getSpanIdent() {
+		return this.spanIdent;
+	}
+
+	/**
+	 * Sets {@link #spanIdent}.
+	 *
+	 * @param spanIdent
+	 *            New value for {@link #spanIdent}
+	 */
+	public void setSpanIdent(SpanIdent spanIdent) {
+		this.spanIdent = spanIdent;
 	}
 
 	/**
@@ -459,7 +480,7 @@ public class InvocationSequenceData extends MethodSensorData {
 		result = (prime * result) + ((sqlStatementData == null) ? 0 : sqlStatementData.hashCode());
 		result = (prime * result) + ((timerData == null) ? 0 : timerData.hashCode());
 		result = (prime * result) + ((loggingData == null) ? 0 : loggingData.hashCode());
-		result = (prime * result) + ((mobileData == null) ? 0 : mobileData.hashCode());
+		result = (prime * result) + ((spanIdent == null) ? 0 : spanIdent.hashCode());
 		result = (prime * result) + applicationId;
 		result = (prime * result) + businessTransactionId;
 		return result;
@@ -508,11 +529,11 @@ public class InvocationSequenceData extends MethodSensorData {
 		} else if (!loggingData.equals(other.loggingData)) {
 			return false;
 		}
-		if (mobileData == null) {
-			if (other.mobileData != null) {
+		if (spanIdent == null) {
+			if (other.spanIdent != null) {
 				return false;
 			}
-		} else if (!mobileData.equals(other.mobileData)) {
+		} else if (!spanIdent.equals(other.spanIdent)) {
 			return false;
 		}
 		if (applicationId != other.applicationId) {
@@ -530,11 +551,12 @@ public class InvocationSequenceData extends MethodSensorData {
 	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = super.getObjectSize(objectSizes, doAlign);
-		size += objectSizes.getPrimitiveTypesSize(8, 0, 2, 0, 2, 3);
+		size += objectSizes.getPrimitiveTypesSize(9, 0, 2, 0, 2, 3);
 		size += objectSizes.getSizeOf(timerData);
 		size += objectSizes.getSizeOf(loggingData);
 		size += objectSizes.getSizeOf(mobileData);
 		size += objectSizes.getSizeOf(sqlStatementData);
+		size += objectSizes.getSizeOf(spanIdent);
 		if (nestedSequences instanceof ArrayList) {
 			size += objectSizes.getSizeOf(nestedSequences, 0);
 			for (InvocationSequenceData invocationSequenceData : nestedSequences) {
@@ -569,6 +591,7 @@ public class InvocationSequenceData extends MethodSensorData {
 	public InvocationSequenceData getClonedInvocationSequence() {
 		InvocationSequenceData clone = new InvocationSequenceData(this.getTimeStamp(), this.getPlatformIdent(), this.getSensorTypeIdent(), this.getMethodIdent());
 		clone.setId(this.getId());
+		clone.setSpanIdent(this.getSpanIdent());
 		clone.setChildCount(this.getChildCount());
 		clone.setDuration(this.getDuration());
 		clone.setEnd(this.getEnd());
