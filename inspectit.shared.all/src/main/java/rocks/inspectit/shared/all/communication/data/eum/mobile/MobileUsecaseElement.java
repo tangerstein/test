@@ -27,7 +27,7 @@ public class MobileUsecaseElement extends MobileIOSElement{
 		super();
 	}
 	
-	public MobileUsecaseElement(String useCaseDescription, String useCaseID,
+	public MobileUsecaseElement(String useCaseDescription, long useCaseID,
 			List<RemoteCallMeasurementContainer> remoteCalls, long timeStamp,
 			MobilePeriodicMeasurement startMeasurement, MobilePeriodicMeasurement stopMeasurement, 
 			List<MobilePeriodicMeasurement> measurements, String deviceID) {

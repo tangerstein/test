@@ -15,7 +15,7 @@ public class RemoteCallMeasurement extends MobileMeasurement {
 	private static final long serialVersionUID = 8411848459847980488L;
 
 	@JsonProperty(value = "remoteCallID")
-	private String remoteCallID;
+	private long remoteCallID;
 	
 	@JsonProperty(value = "ssid")
 	private String ssid;
@@ -52,7 +52,7 @@ public class RemoteCallMeasurement extends MobileMeasurement {
 	 * @param longitude
 	 * @param latitude
 	 */
-	public RemoteCallMeasurement(long timestamp, String remoteCallID,
+	public RemoteCallMeasurement(long timestamp, long remoteCallID,
 			String ssid, String networkConnection, String networkProvider,
 			long responseCode, boolean timeout, double longitude,
 			double latitude) {
@@ -84,14 +84,14 @@ public class RemoteCallMeasurement extends MobileMeasurement {
 	/**
 	 * @return the remoteCallID
 	 */
-	public String getRemoteCallID() {
+	public long getRemoteCallID() {
 		return remoteCallID;
 	}
 
 	/**
 	 * @param remoteCallID the remoteCallID to set
 	 */
-	public void setRemoteCallID(String remoteCallID) {
+	public void setRemoteCallID(long remoteCallID) {
 		this.remoteCallID = remoteCallID;
 	}
 

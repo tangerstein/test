@@ -41,13 +41,13 @@ import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceDataHelper;
 import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
 import rocks.inspectit.shared.all.communication.data.LoggingData;
-import rocks.inspectit.shared.all.communication.data.MobileData;
 import rocks.inspectit.shared.all.communication.data.ParameterContentData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
 import rocks.inspectit.shared.all.instrumentation.config.impl.MethodSensorTypeConfig;
 import rocks.inspectit.shared.all.instrumentation.config.impl.PlatformSensorTypeConfig;
 import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
+import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
 /**
  * The invocation sequence hook stores the record of the invocation sequences in a
@@ -509,11 +509,8 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 				// For mobile data
 				HttpTimerData httpTimerData = (HttpTimerData) dataObject;
 				invocationSequenceData.setTimerData(httpTimerData);
-				String useCaseID = httpTimerData.getHeaders().get("usecaseID");
-				String timestamp = httpTimerData.getHeaders().get("timestamp");
-				MobileData mobileServerData = new MobileData(useCaseID);
-				mobileServerData.setTimeStamp(new Timestamp(Long.parseLong(timestamp)));
-				invocationSequenceData.setMobileData(mobileServerData);
+				String remoteCallID = httpTimerData.getHeaders().get("remoteCallID");
+				invocationSequenceData.setSpanIdent(new SpanIdent(Integer.parseInt(remoteCallID), 0, 0));
 			}
 		}
 

@@ -22,7 +22,7 @@ public class MobileIOSElement extends DefaultData {
 	private String useCaseDescription;
 
 	@JsonProperty(value = "useCaseID")
-	private String useCaseID;
+	private long useCaseID;
 
 	@JsonProperty(value = "remoteCalls")
 	private List<RemoteCallMeasurementContainer> remoteCalls;
@@ -48,7 +48,7 @@ public class MobileIOSElement extends DefaultData {
 	 * @param measurements
 	 * @param timeStamp
 	 */
-	public MobileIOSElement(String useCaseDescription, String useCaseID, long timeStamp, 
+	public MobileIOSElement(String useCaseDescription, long useCaseID, long timeStamp,
 			List<RemoteCallMeasurementContainer> remoteCalls, MobilePeriodicMeasurement startMeasurement, MobilePeriodicMeasurement stopMeasurement) {
 		super();
 		super.setTimeStamp(new Timestamp(timeStamp));
@@ -76,14 +76,14 @@ public class MobileIOSElement extends DefaultData {
 	/**
 	 * @return the useCaseID
 	 */
-	public String getUseCaseID() {
+	public long getUseCaseID() {
 		return useCaseID;
 	}
 
 	/**
 	 * @param useCaseID the useCaseID to set
 	 */
-	public void setUseCaseID(String useCaseID) {
+	public void setUseCaseID(long useCaseID) {
 		this.useCaseID = useCaseID;
 	}
 
@@ -119,7 +119,7 @@ public class MobileIOSElement extends DefaultData {
 		return useCaseDescription;
 	}
 
-	public String getUsecaseID() {
+	public long getUsecaseID() {
 		return useCaseID;
 	}
 	
@@ -150,7 +150,6 @@ public class MobileIOSElement extends DefaultData {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = (prime * result) + ((this.useCaseDescription == null) ? 0 : this.useCaseDescription.hashCode());
-		result = (prime * result) + ((this.useCaseID == null) ? 0 : this.useCaseID.hashCode());
 		result = (prime * result) + ((this.remoteCalls == null) ? 0 : this.remoteCalls.hashCode());
 		result = (prime * result) + ((this.startMeasurement == null) ? 0 : this.startMeasurement.hashCode());
 		result = (prime * result) + ((this.stopMeasurement == null) ? 0 : this.stopMeasurement.hashCode());

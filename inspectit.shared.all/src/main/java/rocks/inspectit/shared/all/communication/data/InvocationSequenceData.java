@@ -243,26 +243,6 @@ public class InvocationSequenceData extends MethodSensorData {
 	public void setLoggingData(LoggingData loggingData) {
 		this.loggingData = loggingData;
 	}
-	
-	
-	/**
-	 * Gets {@link #mobileData}.
-	 *
-	 * @return {@link #mobileData}
-	 */
-	public MobileData getMobileData() {
-		return mobileData;
-	}
-
-	/**
-	 * Sets {@link #mobileData}.
-	 *
-	 * @param mobileData
-	 *            New value for {@link #mobileData}
-	 */
-	public void setMobileData(MobileData mobileData) {
-		this.mobileData = mobileData;
-	}
 
 	/**
 	 * Gets {@link #spanIdent}.
@@ -554,7 +534,6 @@ public class InvocationSequenceData extends MethodSensorData {
 		size += objectSizes.getPrimitiveTypesSize(9, 0, 2, 0, 2, 3);
 		size += objectSizes.getSizeOf(timerData);
 		size += objectSizes.getSizeOf(loggingData);
-		size += objectSizes.getSizeOf(mobileData);
 		size += objectSizes.getSizeOf(sqlStatementData);
 		size += objectSizes.getSizeOf(spanIdent);
 		if (nestedSequences instanceof ArrayList) {
