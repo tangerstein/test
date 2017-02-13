@@ -8,8 +8,9 @@ import org.codehaus.jackson.annotate.JsonSubTypes.Type;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes({ @Type(name = "IOSMeasurement", value = MobileIOSMeasurement.class)
-
+@JsonSubTypes({ 
+	@Type(name = "MetaMeasurement", value = MobileIOSMeasurement.class),
+	@Type(name = "RemoteMeasurement", value = RemoteCallMeasurementContainer.class)
 })
 /**
  * 
@@ -20,10 +21,10 @@ public class MobileMeasurement implements Serializable,
 		Comparable<MobileMeasurement> {
 
 	/**
-	 * UID
+	 * The serial version UID.
 	 */
-	private static final long serialVersionUID = 43L;
-
+	private static final long serialVersionUID = -5092391272010428974L;
+	
 	@JsonProperty(value = "timestamp")
 	private long timestamp;
 

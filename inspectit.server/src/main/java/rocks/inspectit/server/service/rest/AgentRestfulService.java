@@ -1,6 +1,8 @@
 package rocks.inspectit.server.service.rest;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import io.gsonfire.GsonFireBuilder;
+import io.gsonfire.TypeSelector;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -24,11 +26,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-
-import io.gsonfire.GsonFireBuilder;
-import io.gsonfire.TypeSelector;
 import rocks.inspectit.server.processor.impl.MobileTraceMerger;
 import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.server.util.PlatformIdentCache;
@@ -42,6 +39,12 @@ import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileUsecaseElement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.RemoteCallMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.RemoteCallMeasurementContainer;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 /**
  * Restful service provider for detail {@link MobileBeacon} information.
@@ -89,10 +92,19 @@ public class AgentRestfulService {
 		for (DefaultData data : mobileBeacon.getData()) {
 			if (data instanceof MobileIOSElement) {
 				MobileIOSElement iOSElement = (MobileIOSElement) data;
+				
+				//MobileUsecaseElement usecaseElement = new MobileUsecaseElement();			
+				MobileUsecaseElement usecaseElement = (MobileUsecaseElement) iOSElement;
+				
+				// Set data which are not in the MobileIOSElement class 
+				usecaseElement.setDeviceID(mobileBeacon.getDeviceID());
+				usecaseElement.setMeasurements(mobileBeacon.getMeasurements());
+				usecaseElement.getMeasurements().add(0, iOSElement.getStartMeasurement());
+				usecaseElement.getMeasurements().add(iOSElement.getStopMeasurement());
 
 				InvocationSequenceData rootSequenceData = new InvocationSequenceData();
 				listSequenceDatas.add(rootSequenceData);
-
+				
 				// Set mobileData on the root node of the sequence.
 				MobileClientData rootMobileClientData = new MobileClientData();
 				rootMobileClientData.setUseCaseDescription(iOSElement.getUsecaseDescription());
@@ -102,7 +114,7 @@ public class AgentRestfulService {
 				rootSequenceData.setTimeStamp(new Timestamp(0));
 
 				// Get and set mobile measurement points
-				for (MobileMeasurement mobileMeasurement : iOSElement.getMeasurements()) {
+				for (MobileMeasurement mobileMeasurement : mobileBeacon.getMeasurements()) {
 					MobileIOSMeasurement iOSMeasurement = (MobileIOSMeasurement) mobileMeasurement;
 					MobileClientData mobileClientData = getMobileDataFromMobileMeasurement(iOSMeasurement);
 
@@ -164,9 +176,9 @@ public class AgentRestfulService {
 		mobileClientData.setBatteryPower(iOSMeasurement.getPower());
 		mobileClientData.setCpuUsage(iOSMeasurement.getCpu());
 		mobileClientData.setMemoryUsage(iOSMeasurement.getMemory());
-		mobileClientData.setLatitude(iOSMeasurement.getLatitude());
-		mobileClientData.setLongitude(iOSMeasurement.getLongitude());
-		mobileClientData.setNetworkConnection(iOSMeasurement.getNetworkConnection());
+//		mobileClientData.setLatitude(iOSMeasurement.getLatitude());
+//		mobileClientData.setLongitude(iOSMeasurement.getLongitude());
+//		mobileClientData.setNetworkConnection(iOSMeasurement.getNetworkConnection());
 
 		return mobileClientData;
 	}
@@ -214,20 +226,27 @@ public class AgentRestfulService {
 	@RequestMapping(method = POST, value = "/defaultJSON")
 	@ResponseBody
 	public AbstractBeacon getNewMobileBeacon() {
-		AbstractBeacon beacon = new MobileBeacon();
-		MobileIOSMeasurement measurement = new MobileIOSMeasurement(53.4234523F, 23.45234532F, 2423234524L, 43, "4G",
-				81.236218F, 8324683246F);
-		MobileIOSMeasurement measurement2 = new MobileIOSMeasurement(27.34567890F, 18.1234245F, 2423234524L, 87, "3G",
-				99.99F, 10400000F);
+		MobileBeacon beacon = new MobileBeacon();
+		MobileIOSMeasurement measurement1 = new MobileIOSMeasurement(2423234524L, 12, 81.236218F, 83.24683246F);
+		MobileIOSMeasurement measurement2 = new MobileIOSMeasurement(2423234525L, 23, 96.99F, 10.500000F);
+		MobileIOSMeasurement measurement3 = new MobileIOSMeasurement(2423234726L, 34, 81.236218F, 70.24683246F);
+		MobileIOSMeasurement measurement4 = new MobileIOSMeasurement(2423234727L, 45, 80.99F, 11.500000F);
+		MobileIOSMeasurement measurement5 = new MobileIOSMeasurement(2423244828L, 56, 83.236218F, 82.24683246F);
+		MobileIOSMeasurement measurement6 = new MobileIOSMeasurement(2423244829L, 67, 97.99F, 11.400000F);
 
-		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", "1234-5678-90AB",
-				new ArrayList<MobileMeasurement>(Arrays.asList(new MobileMeasurement[] { measurement })), 3456345634L);
+		List<RemoteCallMeasurementContainer> listRemoteCallContainer = new ArrayList<RemoteCallMeasurementContainer>();
+		RemoteCallMeasurement remoteMeasurement = new RemoteCallMeasurement(2423234624L, "1234-5678-9012-3456-7890", "On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
+		RemoteCallMeasurement remoteMeasurement1 = new RemoteCallMeasurement(2423234636L, "1234-5678-9012-3456-7890", "On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
+		RemoteCallMeasurementContainer container = new RemoteCallMeasurementContainer(remoteMeasurement, remoteMeasurement1);
+		listRemoteCallContainer.add(container);
+		
+		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", "1234-5678-90AB", 3456345634L, listRemoteCallContainer, measurement1, measurement2);
+		MobileIOSElement mobileIOSElement2 = new MobileIOSElement("Create Group", "XYZ4-1234-90AB", 123434564L, listRemoteCallContainer, measurement3, measurement4);
 
-		MobileIOSElement mobileIOSElement2 = new MobileIOSElement("Create Group", "XYZ4-1234-90AB",
-				new ArrayList<MobileMeasurement>(Arrays.asList(new MobileMeasurement[] { measurement, measurement2 })),
-				123434564L);
 		beacon.getData().add(mobileIOSElement);
 		beacon.getData().add(mobileIOSElement2);
+		beacon.getMeasurements().add(measurement5);
+		beacon.getMeasurements().add(measurement6);
 		return beacon;
 	}
 

@@ -1,7 +1,7 @@
 package rocks.inspectit.shared.all.communication.data.eum.mobile;
 
 import java.sql.Timestamp;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -24,9 +24,22 @@ public class MobileIOSElement extends DefaultData {
 	@JsonProperty(value = "useCaseID")
 	private String useCaseID;
 
-	@JsonProperty(value = "measurements")
-	private List<MobileMeasurement> measurements;
+	@JsonProperty(value = "remoteCalls")
+	private List<RemoteCallMeasurementContainer> remoteCalls;
+	
+	@JsonProperty(value = "startMeasurement")
+	private MobileIOSMeasurement startMeasurement;
+	
+	@JsonProperty(value = "stopMeasurement")
+	private MobileIOSMeasurement stopMeasurement;
 
+	/**
+	 * Default constructor.
+	 */
+	public MobileIOSElement() {
+		remoteCalls = new ArrayList<RemoteCallMeasurementContainer>();
+	}
+	
 	/**
 	 * Constructor.
 	 * 
@@ -35,13 +48,71 @@ public class MobileIOSElement extends DefaultData {
 	 * @param measurements
 	 * @param timeStamp
 	 */
-	public MobileIOSElement(String useCaseDescription, String useCaseID, List<MobileMeasurement> measurements,
-			long timeStamp) {
+	public MobileIOSElement(String useCaseDescription, String useCaseID, long timeStamp, 
+			List<RemoteCallMeasurementContainer> remoteCalls, MobileIOSMeasurement startMeasurement, MobileIOSMeasurement stopMeasurement) {
 		super();
 		super.setTimeStamp(new Timestamp(timeStamp));
 		this.useCaseDescription = useCaseDescription;
 		this.useCaseID = useCaseID;
-		this.measurements = measurements;
+		this.remoteCalls = remoteCalls;
+		this.startMeasurement = startMeasurement;
+		this.stopMeasurement = stopMeasurement;
+	}	
+
+	/**
+	 * @return the useCaseDescription
+	 */
+	public String getUseCaseDescription() {
+		return useCaseDescription;
+	}
+
+	/**
+	 * @param useCaseDescription the useCaseDescription to set
+	 */
+	public void setUseCaseDescription(String useCaseDescription) {
+		this.useCaseDescription = useCaseDescription;
+	}
+
+	/**
+	 * @return the useCaseID
+	 */
+	public String getUseCaseID() {
+		return useCaseID;
+	}
+
+	/**
+	 * @param useCaseID the useCaseID to set
+	 */
+	public void setUseCaseID(String useCaseID) {
+		this.useCaseID = useCaseID;
+	}
+
+	/**
+	 * @return the serialversionuid
+	 */
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
+	/**
+	 * @param remoteCalls the remoteCalls to set
+	 */
+	public void setRemoteCalls(List<RemoteCallMeasurementContainer> remoteCalls) {
+		this.remoteCalls = remoteCalls;
+	}
+
+	/**
+	 * @param startMeasurement the startMeasurement to set
+	 */
+	public void setStartMeasurement(MobileIOSMeasurement startMeasurement) {
+		this.startMeasurement = startMeasurement;
+	}
+
+	/**
+	 * @param stopMeasurement the stopMeasurement to set
+	 */
+	public void setStopMeasurement(MobileIOSMeasurement stopMeasurement) {
+		this.stopMeasurement = stopMeasurement;
 	}
 	
 	public String getUsecaseDescription() {
@@ -51,14 +122,24 @@ public class MobileIOSElement extends DefaultData {
 	public String getUsecaseID() {
 		return useCaseID;
 	}
+	
+	public MobileIOSMeasurement getStartMeasurement() {
+		return startMeasurement;
+	}
+	
+	public MobileIOSMeasurement getStopMeasurement() {
+		return stopMeasurement;
+	}
 
-	public List<MobileMeasurement> getMeasurements() {
-		return measurements;
+	public List<RemoteCallMeasurementContainer> getRemoteCalls() {
+		return remoteCalls;
 	}
 
 	public long getDuration() {
-		Collections.sort(measurements);
-		return measurements.get(measurements.size() - 1).getTimestamp() - measurements.get(0).getTimestamp();
+		if(stopMeasurement == null || startMeasurement == null){
+			return 0;
+		}
+		return stopMeasurement.getTimestamp() - startMeasurement.getTimestamp();
 	}
 
 	/**
@@ -70,7 +151,9 @@ public class MobileIOSElement extends DefaultData {
 		int result = super.hashCode();
 		result = (prime * result) + ((this.useCaseDescription == null) ? 0 : this.useCaseDescription.hashCode());
 		result = (prime * result) + ((this.useCaseID == null) ? 0 : this.useCaseID.hashCode());
-		result = (prime * result) + ((this.measurements == null) ? 0 : this.measurements.hashCode());
+		result = (prime * result) + ((this.remoteCalls == null) ? 0 : this.remoteCalls.hashCode());
+		result = (prime * result) + ((this.startMeasurement == null) ? 0 : this.startMeasurement.hashCode());
+		result = (prime * result) + ((this.stopMeasurement == null) ? 0 : this.stopMeasurement.hashCode());
 		return result;
 	}
 
