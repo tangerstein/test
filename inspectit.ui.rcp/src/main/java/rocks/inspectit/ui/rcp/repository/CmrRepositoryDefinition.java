@@ -21,6 +21,7 @@ import rocks.inspectit.shared.cs.cmr.service.IServerStatusService.ServerStatus;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IStorageService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
 import rocks.inspectit.shared.cs.cmr.service.cache.CachedDataService;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.provider.ICmrRepositoryProvider;
@@ -231,6 +232,18 @@ public class CmrRepositoryDefinition implements RepositoryDefinition, ICmrReposi
 	 * CMR repository change listeners.
 	 */
 	private List<CmrRepositoryChangeListener> cmrRepositoryChangeListeners = new ArrayList<>(1);
+	/**
+	 * Usecase access service
+	 */
+	private IUsecaseAccessService usecaseAccessService;
+
+	public IUsecaseAccessService getUsecaseAccessService() {
+		return usecaseAccessService;
+	}
+
+	public void setUsecaseAccessService(IUsecaseAccessService usecaseAccessService) {
+		this.usecaseAccessService = usecaseAccessService;
+	}
 
 	/**
 	 * Calls default constructor with name 'Undefined'.
@@ -277,7 +290,7 @@ public class CmrRepositoryDefinition implements RepositoryDefinition, ICmrReposi
 		influxDBService = cmrServiceProvider.getInfluxDBService(this);
 		alertAccessService = cmrServiceProvider.getAlertAccessService(this);
 		agentInstrumentationService = cmrServiceProvider.getAgentInstrumentationService(this);
-
+		usecaseAccessService = cmrServiceProvider.getUsecaseAccessService(this);
 		cachedDataService = new RefreshEditorsCachedDataService(globalDataAccessService, businessContextManagementService, this);
 	}
 

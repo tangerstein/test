@@ -50,4 +50,10 @@ public class MobileTraceStorage implements Serializable {
 		return (this.mapMobileTrace.remove(useCaseID) != null);
 	}
 	
+	public ConcurrentHashMap<Long, MobileUsecaseElement> getMapCopy() {
+		ConcurrentHashMap<Long, MobileUsecaseElement> mapMobileTraceCopy = new ConcurrentHashMap<Long, MobileUsecaseElement>();
+		mapMobileTraceCopy.putAll(mapMobileTrace);
+		return mapMobileTraceCopy;
+	}
+	
 }

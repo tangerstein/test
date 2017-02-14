@@ -1,12 +1,9 @@
 package rocks.inspectit.server.service.rest;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import io.gsonfire.GsonFireBuilder;
-import io.gsonfire.TypeSelector;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
@@ -26,25 +23,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import rocks.inspectit.server.processor.impl.MobileTraceMerger;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
+import io.gsonfire.GsonFireBuilder;
+import io.gsonfire.TypeSelector;
+import rocks.inspectit.server.cache.IBuffer;
+import rocks.inspectit.server.cache.impl.BufferElement;
 import rocks.inspectit.server.service.rest.error.JsonError;
+import rocks.inspectit.server.util.MobileTraceStorage;
 import rocks.inspectit.server.util.PlatformIdentCache;
 import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
-import rocks.inspectit.shared.all.communication.data.MobileClientData;
-import rocks.inspectit.shared.all.communication.data.MobileData;
 import rocks.inspectit.shared.all.communication.data.eum.AbstractBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileBeacon;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileIOSElement;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileMeasurement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileUsecaseElement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.RemoteCallMeasurement;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.RemoteCallMeasurementContainer;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
+import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
 /**
  * Restful service provider for detail {@link MobileBeacon} information.
@@ -60,7 +60,10 @@ public class AgentRestfulService {
 	private PlatformIdentCache platformCache;
 
 	@Autowired
-	private MobileTraceMerger mobileTraceMerger;
+	private MobileTraceStorage mobileTraceStorage;
+
+	@Autowired
+	private IBuffer<InvocationSequenceData> buffer;
 
 	/**
 	 * Handling of all the exceptions happening in this controller.
@@ -79,7 +82,7 @@ public class AgentRestfulService {
 	 */
 	@RequestMapping(method = POST, value = "")
 	@ResponseBody
-	public List<InvocationSequenceData> addNewMobileBeacon(@RequestBody String json) {
+	public void addNewMobileBeacon(@RequestBody String json) {
 
 		Gson gson = getGson();
 		MobileBeacon mobileBeacon = gson.fromJson(json, MobileBeacon.class);
@@ -92,95 +95,50 @@ public class AgentRestfulService {
 		for (DefaultData data : mobileBeacon.getData()) {
 			if (data instanceof MobileIOSElement) {
 				MobileIOSElement iOSElement = (MobileIOSElement) data;
-				
-				//MobileUsecaseElement usecaseElement = new MobileUsecaseElement();			
+
+				// MobileUsecaseElement usecaseElement = new
+				// MobileUsecaseElement();
 				MobileUsecaseElement usecaseElement = (MobileUsecaseElement) iOSElement;
-				
-				// Set data which are not in the MobileIOSElement class 
+
+				// Set data which are not in the MobileIOSElement class
 				usecaseElement.setDeviceID(mobileBeacon.getDeviceID());
+				List<MobilePeriodicMeasurement> relevantMeasurements = mobileBeacon.getMeasurements();
+
+				// Remove irrelevant measurements, which are not in the defined
+				// timeslot
+				for (MobilePeriodicMeasurement measurement : relevantMeasurements) {
+					if (!(measurement.getTimestamp() <= iOSElement.getStopMeasurement().getTimestamp())
+							&& !(measurement.getTimestamp() >= iOSElement.getStartMeasurement().getTimestamp())) {
+						relevantMeasurements.remove(measurement);
+					}
+				}
 				usecaseElement.setMeasurements(mobileBeacon.getMeasurements());
 				usecaseElement.getMeasurements().add(0, iOSElement.getStartMeasurement());
 				usecaseElement.getMeasurements().add(iOSElement.getStopMeasurement());
-
-				InvocationSequenceData rootSequenceData = new InvocationSequenceData();
-				listSequenceDatas.add(rootSequenceData);
-				
-				// Set mobileData on the root node of the sequence.
-				MobileClientData rootMobileClientData = new MobileClientData();
-				rootMobileClientData.setUseCaseDescription(iOSElement.getUsecaseDescription());
-				rootMobileClientData.setUseCaseID(iOSElement.getUsecaseID());
-				rootSequenceData.setMobileData(rootMobileClientData);
-				rootSequenceData.setPlatformIdent(-1);
-				rootSequenceData.setTimeStamp(new Timestamp(0));
-
-				// Get and set mobile measurement points
-				for (MobileMeasurement mobileMeasurement : mobileBeacon.getMeasurements()) {
-					MobilePeriodicMeasurement iOSMeasurement = (MobilePeriodicMeasurement) mobileMeasurement;
-					MobileClientData mobileClientData = getMobileDataFromMobileMeasurement(iOSMeasurement);
-
-					// Set use case data
-					mobileClientData.setUseCaseDescription(iOSElement.getUsecaseDescription());
-					mobileClientData.setUseCaseID(iOSElement.getUsecaseID());
-
-					InvocationSequenceData nestedSequenceData = new InvocationSequenceData();
-					nestedSequenceData.setMobileData(mobileClientData);
-					rootSequenceData.getNestedSequences().add(nestedSequenceData);
+				mobileTraceStorage.push(usecaseElement);
+			}
+			// TODO Convertion
+			List<PlatformIdent> platformIdentList = new ArrayList<PlatformIdent>();
+			Collection<PlatformIdent> platformIdents = platformCache.getCleanPlatformIdents();
+			for (PlatformIdent platIdent : platformIdents) {
+				platformIdentList.add(platIdent);
+			}
+			PlatformIdent ident = new PlatformIdent();
+			ident.setId(-1L);
+			platformIdentList.add(ident);
+			// TODO
+			for (InvocationSequenceData invocationSequenceData : listSequenceDatas) {
+				InspectITTraceConverter converter = new InspectITTraceConverter();
+				Trace trace = converter.convertTraces(invocationSequenceData, platformIdentList);
+				// Trace trace = TraceCreator.getTestTrace1();
+				try {
+					Launcher.startLauncher(trace, RulePackage.MobilePackage);
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		}
-		// Merge server sequences with client sequence and store the result on
-		// the server
-		List<PlatformIdent> platformIdentList = new ArrayList<PlatformIdent>();
-		Collection<PlatformIdent> platformIdents = platformCache.getCleanPlatformIdents();
-		for (PlatformIdent platIdent : platformIdents) {
-			platformIdentList.add(platIdent);
-		}
-		PlatformIdent ident = new PlatformIdent();
-		ident.setId(-1L);
-		platformIdentList.add(ident);
-		for (InvocationSequenceData invocationSequenceData : listSequenceDatas) {
-			InvocationSequenceData mergedTrace = mobileTraceMerger
-					.mergeMobileTraceWithServerTraces(invocationSequenceData);
-			mobileTraceMerger.storeTraceOnTree(mergedTrace);
-			InspectITTraceConverter converter = new InspectITTraceConverter();
-			Trace trace = converter.convertTraces(mergedTrace, platformIdentList);
-			// Trace trace = TraceCreator.getTestTrace1();
-			try {
-				Launcher.startLauncher(trace, RulePackage.MobilePackage);
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		return listSequenceDatas;
-	}
-
-	/**
-	 * Delegate values from the provided {@link MobilePeriodicMeasurement} to
-	 * {@link MobileClientData}.
-	 * 
-	 * @param iOSMeasurement
-	 *            {@link MobileClientData} to convert
-	 * @return {@link MobileClientData} with values of the provided
-	 *         {@link MobilePeriodicMeasurement}
-	 */
-	private MobileClientData getMobileDataFromMobileMeasurement(MobilePeriodicMeasurement iOSMeasurement) {
-		MobileClientData mobileClientData = new MobileClientData();
-
-		// Set timestamp of the measurement
-		Timestamp timestamp = new Timestamp(iOSMeasurement.getTimestamp());
-		mobileClientData.setTimeStamp(timestamp);
-
-		// Set mobile measurement data
-		mobileClientData.setBatteryPower(iOSMeasurement.getPower());
-		mobileClientData.setCpuUsage(iOSMeasurement.getCpu());
-		mobileClientData.setMemoryUsage(iOSMeasurement.getMemory());
-//		mobileClientData.setLatitude(iOSMeasurement.getLatitude());
-//		mobileClientData.setLongitude(iOSMeasurement.getLongitude());
-//		mobileClientData.setNetworkConnection(iOSMeasurement.getNetworkConnection());
-
-		return mobileClientData;
 	}
 
 	private Gson getGson() {
@@ -227,21 +185,29 @@ public class AgentRestfulService {
 	@ResponseBody
 	public AbstractBeacon getNewMobileBeacon() {
 		MobileBeacon beacon = new MobileBeacon();
-		MobilePeriodicMeasurement measurement1 = new MobilePeriodicMeasurement(2423234524L, 12, 81.236218F, 83.24683246F);
+		MobilePeriodicMeasurement measurement1 = new MobilePeriodicMeasurement(2423234524L, 12, 81.236218F,
+				83.24683246F);
 		MobilePeriodicMeasurement measurement2 = new MobilePeriodicMeasurement(2423234525L, 23, 96.99F, 10.500000F);
-		MobilePeriodicMeasurement measurement3 = new MobilePeriodicMeasurement(2423234726L, 34, 81.236218F, 70.24683246F);
+		MobilePeriodicMeasurement measurement3 = new MobilePeriodicMeasurement(2423234726L, 34, 81.236218F,
+				70.24683246F);
 		MobilePeriodicMeasurement measurement4 = new MobilePeriodicMeasurement(2423234727L, 45, 80.99F, 11.500000F);
-		MobilePeriodicMeasurement measurement5 = new MobilePeriodicMeasurement(2423244828L, 56, 83.236218F, 82.24683246F);
+		MobilePeriodicMeasurement measurement5 = new MobilePeriodicMeasurement(2423244828L, 56, 83.236218F,
+				82.24683246F);
 		MobilePeriodicMeasurement measurement6 = new MobilePeriodicMeasurement(2423244829L, 67, 97.99F, 11.400000F);
 
 		List<RemoteCallMeasurementContainer> listRemoteCallContainer = new ArrayList<RemoteCallMeasurementContainer>();
-		RemoteCallMeasurement remoteMeasurement = new RemoteCallMeasurement(2423234624L, "1234-5678-9012-3456-7890", "On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
-		RemoteCallMeasurement remoteMeasurement1 = new RemoteCallMeasurement(2423234636L, "1234-5678-9012-3456-7890", "On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
-		RemoteCallMeasurementContainer container = new RemoteCallMeasurementContainer(remoteMeasurement, remoteMeasurement1);
+		RemoteCallMeasurement remoteMeasurement = new RemoteCallMeasurement(2423234624L, 1,
+				"On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
+		RemoteCallMeasurement remoteMeasurement1 = new RemoteCallMeasurement(2423234636L, 2,
+				"On my way", "4G", "zero", 200, false, 53.4234523, 23.45234532);
+		RemoteCallMeasurementContainer container = new RemoteCallMeasurementContainer(remoteMeasurement,
+				remoteMeasurement1);
 		listRemoteCallContainer.add(container);
-		
-		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", "1234-5678-90AB", 3456345634L, listRemoteCallContainer, measurement1, measurement2);
-		MobileIOSElement mobileIOSElement2 = new MobileIOSElement("Create Group", "XYZ4-1234-90AB", 123434564L, listRemoteCallContainer, measurement3, measurement4);
+
+		MobileIOSElement mobileIOSElement = new MobileIOSElement("Login", 123456789023L, 3456345634L,
+				listRemoteCallContainer, measurement1, measurement2);
+		MobileIOSElement mobileIOSElement2 = new MobileIOSElement("Create Group", 123456789022L, 123434564L,
+				listRemoteCallContainer, measurement3, measurement4);
 
 		beacon.getData().add(mobileIOSElement);
 		beacon.getData().add(mobileIOSElement2);
@@ -256,24 +222,21 @@ public class AgentRestfulService {
 	@RequestMapping(method = POST, value = "/createRemoteCall")
 	@ResponseBody
 	public void createRemoteCall() {
-
 		InvocationSequenceData remoteCall = new InvocationSequenceData();
 		remoteCall.setPlatformIdent(-1);
 		remoteCall.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
-		MobileData remoteCallServerData = new MobileData();
-		remoteCallServerData.setUseCaseID("XYZ4-1234-90AB");
-		remoteCallServerData.setTimeStamp(new Timestamp(1000000015));
-		remoteCall.setMobileData(remoteCallServerData);
-		mobileTraceMerger.storeTraceOnTree(remoteCall);
+		remoteCall.setId(42);
+		// RemoteCall ID which will be set by the header
+		remoteCall.setSpanIdent(new SpanIdent(1, 0, 0));
 
 		InvocationSequenceData remoteCall2 = new InvocationSequenceData();
 		remoteCall2.setPlatformIdent(-1);
 		remoteCall2.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
-		MobileData remoteCallServerData2 = new MobileData();
-		remoteCallServerData2.setUseCaseID("XYZ4-1234-90AB_2");
-		remoteCallServerData2.setTimeStamp(new Timestamp(1000000016));
-		remoteCall2.setMobileData(remoteCallServerData2);
-		mobileTraceMerger.storeTraceOnTree(remoteCall2);
+		remoteCall2.setId(43);
+		remoteCall2.setSpanIdent(new SpanIdent(2, 0, 0));
+		buffer.put(new BufferElement<InvocationSequenceData>(remoteCall));
+		buffer.put(new BufferElement<InvocationSequenceData>(remoteCall2));
+
 	}
 
 	/**

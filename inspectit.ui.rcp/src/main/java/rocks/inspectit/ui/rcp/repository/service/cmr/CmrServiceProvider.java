@@ -15,6 +15,7 @@ import rocks.inspectit.shared.cs.cmr.service.IServerStatusService;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IStorageService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
 import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 
 /**
@@ -326,4 +327,24 @@ public abstract class CmrServiceProvider {
 	 * @return Returns Spring created {@link IAgentInstrumentationService}.
 	 */
 	protected abstract IAgentInstrumentationService getAgentInstrumentationService();
+
+	/**
+	 * Returns properly initialized {@link IUsecaseAccessService}.
+	 *
+	 * @param cmrRepositoryDefinition
+	 *            {@link CmrRepositoryDefinition} to bound service to.
+	 * @return Returns {@link IUsecaseAccessService}.
+	 */
+	public IUsecaseAccessService getUsecaseAccessService(CmrRepositoryDefinition cmrRepositoryDefinition) {
+		IUsecaseAccessService usecaseAccessService = getUsecaseAccessService();
+		((ICmrService) usecaseAccessService).initService(cmrRepositoryDefinition);
+		return usecaseAccessService;
+	}
+
+	/**
+	 * Returns Spring created {@link IUsecaseAccessService}.
+	 *
+	 * @return Returns Spring created {@link IUsecaseAccessService}.
+	 */
+	protected abstract IUsecaseAccessService getUsecaseAccessService();
 }
