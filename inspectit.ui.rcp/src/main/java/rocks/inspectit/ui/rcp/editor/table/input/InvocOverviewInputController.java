@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.jfree.util.Log;
 import org.springframework.http.HttpStatus;
 
 import rocks.inspectit.shared.all.cmr.model.MethodIdent;
@@ -45,6 +46,7 @@ import rocks.inspectit.shared.all.communication.data.InvocationSequenceDataHelpe
 import rocks.inspectit.shared.all.communication.data.cmr.ApplicationData;
 import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
@@ -210,6 +212,8 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	 */
 	private ResultComparator<InvocationSequenceData> resultComparator = defaultComparator;
 
+	private IUsecaseAccessService usecaseAccessService;
+
 	/**
 	 *
 	 * @return Returns list of invocation sequence data that represents a table input.
@@ -259,6 +263,8 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 		dataAccessService = inputDefinition.getRepositoryDefinition().getInvocationDataAccessService();
 		cachedDataService = inputDefinition.getRepositoryDefinition().getCachedDataService();
+		Log.warn("Tut");
+		usecaseAccessService = inputDefinition.getRepositoryDefinition().getUsecaseAccessService();
 	}
 
 	/**

@@ -15,47 +15,47 @@ public class MobilePeriodicMeasurement extends MobileMeasurement {
 	private static final long serialVersionUID = -8195087403345499757L;
 
 	@JsonProperty(value = "power")
-	private double power;
+	private double batteryPower;
 	
 	@JsonProperty(value = "cpu")
-	private double cpu;
+	private double cpuUsage;
 	
 	@JsonProperty(value = "memory")
-	private double memory;
+	private double memoryUsage;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param timestamp
-	 * @param power
-	 * @param cpu
-	 * @param memory
+	 * @param battery power
+	 * @param cpu usage
+	 * @param memory usage
 	 */
-	public MobilePeriodicMeasurement(long timestamp, double power, double cpu, double memory) {
+	public MobilePeriodicMeasurement(long timestamp, double batteryPower, double cpuUsage, double memoryUsage) {
 		super(timestamp);
-		this.power = power;
-		this.cpu = cpu;
-		this.memory = memory;
+		this.batteryPower = batteryPower;
+		this.cpuUsage = cpuUsage;
+		this.memoryUsage = memoryUsage;
 	}
 	
 	/**
-	 * @return the power
+	 * @return the battery power
 	 */
-	public double getPower() {
-		return power;
+	public double getBatteryPower() {
+		return batteryPower;
 	}
 	
 	/**
-	 * @return the cpu
+	 * @return the cpu usage
 	 */
-	public double getCpu() {
-		return cpu;
+	public double getCpuUsage() {
+		return cpuUsage;
 	}
 	
 	/**
-	 * @return the memory
+	 * @return the memory usage
 	 */
-	public double getMemory() {
-		return memory;
+	public double getMemoryUsage() {
+		return memoryUsage;
 	}
 }

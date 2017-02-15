@@ -12,6 +12,7 @@ import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
 import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileUsecaseElement;
 import rocks.inspectit.shared.cs.cmr.service.IBusinessContextManagementService;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
@@ -231,5 +232,31 @@ public abstract class StorageServiceProvider {
 		storageBusinessContextService.setIndexingTree(indexingTree);
 		storageBusinessContextService.setBusinessTransactions(businessTransactions);
 		return storageBusinessContextService;
+	}
+	
+
+	/**
+	 * @return Spring created {@link StorageUsecaseAccessService }.
+	 */
+	protected abstract StorageUsecaseAccessService createStorageUsecaseAccessService();
+
+	/**
+	 * Properly initialized {@link StorageJmxDataAccessService}.
+	 *
+	 * @param storageRepositoryDefinition
+	 *            {@link StorageRepositoryDefinition}.
+	 * @param localStorageData
+	 *            {@link LocalStorageData}.
+	 * @param storageTreeComponent
+	 *            Indexing tree.
+	 * @return Properly initialized {@link StorageUsecaseAccessService}.
+	 */
+	public StorageUsecaseAccessService createStorageUsecaseAccessService(StorageRepositoryDefinition storageRepositoryDefinition, LocalStorageData localStorageData,
+			IStorageTreeComponent<MobileUsecaseElement> storageTreeComponent) {
+		StorageUsecaseAccessService storageUsecaseAccessService = createStorageUsecaseAccessService();
+		storageUsecaseAccessService.setStorageRepositoryDefinition(storageRepositoryDefinition);
+		storageUsecaseAccessService.setLocalStorageData(localStorageData);
+		storageUsecaseAccessService.setIndexingTree(storageTreeComponent);
+		return storageUsecaseAccessService;
 	}
 }
