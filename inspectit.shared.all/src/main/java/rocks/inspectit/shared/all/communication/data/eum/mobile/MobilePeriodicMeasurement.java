@@ -1,27 +1,39 @@
 package rocks.inspectit.shared.all.communication.data.eum.mobile;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import rocks.inspectit.shared.all.communication.DefaultData;
 
 /**
  * 
  * @author Tobias Angerstein, Alper Hidiroglu, Manuel Palenga
  *
  */
-public class MobilePeriodicMeasurement extends MobileMeasurement {
+public class MobilePeriodicMeasurement extends DefaultData {
 
 	/**
 	 * The serial version UID.
 	 */
 	private static final long serialVersionUID = -8195087403345499757L;
 
-	@JsonProperty(value = "power")
+	@JsonIgnore
+	private long deviceID;
+	
+	@JsonProperty
+	private long timestamp;
+	
+	@JsonProperty
 	private double batteryPower;
 	
-	@JsonProperty(value = "cpu")
+	@JsonProperty
 	private double cpuUsage;
 	
-	@JsonProperty(value = "memory")
+	@JsonProperty
 	private double memoryUsage;
+	
+	@JsonProperty
+	private double storageUsage;
 
 	/**
 	 * Constructor.
@@ -31,11 +43,33 @@ public class MobilePeriodicMeasurement extends MobileMeasurement {
 	 * @param cpu usage
 	 * @param memory usage
 	 */
-	public MobilePeriodicMeasurement(long timestamp, double batteryPower, double cpuUsage, double memoryUsage) {
-		super(timestamp);
+	public MobilePeriodicMeasurement(long timestamp, double batteryPower, double cpuUsage, double memoryUsage, double storageUsage) {
+		this.timestamp = timestamp;
 		this.batteryPower = batteryPower;
 		this.cpuUsage = cpuUsage;
 		this.memoryUsage = memoryUsage;
+		this.storageUsage = storageUsage;
+	}
+	
+	/**
+	 * @param deviceID
+	 */
+	public void setDeviceID(long deviceID) {
+		this.deviceID = deviceID;
+	}
+	
+	/**
+	 * @return timestamp
+	 */
+	public long getTimestamp() {
+		return timestamp;
+	}
+	
+	/**
+	 * @return deviceID
+	 */
+	public long getDeviceID() {
+		return deviceID;
 	}
 	
 	/**
@@ -57,5 +91,12 @@ public class MobilePeriodicMeasurement extends MobileMeasurement {
 	 */
 	public double getMemoryUsage() {
 		return memoryUsage;
+	}
+	
+	/**
+	 * @return storage usage
+	 */
+	public double getStorageUsage() {
+		return storageUsage;
 	}
 }

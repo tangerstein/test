@@ -21,7 +21,7 @@ import rocks.inspectit.shared.cs.cmr.service.IServerStatusService.ServerStatus;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IStorageService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
-import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.shared.cs.cmr.service.cache.CachedDataService;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.provider.ICmrRepositoryProvider;
@@ -235,13 +235,13 @@ public class CmrRepositoryDefinition implements RepositoryDefinition, ICmrReposi
 	/**
 	 * Usecase access service
 	 */
-	private IUsecaseAccessService usecaseAccessService;
+	private IMobilePeriodicMeasurementAccessService usecaseAccessService;
 
-	public IUsecaseAccessService getUsecaseAccessService() {
+	public IMobilePeriodicMeasurementAccessService getUsecaseAccessService() {
 		return usecaseAccessService;
 	}
 
-	public void setUsecaseAccessService(IUsecaseAccessService usecaseAccessService) {
+	public void setUsecaseAccessService(IMobilePeriodicMeasurementAccessService usecaseAccessService) {
 		this.usecaseAccessService = usecaseAccessService;
 	}
 

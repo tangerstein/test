@@ -46,7 +46,7 @@ import rocks.inspectit.shared.all.communication.data.InvocationSequenceDataHelpe
 import rocks.inspectit.shared.all.communication.data.cmr.ApplicationData;
 import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
-import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
@@ -212,7 +212,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	 */
 	private ResultComparator<InvocationSequenceData> resultComparator = defaultComparator;
 
-	private IUsecaseAccessService usecaseAccessService;
+	private IMobilePeriodicMeasurementAccessService usecaseAccessService;
 
 	/**
 	 *

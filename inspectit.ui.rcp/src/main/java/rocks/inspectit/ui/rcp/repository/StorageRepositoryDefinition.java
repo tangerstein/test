@@ -3,8 +3,6 @@ package rocks.inspectit.ui.rcp.repository;
 import java.util.Collection;
 import java.util.List;
 
-import com.google.common.base.Objects;
-
 import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.ExceptionSensorData;
@@ -14,20 +12,22 @@ import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
 import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileUsecaseElement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.cs.cmr.service.IBusinessContextManagementService;
 import rocks.inspectit.shared.cs.cmr.service.IExceptionDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IGlobalDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IHttpTimerDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IJmxDataAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
-import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
 import rocks.inspectit.shared.cs.cmr.service.cache.CachedDataService;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
 import rocks.inspectit.ui.rcp.repository.service.storage.StorageServiceProvider;
+
+import com.google.common.base.Objects;
 
 /**
  * Storage repository definition. This {@link RepositoryDefinition} has a direct usage of a
@@ -94,9 +94,9 @@ public class StorageRepositoryDefinition implements RepositoryDefinition {
 	private IBusinessContextManagementService businessContextService;
 	
 	/**
-	 * {@link IUsecaseAccessService}.
+	 * {@link IMobilePeriodicMeasurementAccessService}.
 	 */
-	private IUsecaseAccessService usecaseAccessService;
+	private IMobilePeriodicMeasurementAccessService usecaseAccessService;
 
 	/**
 	 * {@link StorageServiceProvider} for instantiating storage services.
@@ -218,7 +218,7 @@ public class StorageRepositoryDefinition implements RepositoryDefinition {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public IUsecaseAccessService getUsecaseAccessService() {
+	public IMobilePeriodicMeasurementAccessService getUsecaseAccessService() {
 		return usecaseAccessService;
 	}
 
@@ -237,7 +237,7 @@ public class StorageRepositoryDefinition implements RepositoryDefinition {
 		httpTimerDataAccessService = storageServiceProvider.createStorageHttpTimerDataAccessService(this, localStorageData, (IStorageTreeComponent<HttpTimerData>) indexingTree);
 		jmxDataAccessService = storageServiceProvider.createStorageJmxDataAccessService(this, localStorageData, (IStorageTreeComponent<JmxSensorValueData>) indexingTree);
 		businessContextService = storageServiceProvider.createStorageBusinessContextService(this, localStorageData, (IStorageTreeComponent<DefaultData>) indexingTree, businessTransactions);
-		usecaseAccessService = storageServiceProvider.createStorageUsecaseAccessService(this, localStorageData, (IStorageTreeComponent<MobileUsecaseElement>) indexingTree);
+		usecaseAccessService = storageServiceProvider.createStorageMobilePeriodicMeasurementAccessService(this, localStorageData, (IStorageTreeComponent<MobilePeriodicMeasurement>) indexingTree);
 		// for storage we use the regular cached data service because ids can never change
 		cachedDataService = new CachedDataService(globalDataAccessService, businessContextService);
 	}

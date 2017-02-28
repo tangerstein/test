@@ -9,7 +9,7 @@ import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IJmxDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
-import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 
 /**
  * The interface to the repository definition. A repository can be anywhere and anything, the
@@ -104,9 +104,9 @@ public interface RepositoryDefinition {
 	IBusinessContextManagementService getBusinessContextMangementService();
 	
 	/**
-	 * Returns the {@link IUsecaseAccessService}.
+	 * Returns the {@link IMobilePeriodicMeasurementAccessService}.
 	 * 
-	 * @return Returns the {@link IUsecaseAccessService}.
+	 * @return Returns the {@link IMobilePeriodicMeasurementAccessService}.
 	 */
-	IUsecaseAccessService getUsecaseAccessService();
+	IMobilePeriodicMeasurementAccessService getUsecaseAccessService();
 }

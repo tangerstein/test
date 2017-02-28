@@ -12,7 +12,7 @@ import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
 import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobileUsecaseElement;
+import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.cs.cmr.service.IBusinessContextManagementService;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
@@ -236,9 +236,9 @@ public abstract class StorageServiceProvider {
 	
 
 	/**
-	 * @return Spring created {@link StorageUsecaseAccessService }.
+	 * @return Spring created {@link StorageMobilePeriodicMeasurementAccessService }.
 	 */
-	protected abstract StorageUsecaseAccessService createStorageUsecaseAccessService();
+	protected abstract StorageMobilePeriodicMeasurementAccessService createStorageUsecaseAccessService();
 
 	/**
 	 * Properly initialized {@link StorageJmxDataAccessService}.
@@ -249,14 +249,14 @@ public abstract class StorageServiceProvider {
 	 *            {@link LocalStorageData}.
 	 * @param storageTreeComponent
 	 *            Indexing tree.
-	 * @return Properly initialized {@link StorageUsecaseAccessService}.
+	 * @return Properly initialized {@link StorageMobilePeriodicMeasurementAccessService}.
 	 */
-	public StorageUsecaseAccessService createStorageUsecaseAccessService(StorageRepositoryDefinition storageRepositoryDefinition, LocalStorageData localStorageData,
-			IStorageTreeComponent<MobileUsecaseElement> storageTreeComponent) {
-		StorageUsecaseAccessService storageUsecaseAccessService = createStorageUsecaseAccessService();
-		storageUsecaseAccessService.setStorageRepositoryDefinition(storageRepositoryDefinition);
-		storageUsecaseAccessService.setLocalStorageData(localStorageData);
-		storageUsecaseAccessService.setIndexingTree(storageTreeComponent);
-		return storageUsecaseAccessService;
+	public StorageMobilePeriodicMeasurementAccessService createStorageMobilePeriodicMeasurementAccessService(StorageRepositoryDefinition storageRepositoryDefinition, LocalStorageData localStorageData,
+			IStorageTreeComponent<MobilePeriodicMeasurement> storageTreeComponent) {
+		StorageMobilePeriodicMeasurementAccessService storageMobilePeriodicMeasurementAccessService = createStorageUsecaseAccessService();
+		storageMobilePeriodicMeasurementAccessService.setStorageRepositoryDefinition(storageRepositoryDefinition);
+		storageMobilePeriodicMeasurementAccessService.setLocalStorageData(localStorageData);
+		storageMobilePeriodicMeasurementAccessService.setIndexingTree(storageTreeComponent);
+		return storageMobilePeriodicMeasurementAccessService;
 	}
 }

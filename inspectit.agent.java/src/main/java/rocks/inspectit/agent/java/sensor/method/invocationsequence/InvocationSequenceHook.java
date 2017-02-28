@@ -47,6 +47,8 @@ import rocks.inspectit.shared.all.communication.data.TimerData;
 import rocks.inspectit.shared.all.instrumentation.config.impl.MethodSensorTypeConfig;
 import rocks.inspectit.shared.all.instrumentation.config.impl.PlatformSensorTypeConfig;
 import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
+import rocks.inspectit.shared.all.tracing.data.ClientSpan;
+import rocks.inspectit.shared.all.tracing.data.PropagationType;
 import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
 /**
@@ -509,8 +511,10 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 				// For mobile data
 				HttpTimerData httpTimerData = (HttpTimerData) dataObject;
 				invocationSequenceData.setTimerData(httpTimerData);
-				String remoteCallID = httpTimerData.getHeaders().get("remoteCallID");
-				invocationSequenceData.setSpanIdent(new SpanIdent(Integer.parseInt(remoteCallID), 0, 0));
+				String parentID = httpTimerData.getHeaders().get("remoteCallID");
+				String traceID = httpTimerData.getHeaders().get("traceID");
+				SpanIdent spanIdent = new SpanIdent(invocationSequenceData.getId(), Long.valueOf(traceID), Long.valueOf(parentID));
+				invocationSequenceData.setSpanIdent(spanIdent);
 			}
 		}
 

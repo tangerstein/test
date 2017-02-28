@@ -15,7 +15,7 @@ import rocks.inspectit.shared.cs.cmr.service.IServerStatusService;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IStorageService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
-import rocks.inspectit.shared.cs.cmr.service.IUsecaseAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 
 /**
@@ -329,22 +329,22 @@ public abstract class CmrServiceProvider {
 	protected abstract IAgentInstrumentationService getAgentInstrumentationService();
 
 	/**
-	 * Returns properly initialized {@link IUsecaseAccessService}.
+	 * Returns properly initialized {@link IMobilePeriodicMeasurementAccessService}.
 	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
-	 * @return Returns {@link IUsecaseAccessService}.
+	 * @return Returns {@link IMobilePeriodicMeasurementAccessService}.
 	 */
-	public IUsecaseAccessService getUsecaseAccessService(CmrRepositoryDefinition cmrRepositoryDefinition) {
-		IUsecaseAccessService usecaseAccessService = getUsecaseAccessService();
+	public IMobilePeriodicMeasurementAccessService getUsecaseAccessService(CmrRepositoryDefinition cmrRepositoryDefinition) {
+		IMobilePeriodicMeasurementAccessService usecaseAccessService = getUsecaseAccessService();
 		((ICmrService) usecaseAccessService).initService(cmrRepositoryDefinition);
 		return usecaseAccessService;
 	}
 
 	/**
-	 * Returns Spring created {@link IUsecaseAccessService}.
+	 * Returns Spring created {@link IMobilePeriodicMeasurementAccessService}.
 	 *
-	 * @return Returns Spring created {@link IUsecaseAccessService}.
+	 * @return Returns Spring created {@link IMobilePeriodicMeasurementAccessService}.
 	 */
-	protected abstract IUsecaseAccessService getUsecaseAccessService();
+	protected abstract IMobilePeriodicMeasurementAccessService getUsecaseAccessService();
 }
