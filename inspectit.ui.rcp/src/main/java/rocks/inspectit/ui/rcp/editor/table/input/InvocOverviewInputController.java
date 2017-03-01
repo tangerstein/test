@@ -33,7 +33,6 @@ import org.springframework.http.HttpStatus;
 
 import rocks.inspectit.shared.all.cmr.model.MethodIdent;
 import rocks.inspectit.shared.all.cmr.service.ICachedDataService;
-import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.comparator.DefaultDataComparatorEnum;
 import rocks.inspectit.shared.all.communication.comparator.IDataComparator;
 import rocks.inspectit.shared.all.communication.comparator.InvocationSequenceDataComparatorEnum;
@@ -379,7 +378,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean canOpenInput(List<? extends DefaultData> data) {
+	public boolean canOpenInput(List<? extends Object> data) {
 		if (data.isEmpty()) {
 			return true;
 		}

@@ -19,13 +19,14 @@ import rocks.inspectit.shared.cs.cmr.service.IGlobalDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IHttpTimerDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IJmxDataAccessService;
-import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
+import rocks.inspectit.shared.cs.cmr.service.ISpanService;
 import rocks.inspectit.shared.cs.cmr.service.ISqlDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ITimerDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.cache.CachedDataService;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
 import rocks.inspectit.ui.rcp.repository.service.storage.StorageServiceProvider;
+import rocks.inspectit.ui.rcp.repository.service.storage.StorageSpanService;
 
 import com.google.common.base.Objects;
 
@@ -94,9 +95,9 @@ public class StorageRepositoryDefinition implements RepositoryDefinition {
 	private IBusinessContextManagementService businessContextService;
 	
 	/**
-	 * {@link IMobilePeriodicMeasurementAccessService}.
+	 * {@link ISpanService}.
 	 */
-	private IMobilePeriodicMeasurementAccessService usecaseAccessService;
+	private ISpanService spanService;
 
 	/**
 	 * {@link StorageServiceProvider} for instantiating storage services.
@@ -218,13 +219,13 @@ public class StorageRepositoryDefinition implements RepositoryDefinition {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public IMobilePeriodicMeasurementAccessService getUsecaseAccessService() {
-		return usecaseAccessService;
+	public ISpanService getSpanService() {
+		return spanService;
 	}
-
 
 	/**
 	 * {@inheritDoc}
+	 */
 	 */
 	@SuppressWarnings("unchecked")
 	public void initServices() {
@@ -237,7 +238,7 @@ public class StorageRepositoryDefinition implements RepositoryDefinition {
 		httpTimerDataAccessService = storageServiceProvider.createStorageHttpTimerDataAccessService(this, localStorageData, (IStorageTreeComponent<HttpTimerData>) indexingTree);
 		jmxDataAccessService = storageServiceProvider.createStorageJmxDataAccessService(this, localStorageData, (IStorageTreeComponent<JmxSensorValueData>) indexingTree);
 		businessContextService = storageServiceProvider.createStorageBusinessContextService(this, localStorageData, (IStorageTreeComponent<DefaultData>) indexingTree, businessTransactions);
-		usecaseAccessService = storageServiceProvider.createStorageMobilePeriodicMeasurementAccessService(this, localStorageData, (IStorageTreeComponent<MobilePeriodicMeasurement>) indexingTree);
+		spanService = new StorageSpanService();
 		// for storage we use the regular cached data service because ids can never change
 		cachedDataService = new CachedDataService(globalDataAccessService, businessContextService);
 	}
