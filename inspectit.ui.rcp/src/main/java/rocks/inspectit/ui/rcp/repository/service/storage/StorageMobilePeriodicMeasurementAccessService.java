@@ -1,61 +1,58 @@
 package rocks.inspectit.ui.rcp.repository.service.storage;
 
+import java.sql.Timestamp;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
-import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
-import rocks.inspectit.shared.cs.indexing.storage.impl.UsecaseAwareStorageIndexQuery;
+import rocks.inspectit.shared.cs.indexing.storage.impl.MobilePeriodicMeasurementAwareStorageIndexQuery;
 
 /**
- * {@link IInvocationDataAccessService} for storage purposes.
+ * {@link IMobilePeriodicMeasurementAccessService} for storage purposes.
  *
- * @author Ivan Senic
+ * @author Tobias Angerstein, Manuel Palenga
  *
  */
 public class StorageMobilePeriodicMeasurementAccessService extends AbstractStorageService<MobilePeriodicMeasurement> implements IMobilePeriodicMeasurementAccessService {
+	
 	/**
 	 * Indexing tree.
 	 */
 	private IStorageTreeComponent<MobilePeriodicMeasurement> indexingTree;
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public ConcurrentHashMap<Long, MobilePeriodicMeasurement> getAllUseCaseInstances() {
-		UsecaseAwareStorageIndexQuery query = new UsecaseAwareStorageIndexQuery();
-		query.setUsecaseDescription(null);
+	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances() {
+		MobilePeriodicMeasurementAwareStorageIndexQuery query = new MobilePeriodicMeasurementAwareStorageIndexQuery();
 		List<MobilePeriodicMeasurement> resultList = super.executeQuery(query);
-		ConcurrentHashMap<Long, MobilePeriodicMeasurement> resultMap = new ConcurrentHashMap<Long, MobilePeriodicMeasurement>();
-		for(MobilePeriodicMeasurement element : resultList){
-			resultMap.put(element.getId(), element);
-		}
-		return resultMap;
+		return resultList;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public MobilePeriodicMeasurement getSingleUseCaseInstance(long usecaseId) {
-		UsecaseAwareStorageIndexQuery query = new UsecaseAwareStorageIndexQuery();
-		query.setUsecaseId(usecaseId);
-		query.setUsecaseDescription(null);
+	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(long deviceID) {
+		MobilePeriodicMeasurementAwareStorageIndexQuery query = new MobilePeriodicMeasurementAwareStorageIndexQuery();
+		query.setDeviceID(deviceID);
 		List<MobilePeriodicMeasurement> resultList =  super.executeQuery(query);
-		if(resultList.size() > 1){
-			throw new IllegalStateException("Dublicate MobileUsecaseElement objects with the same Id were found");
-		}
-		return resultList.get(0);
+		return resultList;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public ConcurrentHashMap<Long, MobilePeriodicMeasurement> getAllUsecaseInstances(
-			String usecaseDescription) {
-		UsecaseAwareStorageIndexQuery query = new UsecaseAwareStorageIndexQuery();
-		query.setUsecaseDescription(usecaseDescription);
+	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(long deviceID, long fromTimestamp, long toTimestamp) {
+		MobilePeriodicMeasurementAwareStorageIndexQuery query = new MobilePeriodicMeasurementAwareStorageIndexQuery();
+		query.setDeviceID(deviceID);
+		query.setFromDate(new Timestamp(fromTimestamp));
+		query.setToDate(new Timestamp(toTimestamp));
 		List<MobilePeriodicMeasurement> resultList =  super.executeQuery(query);
-		ConcurrentHashMap<Long, MobilePeriodicMeasurement> resultMap = new ConcurrentHashMap<Long, MobilePeriodicMeasurement>();
-		for(MobilePeriodicMeasurement element : resultList){
-			resultMap.put(element.getId(), element);
-		}
-		return resultMap;
+		return resultList;
 	}
 
 	@Override
@@ -63,10 +60,8 @@ public class StorageMobilePeriodicMeasurementAccessService extends AbstractStora
 		return indexingTree;
 	}
 
-	public void setIndexingTree(
-			IStorageTreeComponent<MobilePeriodicMeasurement> storageTreeComponent) {
-		this.indexingTree = storageTreeComponent;
-		
+	public void setIndexingTree(IStorageTreeComponent<MobilePeriodicMeasurement> storageTreeComponent) {
+		this.indexingTree = storageTreeComponent;		
 	}
 
 }

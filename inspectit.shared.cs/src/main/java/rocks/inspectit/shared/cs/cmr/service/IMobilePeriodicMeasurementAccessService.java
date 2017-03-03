@@ -1,35 +1,39 @@
 package rocks.inspectit.shared.cs.cmr.service;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 import rocks.inspectit.shared.all.cmr.service.ServiceExporterType;
 import rocks.inspectit.shared.all.cmr.service.ServiceInterface;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 
-// TODO: EDIT ME
-// TODO: EDIT ME
-// TODO: EDIT ME
-
+/**
+ * Storage methods for {@link MobilePeriodicMeasurement} instaces.
+ * 
+ * @author Tobias Angerstein, Manuel Palenga
+ * 
+ */
 @ServiceInterface(exporter = ServiceExporterType.HTTP)
 public interface IMobilePeriodicMeasurementAccessService {
+	
 	/**
-	 * Returns all available usecases
+	 * Returns all available {@link MobilePeriodicMeasurement} instances.
 	 * 
 	 * @return
 	 */
-	public ConcurrentHashMap<Long, MobilePeriodicMeasurement> getAllUseCaseInstances();
+	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances();
 
 	/**
-	 * Returns a specific use case
+	 * Returns all {@link MobilePeriodicMeasurement} instances from a specific deviceID.
 	 * 
 	 * @return
 	 */
-	public MobilePeriodicMeasurement getSingleUseCaseInstance(long usecaseId);
-
+	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(long deviceID);
+	
 	/**
-	 * Get all usecase instances which belong to the same usecase 
-	 * @param usecaseDescription
+	 * Returns all {@link MobilePeriodicMeasurement} instances from a specific deviceID in an interval.
+	 * 
+	 * @return
 	 */
-	public ConcurrentHashMap<Long, MobilePeriodicMeasurement> getAllUsecaseInstances(String usecaseDescription);
+	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(long deviceID, long fromTimestamp, long toTimestamp);
 
 }

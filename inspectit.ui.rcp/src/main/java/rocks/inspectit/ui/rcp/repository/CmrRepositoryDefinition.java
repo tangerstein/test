@@ -238,18 +238,12 @@ public class CmrRepositoryDefinition implements RepositoryDefinition, ICmrReposi
 	 * CMR repository change listeners.
 	 */
 	private List<CmrRepositoryChangeListener> cmrRepositoryChangeListeners = new ArrayList<>(1);
+	
 	/**
-	 * Usecase access service
+	 * MobilePeriodicMeasurement access service
 	 */
-	private IMobilePeriodicMeasurementAccessService usecaseAccessService;
+	private IMobilePeriodicMeasurementAccessService mobilePeriodicMeasurementAccessService;
 
-	public IMobilePeriodicMeasurementAccessService getUsecaseAccessService() {
-		return usecaseAccessService;
-	}
-
-	public void setUsecaseAccessService(IMobilePeriodicMeasurementAccessService usecaseAccessService) {
-		this.usecaseAccessService = usecaseAccessService;
-	}
 
 	/**
 	 * Calls default constructor with name 'Undefined'.
@@ -296,7 +290,7 @@ public class CmrRepositoryDefinition implements RepositoryDefinition, ICmrReposi
 		influxDBService = cmrServiceProvider.getInfluxDBService(this);
 		alertAccessService = cmrServiceProvider.getAlertAccessService(this);
 		agentInstrumentationService = cmrServiceProvider.getAgentInstrumentationService(this);
-		usecaseAccessService = cmrServiceProvider.getUsecaseAccessService(this);
+		mobilePeriodicMeasurementAccessService = cmrServiceProvider.getMobilePeriodicMeasurementAccessService(this);
 		spanService = cmrServiceProvider.getSpanService(this);
 		cachedDataService = new RefreshEditorsCachedDataService(globalDataAccessService, businessContextManagementService, this);
 	}
@@ -404,6 +398,14 @@ public class CmrRepositoryDefinition implements RepositoryDefinition, ICmrReposi
 	@Override
 	public ISpanService getSpanService() {
 		return spanService;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IMobilePeriodicMeasurementAccessService getMobilePeriodicMeasurementAccess() {
+		return mobilePeriodicMeasurementAccessService;
 	}
 
 	/**

@@ -105,9 +105,16 @@ public interface RepositoryDefinition {
 	IBusinessContextManagementService getBusinessContextMangementService();
 	
 	/**
+	 * Returns the {@link ISpanService}.
+	 *
+	 * @return Returns the {@link ISpanService}.
+	 */
+	ISpanService getSpanService();
+	
+	/**
 	 * Returns the {@link IMobilePeriodicMeasurementAccessService}.
 	 * 
 	 * @return Returns the {@link IMobilePeriodicMeasurementAccessService}.
 	 */
-	IMobilePeriodicMeasurementAccessService getUsecaseAccessService();
+	IMobilePeriodicMeasurementAccessService getMobilePeriodicMeasurementAccess();
 }

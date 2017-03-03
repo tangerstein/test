@@ -238,7 +238,7 @@ public abstract class StorageServiceProvider {
 	/**
 	 * @return Spring created {@link StorageMobilePeriodicMeasurementAccessService }.
 	 */
-	protected abstract StorageMobilePeriodicMeasurementAccessService createStorageUsecaseAccessService();
+	protected abstract StorageMobilePeriodicMeasurementAccessService createStorageMobilePeriodicMeasurementAccessService();
 
 	/**
 	 * Properly initialized {@link StorageJmxDataAccessService}.
@@ -253,7 +253,7 @@ public abstract class StorageServiceProvider {
 	 */
 	public StorageMobilePeriodicMeasurementAccessService createStorageMobilePeriodicMeasurementAccessService(StorageRepositoryDefinition storageRepositoryDefinition, LocalStorageData localStorageData,
 			IStorageTreeComponent<MobilePeriodicMeasurement> storageTreeComponent) {
-		StorageMobilePeriodicMeasurementAccessService storageMobilePeriodicMeasurementAccessService = createStorageUsecaseAccessService();
+		StorageMobilePeriodicMeasurementAccessService storageMobilePeriodicMeasurementAccessService = createStorageMobilePeriodicMeasurementAccessService();
 		storageMobilePeriodicMeasurementAccessService.setStorageRepositoryDefinition(storageRepositoryDefinition);
 		storageMobilePeriodicMeasurementAccessService.setLocalStorageData(localStorageData);
 		storageMobilePeriodicMeasurementAccessService.setIndexingTree(storageTreeComponent);
