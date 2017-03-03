@@ -1,8 +1,6 @@
 package rocks.inspectit.server.service.rest;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import io.gsonfire.GsonFireBuilder;
-import io.gsonfire.TypeSelector;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -15,30 +13,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
+import io.gsonfire.GsonFireBuilder;
+import io.gsonfire.TypeSelector;
 import rocks.inspectit.agent.java.sdk.opentracing.internal.impl.SpanBuilderImpl;
 import rocks.inspectit.agent.java.sdk.opentracing.internal.impl.SpanImpl;
 import rocks.inspectit.agent.java.sdk.opentracing.internal.impl.TracerImpl;
-import rocks.inspectit.agent.java.tracing.core.transformer.SpanTransformer;
 import rocks.inspectit.server.cache.IBuffer;
-import rocks.inspectit.server.cache.impl.BufferElement;
 import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.server.util.PlatformIdentCache;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
-import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
 import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-
 /**
- * Restful service provider for detail {@link MobileBeacon} information.
+ * Restful service provider for detail information.
  *
  * @author Tobias Angerstein, Alper Hidiroglu, Manuel Palenga
  *
@@ -65,91 +61,32 @@ public class AgentRestfulService {
 		return new JsonError(exception).asModelAndView();
 	}
 
-	/*
-	@RequestMapping(method = POST, value = "")
-	@ResponseBody
-	public void addNewMobileBeacon(@RequestBody String json) {
-
-		Gson gson = getGson();
-		MobileBeacon mobileBeacon = gson.fromJson(json, MobileBeacon.class);
-
-		List<InvocationSequenceData> listSequenceDatas = new ArrayList<InvocationSequenceData>();
-
-		for (DefaultData data : mobileBeacon.getData()) {
-			if (data instanceof MobileIOSElement) {
-				MobileIOSElement iOSElement = (MobileIOSElement) data;
-
-				// MobileUsecaseElement usecaseElement = new
-				// MobileUsecaseElement();
-				MobileUsecaseElement usecaseElement = (MobileUsecaseElement) iOSElement;
-
-				// Set data which are not in the MobileIOSElement class
-				usecaseElement.setDeviceID(mobileBeacon.getDeviceID());
-				List<MobilePeriodicMeasurement> relevantMeasurements = mobileBeacon.getMeasurements();
-
-				// Remove irrelevant measurements, which are not in the defined
-				// timeslot
-				for (MobilePeriodicMeasurement measurement : relevantMeasurements) {
-					if (!(measurement.getTimestamp() <= iOSElement.getStopMeasurement().getTimestamp())
-							&& !(measurement.getTimestamp() >= iOSElement.getStartMeasurement().getTimestamp())) {
-						relevantMeasurements.remove(measurement);
-					}
-				}
-				usecaseElement.setMeasurements(mobileBeacon.getMeasurements());
-				usecaseElement.getMeasurements().add(0, iOSElement.getStartMeasurement());
-				usecaseElement.getMeasurements().add(iOSElement.getStopMeasurement());
-				mobileTraceStorage.push(usecaseElement);
-			}
-			// TODO Convertion
-			List<PlatformIdent> platformIdentList = new ArrayList<PlatformIdent>();
-			Collection<PlatformIdent> platformIdents = platformCache.getCleanPlatformIdents();
-			for (PlatformIdent platIdent : platformIdents) {
-				platformIdentList.add(platIdent);
-			}
-			PlatformIdent ident = new PlatformIdent();
-			ident.setId(-1L);
-			platformIdentList.add(ident);
-			// TODO
-			for (InvocationSequenceData invocationSequenceData : listSequenceDatas) {
-				InspectITTraceConverter converter = new InspectITTraceConverter();
-				Trace trace = converter.convertTraces(invocationSequenceData, platformIdentList);
-				// Trace trace = TraceCreator.getTestTrace1();
-				try {
-					Launcher.startLauncher(trace, RulePackage.MobilePackage);
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-	*/
 	
 	@RequestMapping(method = POST, value = "")
 	@ResponseBody
-	public void addNewMobileBeacon(@RequestBody String json) {
+	// public void addNewMobileRoot(@RequestBody String json) {
 
-		Gson gson = getGson();
-		MobileRoot mobileRoot = gson.fromJson(json, MobileRoot.class);
-		
-		for(SpanImpl span : mobileRoot.spans){
-			span.setTag("deviceID", mobileRoot.getDeviceID());
-			AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
-			abstractSpan.setPlatformIdent(-1);
-			abstractSpan.setMethodIdent(-1);
-			abstractSpan.setSensorTypeIdent(-1);
-
-			buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
-		}
-		
-		for(MobilePeriodicMeasurement measurement : mobileRoot.measurements){
-			measurement.setDeviceID(mobileRoot.getDeviceID());
-			measurement.setPlatformIdent(-2);
-			measurement.setSensorTypeIdent(-2);
-			measurement.setTimeStamp(new Timestamp(measurement.getTimestamp()));
-			buffer.put(new BufferElement<DefaultData>((DefaultData)measurement));
-		}
-	}
+	// Gson gson = getGson();
+	// MobileRoot mobileRoot = gson.fromJson(json, MobileRoot.class);
+	//
+	// for (SpanImpl span : mobileRoot.spans) {
+	// span.setTag("deviceID", mobileRoot.getDeviceID());
+	// AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
+	// abstractSpan.setPlatformIdent(-1);
+	// abstractSpan.setMethodIdent(-1);
+	// abstractSpan.setSensorTypeIdent(-1);
+	//
+	// buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
+	// }
+	//
+	// for (MobilePeriodicMeasurement measurement : mobileRoot.measurements) {
+	// measurement.setDeviceID(mobileRoot.getDeviceID());
+	// measurement.setPlatformIdent(-2);
+	// measurement.setSensorTypeIdent(-2);
+	// measurement.setTimeStamp(new Timestamp(measurement.getTimestamp()));
+	// buffer.put(new BufferElement<DefaultData>((DefaultData) measurement));
+	// }
+	// }
 
 	private Gson getGson() {
 		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(DefaultData.class, new TypeSelector<DefaultData>() {
