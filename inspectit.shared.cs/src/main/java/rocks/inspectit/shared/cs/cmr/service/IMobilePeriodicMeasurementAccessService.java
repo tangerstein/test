@@ -7,7 +7,7 @@ import rocks.inspectit.shared.all.cmr.service.ServiceInterface;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 
 /**
- * Storage methods for {@link MobilePeriodicMeasurement} instaces.
+ * Storage methods for {@link MobilePeriodicMeasurement} instances.
  * 
  * @author Tobias Angerstein, Manuel Palenga
  * 

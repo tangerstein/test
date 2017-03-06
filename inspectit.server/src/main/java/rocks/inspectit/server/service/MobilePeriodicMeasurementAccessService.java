@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import rocks.inspectit.server.dao.impl.BufferPeriodicMeasurementDao;
 import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ISpanService;
@@ -21,51 +22,27 @@ public class MobilePeriodicMeasurementAccessService implements IMobilePeriodicMe
 	//TODO: Edit MobilePeriodicMeasurement
 	
 	/**
-	 * The invocation DAO.
+	 * The mobilePeriodicMeasurement DAO.
 	 */
-	//@Autowired
-	//private MobileTraceStorage mobileTraceStorage;
-	
+	@Autowired
+	private BufferPeriodicMeasurementDao periodicMeasurementDao;
+
 	@Override
 	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances() {
-		// TODO Auto-generated method stub
-		return null;
+		return periodicMeasurementDao.getMobilePeriodicMeasurementInstances();
 	}
 
 	@Override
 	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(
 			long deviceID) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return periodicMeasurementDao.getMobilePeriodicMeasurementInstances(deviceID);
 	}
 
 	@Override
 	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(
 			long deviceID, long fromTimestamp, long toTimestamp) {
 		// TODO Auto-generated method stub
-		return null;
+		return periodicMeasurementDao.getMobilePeriodicMeasurementInstances(deviceID, fromTimestamp, toTimestamp);
 	}
-
-//
-//	@Override
-//	public ConcurrentHashMap<Long, MobilePeriodicMeasurement> getAllUseCaseInstances() {
-//		return mobileTraceStorage.getMapCopy();
-//	}
-//
-//	@Override
-//	public MobilePeriodicMeasurement getSingleUseCaseInstance(long usecaseId) {
-//		return mobileTraceStorage.get(usecaseId);
-//	}
-//
-//	@Override
-//	public ConcurrentHashMap<Long, MobilePeriodicMeasurement> getAllUsecaseInstances(String usecaseDescription) {
-//		ConcurrentHashMap<Long, MobilePeriodicMeasurement> map = mobileTraceStorage.getMapCopy();
-//		for (MobilePeriodicMeasurement usecaseInstance : map.values()) {
-//			if (!(usecaseInstance.getUseCaseDescription().equals(usecaseDescription))) {
-//				map.remove(usecaseInstance.getUseCaseID());
-//			}
-//		}
-//		return map;
-//	}
-
 }

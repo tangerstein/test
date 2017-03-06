@@ -3,6 +3,8 @@ package rocks.inspectit.ui.rcp.repository;
 import java.util.Collection;
 import java.util.List;
 
+import com.google.common.base.Objects;
+
 import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.ExceptionSensorData;
@@ -28,8 +30,6 @@ import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
 import rocks.inspectit.ui.rcp.repository.service.storage.StorageServiceProvider;
 import rocks.inspectit.ui.rcp.repository.service.storage.StorageSpanService;
-
-import com.google.common.base.Objects;
 
 /**
  * Storage repository definition. This {@link RepositoryDefinition} has a direct usage of a
