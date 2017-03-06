@@ -18,7 +18,7 @@ import org.codehaus.jackson.annotate.JsonSubTypes.Type;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
 
 import rocks.inspectit.shared.all.cmr.cache.IObjectSizes;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.indexing.IIndexQuery;
 
 /**

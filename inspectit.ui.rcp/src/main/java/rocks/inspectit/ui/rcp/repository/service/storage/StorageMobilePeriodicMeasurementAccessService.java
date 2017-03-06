@@ -3,7 +3,7 @@ package rocks.inspectit.ui.rcp.repository.service.storage;
 import java.sql.Timestamp;
 import java.util.List;
 
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageTreeComponent;
 import rocks.inspectit.shared.cs.indexing.storage.impl.MobilePeriodicMeasurementAwareStorageIndexQuery;

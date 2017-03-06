@@ -4,7 +4,7 @@ import java.util.List;
 
 import rocks.inspectit.shared.all.cmr.service.ServiceExporterType;
 import rocks.inspectit.shared.all.cmr.service.ServiceInterface;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 
 /**
  * Storage methods for {@link MobilePeriodicMeasurement} instaces.

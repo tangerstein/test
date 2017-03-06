@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.shared.cs.cmr.service.ISpanService;
 

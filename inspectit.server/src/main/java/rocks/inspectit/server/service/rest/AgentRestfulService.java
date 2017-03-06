@@ -30,7 +30,7 @@ import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.server.util.PlatformIdentCache;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
-import rocks.inspectit.shared.all.communication.data.eum.mobile.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
 /**
