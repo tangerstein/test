@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
@@ -25,12 +26,15 @@ import io.gsonfire.TypeSelector;
 import rocks.inspectit.agent.java.sdk.opentracing.internal.impl.SpanBuilderImpl;
 import rocks.inspectit.agent.java.sdk.opentracing.internal.impl.SpanImpl;
 import rocks.inspectit.agent.java.sdk.opentracing.internal.impl.TracerImpl;
+import rocks.inspectit.agent.java.tracing.core.transformer.SpanTransformer;
 import rocks.inspectit.server.cache.IBuffer;
+import rocks.inspectit.server.cache.impl.BufferElement;
 import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.server.util.PlatformIdentCache;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
 import rocks.inspectit.shared.all.tracing.data.SpanIdent;
 
 /**
@@ -64,29 +68,29 @@ public class AgentRestfulService {
 	
 	@RequestMapping(method = POST, value = "")
 	@ResponseBody
-	// public void addNewMobileRoot(@RequestBody String json) {
+	public void addNewMobileRoot(@RequestBody String json) {
 
-	// Gson gson = getGson();
-	// MobileRoot mobileRoot = gson.fromJson(json, MobileRoot.class);
-	//
-	// for (SpanImpl span : mobileRoot.spans) {
-	// span.setTag("deviceID", mobileRoot.getDeviceID());
-	// AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
-	// abstractSpan.setPlatformIdent(-1);
-	// abstractSpan.setMethodIdent(-1);
-	// abstractSpan.setSensorTypeIdent(-1);
-	//
-	// buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
-	// }
-	//
-	// for (MobilePeriodicMeasurement measurement : mobileRoot.measurements) {
-	// measurement.setDeviceID(mobileRoot.getDeviceID());
-	// measurement.setPlatformIdent(-2);
-	// measurement.setSensorTypeIdent(-2);
-	// measurement.setTimeStamp(new Timestamp(measurement.getTimestamp()));
-	// buffer.put(new BufferElement<DefaultData>((DefaultData) measurement));
-	// }
-	// }
+		Gson gson = getGson();
+		MobileRoot mobileRoot = gson.fromJson(json, MobileRoot.class);
+
+		for (SpanImpl span : mobileRoot.spans) {
+			span.setTag("deviceID", mobileRoot.getDeviceID());
+			AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
+			abstractSpan.setPlatformIdent(-1);
+			abstractSpan.setMethodIdent(-1);
+			abstractSpan.setSensorTypeIdent(-1);
+
+			buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
+		}
+
+		for (MobilePeriodicMeasurement measurement : mobileRoot.measurements) {
+			measurement.setDeviceID(mobileRoot.getDeviceID());
+			measurement.setPlatformIdent(-2);
+			measurement.setSensorTypeIdent(-2);
+			measurement.setTimeStamp(new Timestamp(measurement.getTimestamp()));
+			buffer.put(new BufferElement<DefaultData>((DefaultData) measurement));
+		}
+	}
 
 	private Gson getGson() {
 		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(DefaultData.class, new TypeSelector<DefaultData>() {
