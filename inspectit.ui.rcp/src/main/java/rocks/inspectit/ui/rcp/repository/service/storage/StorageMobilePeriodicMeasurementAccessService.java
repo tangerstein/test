@@ -38,7 +38,7 @@ public class StorageMobilePeriodicMeasurementAccessService extends AbstractStora
 	public List<MobilePeriodicMeasurement> getMobilePeriodicMeasurementInstances(long deviceID) {
 		MobilePeriodicMeasurementAwareStorageIndexQuery query = new MobilePeriodicMeasurementAwareStorageIndexQuery();
 		query.setDeviceID(deviceID);
-		List<MobilePeriodicMeasurement> resultList =  super.executeQuery(query);
+		List<MobilePeriodicMeasurement> resultList = super.executeQuery(query);
 		return resultList;
 	}
 

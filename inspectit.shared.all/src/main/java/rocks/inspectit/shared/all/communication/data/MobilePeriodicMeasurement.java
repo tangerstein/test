@@ -52,6 +52,13 @@ public class MobilePeriodicMeasurement extends DefaultData {
 	}
 	
 	/**
+	 * Kryo.
+	 */
+	public MobilePeriodicMeasurement() {
+		// TODO Auto-generated constructor stub
+	}
+
+	/**
 	 * @param deviceID
 	 */
 	public void setDeviceID(long deviceID) {

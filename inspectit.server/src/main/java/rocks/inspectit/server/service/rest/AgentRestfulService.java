@@ -30,6 +30,7 @@ import rocks.inspectit.agent.java.tracing.core.transformer.SpanTransformer;
 import rocks.inspectit.server.cache.IBuffer;
 import rocks.inspectit.server.cache.impl.BufferElement;
 import rocks.inspectit.server.service.rest.error.JsonError;
+import rocks.inspectit.server.util.CacheIdGenerator;
 import rocks.inspectit.server.util.PlatformIdentCache;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
@@ -53,6 +54,9 @@ public class AgentRestfulService {
 	@Autowired
 	private IBuffer<DefaultData> buffer;
 
+	@Autowired
+	private CacheIdGenerator idGenerator;
+
 	/**
 	 * Handling of all the exceptions happening in this controller.
 	 *
@@ -65,7 +69,6 @@ public class AgentRestfulService {
 		return new JsonError(exception).asModelAndView();
 	}
 
-	
 	@RequestMapping(method = POST, value = "")
 	@ResponseBody
 	public void addNewMobileRoot(@RequestBody String json) {
@@ -77,8 +80,9 @@ public class AgentRestfulService {
 			span.setTag("deviceID", mobileRoot.getDeviceID());
 			AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
 			abstractSpan.setPlatformIdent(-1);
-			abstractSpan.setMethodIdent(-1);
-			abstractSpan.setSensorTypeIdent(-1);
+			abstractSpan.setMethodIdent(0);
+			abstractSpan.setSensorTypeIdent(0);
+			idGenerator.assignObjectAnId(abstractSpan);
 
 			buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
 		}
@@ -86,8 +90,11 @@ public class AgentRestfulService {
 		for (MobilePeriodicMeasurement measurement : mobileRoot.measurements) {
 			measurement.setDeviceID(mobileRoot.getDeviceID());
 			measurement.setPlatformIdent(-2);
-			measurement.setSensorTypeIdent(-2);
+			measurement.setSensorTypeIdent(0);
+			idGenerator.assignObjectAnId(measurement);
+
 			measurement.setTimeStamp(new Timestamp(measurement.getTimestamp()));
+
 			buffer.put(new BufferElement<DefaultData>((DefaultData) measurement));
 		}
 	}
@@ -119,23 +126,21 @@ public class AgentRestfulService {
 	@RequestMapping(method = POST, value = "/defaultJSON")
 	@ResponseBody
 	public MobileRoot getNewMobileBeacon() {
-		
+
 		MobileRoot root = new MobileRoot();
 		root.deviceID = 4242123456784242l;
-		
+
 		TracerImpl tracerImpl = new TracerImpl();
 		SpanBuilderImpl usecaseBuilder = tracerImpl.buildSpan("Load screen");
-		SpanImpl spanUsecase = usecaseBuilder
-			.withTag("span.kind", "client")
-			.start();
-		
+		SpanImpl spanUsecase = usecaseBuilder.withTag("span.kind", "client").start();
+
 		SpanBuilderImpl remoteBuilder = tracerImpl.buildSpan(null);
 		SpanImpl spanRemoteCall = remoteBuilder.asChildOf(spanUsecase.context()).start();
 		spanRemoteCall.setTag("span.kind", "server");
-		
+
 		// Global information
 		spanRemoteCall.setTag("http.url", "localhost:8080/callRest");
-		
+
 		// Request information
 		spanRemoteCall.setTag("http.request.ssid", "1234-5678");
 		spanRemoteCall.setTag("http.request.networkConnection", "4G");
@@ -152,8 +157,7 @@ public class AgentRestfulService {
 		spanRemoteCall.setTag("http.response.timeout", "false");
 		spanRemoteCall.setTag("http.response.longitude", "48.321");
 		spanRemoteCall.setTag("http.response.latitude", "13.52345");
-		
-		
+
 		List<MobilePeriodicMeasurement> measurements = new ArrayList<MobilePeriodicMeasurement>();
 		measurements.add(new MobilePeriodicMeasurement(2423234524L, 12, 81.236218F, 83.24683246F, 12.12f));
 		measurements.add(new MobilePeriodicMeasurement(2423234525L, 23, 96.99F, 10.500000F, 22.12f));
@@ -161,11 +165,11 @@ public class AgentRestfulService {
 		measurements.add(new MobilePeriodicMeasurement(2423234727L, 45, 80.99F, 11.500000F, 13.12f));
 		measurements.add(new MobilePeriodicMeasurement(2423244828L, 56, 83.236218F, 82.24683246F, 12.12f));
 		measurements.add(new MobilePeriodicMeasurement(2423244829L, 67, 97.99F, 11.400000F, 15.12f));
-		
+
 		root.spans.add(spanUsecase);
 		root.spans.add(spanRemoteCall);
 		root.measurements = measurements;
-		
+
 		return root;
 	}
 
@@ -187,8 +191,8 @@ public class AgentRestfulService {
 		remoteCall2.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
 		remoteCall2.setId(43);
 		remoteCall2.setSpanIdent(new SpanIdent(2, 0, 0));
-//		buffer.put(new BufferElement<InvocationSequenceData>(remoteCall));
-//		buffer.put(new BufferElement<InvocationSequenceData>(remoteCall2));
+		// buffer.put(new BufferElement<InvocationSequenceData>(remoteCall));
+		// buffer.put(new BufferElement<InvocationSequenceData>(remoteCall2));
 
 	}
 
@@ -203,32 +207,32 @@ public class AgentRestfulService {
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 	}
-	
+
 	private class MobileRoot {
-		
+
 		private long deviceID;
 		private List<SpanImpl> spans;
 		private List<MobilePeriodicMeasurement> measurements;
-			
+
 		public MobileRoot() {
 			spans = new ArrayList<SpanImpl>();
 			measurements = new ArrayList<MobilePeriodicMeasurement>();
 		}
-		
+
 		public void setDeviceID(long deviceID) {
 			this.deviceID = deviceID;
 		}
-		
+
 		public long getDeviceID() {
 			return deviceID;
 		}
-		
+
 		public List<MobilePeriodicMeasurement> getMeasurements() {
 			return measurements;
 		}
-		
+
 		public List<SpanImpl> getSpans() {
 			return spans;
-		}	
+		}
 	}
 }
