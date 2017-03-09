@@ -1,7 +1,5 @@
 package rocks.inspectit.server.diagnosis.service;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -50,11 +48,6 @@ public class DiagnosisResultNotificationServiceImpl implements IDiagnosisResultN
 			// Map request root with problem occurrence (atomic)
 			problemOccuranceBuffer.put(new BufferElement<ProblemOccurrence>(po));
 		}
-		log.warn(problemOccurrenceDataDao
-				.getProblemOccurrenceOverview(0, Timestamp.valueOf(LocalDateTime.now().minusMonths(2)),
-						Timestamp.valueOf(LocalDateTime.now()), 0, 0, 0, 0)
-				.size() + "");
-
 	}
 }
 

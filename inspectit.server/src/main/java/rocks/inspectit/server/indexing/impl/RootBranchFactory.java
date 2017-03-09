@@ -3,7 +3,6 @@ package rocks.inspectit.server.indexing.impl;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +25,7 @@ import rocks.inspectit.shared.cs.indexing.indexer.impl.TimestampIndexer;
  *
  */
 @Component
-public class RootBranchFactory implements FactoryBean<RootBranch<DefaultData>>, BeanNameAware {
+public class RootBranchFactory implements FactoryBean<RootBranch<DefaultData>> {
 
 	public String beanname;
 

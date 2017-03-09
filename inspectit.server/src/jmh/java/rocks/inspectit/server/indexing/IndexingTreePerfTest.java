@@ -187,9 +187,7 @@ public class IndexingTreePerfTest {
 		aggregatedTimerDataQuery15MinsTimeframe = timerDataQueryFactory.getAggregatedTimerDataQuery(new TimerData(null, platformIdent, 0, 0), fromDate, toDate);
 
 		// invocation data
-		InvocationSequenceDataQueryFactory<IndexQuery> invocationSequenceDataQueryFactory = new InvocationSequenceDataQueryFactory<>();
-				indexQueryProvider);
-
+		InvocationSequenceDataQueryFactory<IndexQuery> invocationSequenceDataQueryFactory = new InvocationSequenceDataQueryFactory<>(indexQueryProvider);
 		invocationOverviewQuery = invocationSequenceDataQueryFactory.getInvocationSequences(platformIdent, 0, null, null);
 	}
 

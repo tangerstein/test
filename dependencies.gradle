@@ -124,7 +124,7 @@ dependencies {
 		'com.google.guava:guava:18.0',
 		'com.github.stephenc.high-scale-lib:high-scale-lib:1.1.2',
 		'org.codehaus.jackson:jackson-core-asl:1.9.13',
-		'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
+		'org.codehaus.jackson:jackson-mapper-asl:1.9.13',
 		'org.codehaus.jackson:jackson-mapper-asl:1.9.3'
 	) 
 	sharedAllTest (
