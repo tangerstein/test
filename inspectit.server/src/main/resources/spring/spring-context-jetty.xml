@@ -209,6 +209,66 @@
 	</bean>
 	<!-- END -->
 
+	<!-- Business Context Management Service -->
+	<bean name="businessCtxMngmtRequestHandlerServlet" class="org.springframework.web.context.support.HttpRequestHandlerServlet">
+	</bean>
+
+	<bean id="businessCtxMngmtServletHolder" class="org.mortbay.jetty.servlet.ServletHolder">
+		<property name="name" value="businessContextManagementServiceExporter" />
+		<property name="servlet" ref="businessCtxMngmtRequestHandlerServlet" />
+	</bean>
+
+	<bean id="businessCtxMngmtServiceMapping" class="org.mortbay.jetty.servlet.ServletMapping">
+		<property name="servletName" value="businessContextManagementServiceExporter" />
+		<property name="pathSpec" value="/remoting/BusinessContextManagementService" />
+	</bean>
+	<!-- END -->
+	
+	<!-- Influx Database Service -->
+	<bean name="influxDBRequestHandlerServlet" class="org.springframework.web.context.support.HttpRequestHandlerServlet">
+	</bean>
+
+	<bean id="influxDBServletHolder" class="org.mortbay.jetty.servlet.ServletHolder">
+		<property name="name" value="influxDBServiceExporter" />
+		<property name="servlet" ref="influxDBRequestHandlerServlet" />
+	</bean>
+
+	<bean id="influxDBServiceMapping" class="org.mortbay.jetty.servlet.ServletMapping">
+		<property name="servletName" value="influxDBServiceExporter" />
+		<property name="pathSpec" value="/remoting/InfluxDBService" />
+	</bean>
+	<!-- END -->
+	
+	<!-- Alert Access Service -->
+	<bean name="alertAccessRequestHandlerServlet" class="org.springframework.web.context.support.HttpRequestHandlerServlet">
+	</bean>
+
+	<bean id="alertAccessServletHolder" class="org.mortbay.jetty.servlet.ServletHolder">
+		<property name="name" value="alertAccessServiceExporter" />
+		<property name="servlet" ref="alertAccessRequestHandlerServlet" />
+	</bean>
+
+	<bean id="alertAccessServiceMapping" class="org.mortbay.jetty.servlet.ServletMapping">
+		<property name="servletName" value="alertAccessServiceExporter" />
+		<property name="pathSpec" value="/remoting/AlertAccessService" />
+	</bean>
+	<!-- END -->
+
+	<!-- Agent Instrumentation Service -->
+	<bean name="agentInstrumentationRequestHandlerServlet" class="org.springframework.web.context.support.HttpRequestHandlerServlet">
+	</bean>
+
+	<bean id="agentInstrumentationServletHolder" class="org.mortbay.jetty.servlet.ServletHolder">
+		<property name="name" value="agentInstrumentationServiceExporter" />
+		<property name="servlet" ref="agentInstrumentationRequestHandlerServlet" />
+	</bean>
+
+	<bean id="agentInstrumentationServiceMapping" class="org.mortbay.jetty.servlet.ServletMapping">
+		<property name="servletName" value="agentInstrumentationServiceExporter" />
+		<property name="pathSpec" value="/remoting/AgentInstrumentationService" />
+	</bean>
+	<!-- END -->
+
 	<!-- DEFAULT SERVER FOR STATIC CONTENT -->
 	<bean id="defaultServlet" class="org.mortbay.jetty.servlet.DefaultServlet" />
 
@@ -286,10 +346,10 @@
 		<property name="pathSpec" value="*" />
 	</bean>
 	<!-- END -->
-	
+
 	<!-- Dispatcher Servlet -->
 	<bean id="springDispatcherServlet" class="org.springframework.web.servlet.DispatcherServlet" />
-	
+
 	<bean id="springDispatcherServletHolder" class="org.mortbay.jetty.servlet.ServletHolder">
 		<property name="name" value="springDispatcherServletExporter" />
 		<property name="servlet" ref="springDispatcherServlet" />
@@ -302,7 +362,7 @@
 
 	<bean id="springDispatcherServletMapping" class="org.mortbay.jetty.servlet.ServletMapping">
 		<property name="servletName" value="springDispatcherServletExporter" />
-		<property name="pathSpec" value="/rest/*"/>
+		<property name="pathSpec" value="/rest/*" />
 	</bean>
 	<!-- END -->
 
@@ -320,6 +380,10 @@
 				<ref bean="httpTimerDataAccessServiceServletHolder" />
 				<ref bean="storageServiceServletHolder" />
 				<ref bean="configurationInterfaceServiceServletHolder" />
+				<ref bean="businessCtxMngmtServletHolder" />
+				<ref bean="influxDBServletHolder" />
+				<ref bean="alertAccessServletHolder" />
+				<ref bean="agentInstrumentationServletHolder" />
 				<ref bean="defaultServletHolder" />
 				<ref bean="uploadServletHolder" />
 				<ref bean="springDispatcherServletHolder" />
@@ -338,6 +402,10 @@
 				<ref bean="httpTimerDataAccessServiceServiceMapping" />
 				<ref bean="storageServiceServiceMapping" />
 				<ref bean="configurationInterfaceServiceServiceMapping" />
+				<ref bean="businessCtxMngmtServiceMapping" />
+				<ref bean="influxDBServiceMapping" />
+				<ref bean="alertAccessServiceMapping" />
+				<ref bean="agentInstrumentationServiceMapping" />
 				<ref bean="defaultServletMapping" />
 				<ref bean="uploadServletMapping" />
 				<ref bean="springDispatcherServletMapping" />

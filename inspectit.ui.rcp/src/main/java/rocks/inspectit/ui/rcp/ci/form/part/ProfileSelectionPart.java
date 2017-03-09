@@ -27,7 +27,9 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
@@ -50,16 +52,23 @@ import rocks.inspectit.ui.rcp.editor.viewers.StyledCellIndexLabelProvider;
 import rocks.inspectit.ui.rcp.filter.FilterComposite;
 import rocks.inspectit.ui.rcp.formatter.ImageFormatter;
 import rocks.inspectit.ui.rcp.formatter.TextFormatter;
+import rocks.inspectit.ui.rcp.preferences.PreferencesConstants;
 import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 import rocks.inspectit.ui.rcp.util.SafeExecutor;
+import rocks.inspectit.ui.rcp.util.WarningUtils;
 
 /**
  * Profile selection for the environment.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class ProfileSelectionPart extends SectionPart implements IProfileChangeListener, IPropertyListener {
+
+	/**
+	 * Id of the exclude profiles ID.
+	 */
+	private static final String EXCLUDE_CLASSES_PROFILE_ID = "exclude-classes";
 
 	/**
 	 * Repository needed for loading all {@link Profile}s.
@@ -88,7 +97,7 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param formPage
 	 *            {@link FormPage} section belongs to.
 	 * @param parent
@@ -122,7 +131,7 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 
 	/**
 	 * Creates complete client.
-	 * 
+	 *
 	 * @param section
 	 *            {@link Section}
 	 * @param toolkit
@@ -151,7 +160,7 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 		tableViewer.setComparator(new ViewerComparator() {
 			@Override
 			public int compare(Viewer viewer, Object e1, Object e2) {
-				if (e1 instanceof Profile && e2 instanceof Profile) {
+				if ((e1 instanceof Profile) && (e2 instanceof Profile)) {
 					int res = Boolean.compare(((Profile) e1).isCommonProfile(), ((Profile) e2).isCommonProfile());
 					if (0 != res) {
 						return res;
@@ -174,12 +183,33 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 		tableViewer.getTable().addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (e.detail == SWT.CHECK && !isDirty()) {
+				if ((e.detail == SWT.CHECK) && !isDirty()) {
 					markDirty();
+				}
+
+				// warning for the exclude-classes un-checking
+				TableItem item = (TableItem) e.item;
+				Profile profile = (Profile) item.getData();
+				if ((e.detail == SWT.CHECK) && !item.getChecked() && EXCLUDE_CLASSES_PROFILE_ID.equals(profile.getId())) {
+					WarningUtils.inform("Exlude Classes Profile Removal", "Please note that removing default exclude classes profile from the environment can result in non-operative agent.",
+							PreferencesConstants.EXCLUDE_CLASSES_PROFILE_WARNING);
 				}
 			}
 		});
 
+		// open profile on double-click
+		tableViewer.getTable().addListener(SWT.MouseDoubleClick, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				StructuredSelection selection = (StructuredSelection) tableViewer.getSelection();
+				if (!selection.isEmpty()) {
+					Profile profile = (Profile) selection.getFirstElement();
+					new OpenProfileJob(cmrRepositoryDefinition, profile.getId(), formPage.getSite().getPage()).schedule();
+				}
+			}
+		});
+
+		// add menu as option also
 		MenuManager menuManager = new MenuManager();
 		menuManager.add(new EditProfileAction());
 		Menu menu = menuManager.createContextMenu(table);
@@ -190,12 +220,6 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 	 * Creates columns for table.
 	 */
 	private void createColumns() {
-		TableViewerColumn selectedColumn = new TableViewerColumn(tableViewer, SWT.NONE);
-		selectedColumn.getColumn().setResizable(false);
-		selectedColumn.getColumn().setWidth(40);
-		selectedColumn.getColumn().setText("Selected");
-		selectedColumn.getColumn().setToolTipText("If profile is included in the Environment.");
-
 		TableViewerColumn profileNameColumn = new TableViewerColumn(tableViewer, SWT.NONE);
 		profileNameColumn.getColumn().setResizable(true);
 		profileNameColumn.getColumn().setWidth(250);
@@ -206,21 +230,28 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 		activeColumn.getColumn().setMoveable(true);
 		activeColumn.getColumn().setResizable(true);
 		activeColumn.getColumn().setText("Active");
-		activeColumn.getColumn().setWidth(60);
-		activeColumn.getColumn().setToolTipText("If profile is active or not, note that deactivated profile will not be considered during the instrumentation even if it's a part of an Environment.");
+		activeColumn.getColumn().setWidth(40);
+		activeColumn.getColumn().setToolTipText("If profile is active or not, note that deactivated profile will not be considered during the instrumentation even if it's a part of an environment.");
 
 		TableViewerColumn defaultColumn = new TableViewerColumn(tableViewer, SWT.NONE);
 		defaultColumn.getColumn().setMoveable(true);
 		defaultColumn.getColumn().setResizable(true);
 		defaultColumn.getColumn().setText("Default");
-		defaultColumn.getColumn().setWidth(60);
-		defaultColumn.getColumn().setToolTipText("If profile is default or not, note that default profile will be added to any new created Environment.");
+		defaultColumn.getColumn().setWidth(40);
+		defaultColumn.getColumn().setToolTipText("If profile is default or not, note that default profile will be added to any new created environment.");
+
+		TableViewerColumn typeColumn = new TableViewerColumn(tableViewer, SWT.NONE);
+		typeColumn.getColumn().setMoveable(true);
+		typeColumn.getColumn().setResizable(true);
+		typeColumn.getColumn().setText("Type");
+		typeColumn.getColumn().setWidth(40);
+		typeColumn.getColumn().setToolTipText("Type of data profile is holding.");
 
 		TableViewerColumn descriptionColumn = new TableViewerColumn(tableViewer, SWT.NONE);
 		descriptionColumn.getColumn().setMoveable(true);
 		descriptionColumn.getColumn().setResizable(true);
 		descriptionColumn.getColumn().setText("Description");
-		descriptionColumn.getColumn().setWidth(150);
+		descriptionColumn.getColumn().setWidth(250);
 		descriptionColumn.getColumn().setToolTipText("Profile description.");
 	}
 
@@ -254,9 +285,9 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 
 	/**
 	 * Profile label provider.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static class ProfileLabelProvider extends StyledCellIndexLabelProvider {
 
@@ -273,7 +304,7 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 			if (element instanceof Profile) {
 				Profile profile = ((Profile) element);
 				switch (index) {
-				case 1:
+				case 0:
 					return new StyledString(profile.getName());
 				case 4:
 					return TextFormatter.emptyStyledStringIfNull(TextFormatter.clearLineBreaks(profile.getDescription()));
@@ -292,12 +323,14 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 			if (element instanceof Profile) {
 				Profile profile = ((Profile) element);
 				switch (index) {
-				case 1:
+				case 0:
 					return ImageFormatter.getProfileImage(profile);
-				case 2:
+				case 1:
 					return profile.isActive() ? InspectIT.getDefault().getImage(InspectITImages.IMG_CHECKMARK) : null; // NOPMD
-				case 3:
+				case 2:
 					return profile.isDefaultProfile() ? InspectIT.getDefault().getImage(InspectITImages.IMG_CHECKMARK) : null; // NOPMD
+				case 3:
+					return ImageFormatter.getProfileDataImage(profile.getProfileData());
 				default:
 					return super.getColumnImage(element, index);
 				}
@@ -318,13 +351,27 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 			}
 			return super.getForeground(element, index);
 		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String getToolTipText(Object element, int index) {
+			switch (index) {
+			case 0:
+				return "Selecting the profile will include it in the environment.";
+			default:
+				return super.getToolTipText(element, index);
+			}
+		}
+
 	}
 
 	/**
 	 * Action for editing the profile.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class EditProfileAction extends Action {
 
@@ -351,9 +398,9 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 
 	/**
 	 * Implementation of the filter for the profiles.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class FilterProfileComposite extends FilterComposite {
 
@@ -384,7 +431,7 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 
 			/**
 			 * Does a filter select on {@link Profile}.
-			 * 
+			 *
 			 * @param profile
 			 *            {@link Profile}
 			 * @return True if data in {@link Profile} fits the filter string.
@@ -428,7 +475,7 @@ public class ProfileSelectionPart extends SectionPart implements IProfileChangeL
 
 		/**
 		 * Gets {@link #filter}.
-		 * 
+		 *
 		 * @return {@link #filter}
 		 */
 		public ViewerFilter getFilter() {

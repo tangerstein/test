@@ -1,5 +1,6 @@
 package rocks.inspectit.shared.cs.ci;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,27 +10,29 @@ import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import rocks.inspectit.shared.cs.jaxb.AbstractSchemaVersionAware;
+
 /**
  * Utility class that combines all {@link AgentMappings} for easier marshalling.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "agent-mappings")
-public class AgentMappings {
+public class AgentMappings extends AbstractSchemaVersionAware {
 
 	/**
 	 * {@link AgentMapping}s.
 	 */
 	@XmlElementRefs({ @XmlElementRef(type = AgentMapping.class) })
-	private Collection<AgentMapping> mappings;
+	private Collection<AgentMapping> mappings = new ArrayList<>(0);
 
 	/**
 	 * Revision. Server for version control and updating control.
 	 */
 	@XmlAttribute(name = "revision")
-	private int revision = 1;
+	private Integer revision = 1;
 
 	/**
 	 * No-arg constructor.
@@ -47,7 +50,7 @@ public class AgentMappings {
 
 	/**
 	 * Gets {@link #mappings}.
-	 * 
+	 *
 	 * @return {@link #mappings}
 	 */
 	public Collection<AgentMapping> getMappings() {
@@ -56,7 +59,7 @@ public class AgentMappings {
 
 	/**
 	 * Sets {@link #mappings}.
-	 * 
+	 *
 	 * @param mappings
 	 *            New value for {@link #mappings}
 	 */
@@ -66,21 +69,21 @@ public class AgentMappings {
 
 	/**
 	 * Gets {@link #revision}.
-	 * 
+	 *
 	 * @return {@link #revision}
 	 */
 	public int getRevision() {
-		return revision;
+		return revision.intValue();
 	}
 
 	/**
 	 * Sets {@link #revision}.
-	 * 
+	 *
 	 * @param revision
 	 *            New value for {@link #revision}
 	 */
 	public void setRevision(int revision) {
-		this.revision = revision;
+		this.revision = Integer.valueOf(revision);
 	}
 
 	/**
@@ -90,8 +93,8 @@ public class AgentMappings {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((mappings == null) ? 0 : mappings.hashCode());
-		result = prime * result + revision;
+		result = (prime * result) + ((mappings == null) ? 0 : mappings.hashCode());
+		result = (prime * result) + revision;
 		return result;
 	}
 
@@ -117,7 +120,7 @@ public class AgentMappings {
 		} else if (!mappings.equals(other.mappings)) {
 			return false;
 		}
-		if (revision != other.revision) {
+		if (getRevision() != other.getRevision()) {
 			return false;
 		}
 		return true;

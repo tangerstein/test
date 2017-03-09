@@ -2,9 +2,9 @@ package rocks.inspectit.agent.java.analyzer.classes;
 
 /**
  * DO NOT MODIFY UNLESS YOU ARE SURE WHAT YOU ARE DOING!
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 @SuppressWarnings("PMD")
 public class TestClass extends AbstractSubTest {
@@ -19,9 +19,11 @@ public class TestClass extends AbstractSubTest {
 		this("delegate");
 	}
 
+	@Override
 	public void voidNullParameter() {
 	}
 
+	@Override
 	public String stringNullParameter() {
 		return "stringNullParameter";
 	}
@@ -80,6 +82,11 @@ public class TestClass extends AbstractSubTest {
 
 	public String[] stringArrayNullParameter() {
 		return new String[] { "test123", "bla" };
+	}
+
+	// added for class loading delegation testing
+	public Class<?> loadClass(String name) {
+		return null;
 	}
 
 }

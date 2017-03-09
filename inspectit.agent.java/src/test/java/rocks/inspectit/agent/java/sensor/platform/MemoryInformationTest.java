@@ -1,323 +1,372 @@
 package rocks.inspectit.agent.java.sensor.platform;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
-
 import java.lang.management.MemoryUsage;
-import java.lang.reflect.Field;
-import java.util.logging.Level;
+import java.sql.Timestamp;
 
-import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.BeforeMethod;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
-import rocks.inspectit.agent.java.AbstractLogSupport;
-import rocks.inspectit.agent.java.core.ICoreService;
-import rocks.inspectit.agent.java.core.IIdManager;
-import rocks.inspectit.agent.java.core.IdNotAvailableException;
-import rocks.inspectit.agent.java.sensor.platform.MemoryInformation;
 import rocks.inspectit.agent.java.sensor.platform.provider.MemoryInfoProvider;
 import rocks.inspectit.agent.java.sensor.platform.provider.OperatingSystemInfoProvider;
-import rocks.inspectit.shared.all.communication.SystemSensorData;
 import rocks.inspectit.shared.all.communication.data.MemoryInformationData;
+import rocks.inspectit.shared.all.testbase.TestBase;
 
-@SuppressWarnings("PMD")
-public class MemoryInformationTest extends AbstractLogSupport {
+/**
+ * Test class for {@link MemoryInformation}.
+ *
+ * @author Max Wassiljew (NovaTec Consulting GmbH)
+ */
+public class MemoryInformationTest extends TestBase {
 
-	private MemoryInformation memoryInfo;
+	/** Class under test. */
+	@InjectMocks
+	MemoryInformation cut;
 
+	/** The mocked {@link MemoryInfoProvider}. */
 	@Mock
-	private MemoryInfoProvider memoryBean;
+	MemoryInfoProvider memoryBean;
 
+	/** The mocked {@link OperatingSystemInfoProvider}. */
 	@Mock
-	private OperatingSystemInfoProvider osBean;
+	OperatingSystemInfoProvider osBean;
 
-	@Mock
-	private MemoryUsage heapMemoryUsage;
+	/**
+	 * Tests the {@link MemoryInformation#gather()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Gather extends MemoryInformationTest {
 
-	@Mock
-	private MemoryUsage nonHeapMemoryUsage;
+		@Test
+		void freeMemoryIsCalculated() {
+			this.mockCollectorWithDefaults();
 
-	@Mock
-	private IIdManager idManager;
+			when(this.osBean.getFreePhysicalMemorySize()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
 
-	@Mock
-	private ICoreService coreService;
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
 
-	@BeforeMethod
-	public void initTestClass() throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-		memoryInfo = new MemoryInformation(idManager);
-		memoryInfo.log = LoggerFactory.getLogger(MemoryInformation.class);
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
 
-		// we have to replace the real osBean by the mocked one, so that we don't retrieve the
-		// info from the underlying JVM
-		Field field = memoryInfo.getClass().getDeclaredField("osBean");
-		field.setAccessible(true);
-		field.set(memoryInfo, osBean);
+			assertThat(collector.getMinFreePhysMemory(), is(9L));
+			assertThat(collector.getMaxFreePhysMemory(), is(11L));
+			assertThat(collector.getTotalFreePhysMemory(), is(40L));
+		}
 
-		// we have to replace the real memoryBean by the mocked one, so that we don't retrieve the
-		// info from the underlying JVM
-		field = memoryInfo.getClass().getDeclaredField("memoryBean");
-		field.setAccessible(true);
-		field.set(memoryInfo, memoryBean);
+		@Test
+		void freeSwapSpaceIsCalculated() {
+			this.mockCollectorWithDefaults();
+
+			when(this.osBean.getFreeSwapSpaceSize()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getMinFreeSwapSpace(), is(9L));
+			assertThat(collector.getMaxFreeSwapSpace(), is(11L));
+			assertThat(collector.getTotalFreeSwapSpace(), is(40L));
+		}
+
+		@Test
+		void comittedVirtualMemSizeIsCalculated() {
+			this.mockCollectorWithDefaults();
+
+			when(this.osBean.getCommittedVirtualMemorySize()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getMinComittedVirtualMemSize(), is(9L));
+			assertThat(collector.getMaxComittedVirtualMemSize(), is(11L));
+			assertThat(collector.getTotalComittedVirtualMemSize(), is(40L));
+		}
+
+		@Test
+		void usedHeapMemorySizeIsCalculated() {
+			this.mockCollectorWithDefaults();
+
+			MemoryUsage heapMemoryUsage = this.memoryBean.getHeapMemoryUsage();
+			when(heapMemoryUsage.getUsed()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getMinUsedHeapMemorySize(), is(9L));
+			assertThat(collector.getMaxUsedHeapMemorySize(), is(11L));
+			assertThat(collector.getTotalUsedHeapMemorySize(), is(40L));
+		}
+
+		@Test
+		void comittedHeapMemorySizeIsCalculated() {
+			this.mockCollectorWithDefaults();
+
+			MemoryUsage heapMemoryUsage = this.memoryBean.getHeapMemoryUsage();
+			when(heapMemoryUsage.getCommitted()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getMinComittedHeapMemorySize(), is(9L));
+			assertThat(collector.getMaxComittedHeapMemorySize(), is(11L));
+			assertThat(collector.getTotalComittedHeapMemorySize(), is(40L));
+		}
+
+		@Test
+		void usedNonHeapMemorySizeIsCalculated() {
+			this.mockCollectorWithDefaults();
+
+			MemoryUsage nonHeapMemoryUsage = this.memoryBean.getNonHeapMemoryUsage();
+			when(nonHeapMemoryUsage.getUsed()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getMinUsedNonHeapMemorySize(), is(9L));
+			assertThat(collector.getMaxUsedNonHeapMemorySize(), is(11L));
+			assertThat(collector.getTotalUsedNonHeapMemorySize(), is(40L));
+		}
+
+		@Test
+		void comittedNonHeapMemorySizeIsCalculated() {
+			this.mockCollectorWithDefaults();
+
+			MemoryUsage nonHeapMemoryUsage = this.memoryBean.getNonHeapMemoryUsage();
+			when(nonHeapMemoryUsage.getCommitted()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getMinComittedNonHeapMemorySize(), is(9L));
+			assertThat(collector.getMaxComittedNonHeapMemorySize(), is(11L));
+			assertThat(collector.getTotalComittedNonHeapMemorySize(), is(40L));
+		}
+
+		@Test
+		void countIsIncremented() {
+			this.mockCollectorWithDefaults();
+
+			this.cut.gather();
+			this.cut.gather();
+
+			MemoryInformationData collector = (MemoryInformationData) this.cut.get();
+
+			assertThat(collector.getCount(), is(2));
+		}
 	}
 
-	@Test
-	public void oneDataSet() throws IdNotAvailableException {
-		long freePhysicalMemory = 37566L;
-		long freeSwapSpace = 578300L;
-		long committedVirtualMemorySize = 12345L;
-		long usedHeapMemorySize = 3827L;
-		long usedNonHeapMemorySize = 12200L;
-		long committedHeapMemorySize = 5056L;
-		long committedNonHeapMemorySize = 14016L;
-		long sensorTypeIdent = 13L;
-		long platformIdent = 11L;
+	/**
+	 * Tests the {@link MemoryInformation#get()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Get extends MemoryInformationTest {
 
-		when(memoryBean.getHeapMemoryUsage()).thenReturn(heapMemoryUsage);
-		when(memoryBean.getNonHeapMemoryUsage()).thenReturn(nonHeapMemoryUsage);
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenReturn(sensorTypeIdent);
+		@Test
+		void getNewMemoryInformationData() throws Exception {
+			MemoryInformationData collector = (MemoryInformationData) this.cut.getSystemSensorData();
 
-		when(osBean.getFreePhysicalMemorySize()).thenReturn(freePhysicalMemory);
-		when(osBean.getFreeSwapSpaceSize()).thenReturn(freeSwapSpace);
-		when(osBean.getCommittedVirtualMemorySize()).thenReturn(committedVirtualMemorySize);
-		when(memoryBean.getHeapMemoryUsage().getCommitted()).thenReturn(committedHeapMemorySize);
-		when(memoryBean.getHeapMemoryUsage().getUsed()).thenReturn(usedHeapMemorySize);
-		when(memoryBean.getNonHeapMemoryUsage().getCommitted()).thenReturn(committedNonHeapMemorySize);
-		when(memoryBean.getNonHeapMemoryUsage().getUsed()).thenReturn(usedNonHeapMemorySize);
+			collector.setPlatformIdent(1L);
+			collector.setSensorTypeIdent(2L);
+			collector.setCount(3);
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		memoryInfo.update(coreService, sensorTypeIdent);
+			collector.setTotalFreePhysMemory(4L);
+			collector.setMinFreePhysMemory(5L);
+			collector.setMaxFreePhysMemory(6L);
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			collector.setTotalFreeSwapSpace(7L);
+			collector.setMinFreeSwapSpace(8L);
+			collector.setMaxFreeSwapSpace(9L);
 
-		SystemSensorData sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(MemoryInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			collector.setTotalComittedVirtualMemSize(10L);
+			collector.setMinComittedVirtualMemSize(11L);
+			collector.setMaxComittedVirtualMemSize(12L);
 
-		MemoryInformationData memoryData = (MemoryInformationData) sensorData;
-		assertThat(memoryData.getCount(), is(equalTo(1)));
+			collector.setTotalUsedHeapMemorySize(13L);
+			collector.setMinUsedHeapMemorySize(14L);
+			collector.setMaxUsedHeapMemorySize(15L);
 
-		// as there was only one data object min/max/total the values must be the
-		// same
-		assertThat(memoryData.getMinComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
-		assertThat(memoryData.getMaxComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
-		assertThat(memoryData.getTotalComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
+			collector.setTotalComittedHeapMemorySize(16L);
+			collector.setMinComittedHeapMemorySize(17L);
+			collector.setMaxComittedHeapMemorySize(18L);
 
-		assertThat(memoryData.getMinComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
-		assertThat(memoryData.getMaxComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
-		assertThat(memoryData.getTotalComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
+			collector.setTotalUsedNonHeapMemorySize(19L);
+			collector.setMinUsedNonHeapMemorySize(20L);
+			collector.setMaxUsedNonHeapMemorySize(21L);
 
-		assertThat(memoryData.getMinComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
-		assertThat(memoryData.getMaxComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
-		assertThat(memoryData.getTotalComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
+			collector.setMinComittedNonHeapMemorySize(22L);
+			collector.setMaxComittedNonHeapMemorySize(23L);
+			collector.setTotalComittedNonHeapMemorySize(24L);
 
-		assertThat(memoryData.getMinFreePhysMemory(), is(equalTo(freePhysicalMemory)));
-		assertThat(memoryData.getMaxFreePhysMemory(), is(equalTo(freePhysicalMemory)));
-		assertThat(memoryData.getTotalFreePhysMemory(), is(equalTo(freePhysicalMemory)));
+			collector.setTimeStamp(new Timestamp(25L));
 
-		assertThat(memoryData.getMinFreeSwapSpace(), is(equalTo(freeSwapSpace)));
-		assertThat(memoryData.getMaxFreeSwapSpace(), is(equalTo(freeSwapSpace)));
-		assertThat(memoryData.getTotalFreeSwapSpace(), is(equalTo(freeSwapSpace)));
+			MemoryInformationData memoryInformationData = (MemoryInformationData) this.cut.get();
 
-		assertThat(memoryData.getMinUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
-		assertThat(memoryData.getMaxUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
-		assertThat(memoryData.getTotalUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
+			assertThat(memoryInformationData.getPlatformIdent(), is(1L));
+			assertThat(memoryInformationData.getSensorTypeIdent(), is(2L));
+			assertThat(memoryInformationData.getCount(), is(3));
 
-		assertThat(memoryData.getMinUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
-		assertThat(memoryData.getMaxUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
-		assertThat(memoryData.getTotalUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
+			assertThat(memoryInformationData.getTotalFreePhysMemory(), is(4L));
+			assertThat(memoryInformationData.getMinFreePhysMemory(), is(5L));
+			assertThat(memoryInformationData.getMaxFreePhysMemory(), is(6L));
+
+			assertThat(memoryInformationData.getTotalFreeSwapSpace(), is(7L));
+			assertThat(memoryInformationData.getMinFreeSwapSpace(), is(8L));
+			assertThat(memoryInformationData.getMaxFreeSwapSpace(), is(9L));
+
+			assertThat(memoryInformationData.getTotalComittedVirtualMemSize(), is(10L));
+			assertThat(memoryInformationData.getMinComittedVirtualMemSize(), is(11L));
+			assertThat(memoryInformationData.getMaxComittedVirtualMemSize(), is(12L));
+
+			assertThat(memoryInformationData.getTotalUsedHeapMemorySize(), is(13L));
+			assertThat(memoryInformationData.getMinUsedHeapMemorySize(), is(14L));
+			assertThat(memoryInformationData.getMaxUsedHeapMemorySize(), is(15L));
+
+			assertThat(memoryInformationData.getTotalComittedHeapMemorySize(), is(16L));
+			assertThat(memoryInformationData.getMinComittedHeapMemorySize(), is(17L));
+			assertThat(memoryInformationData.getMaxComittedHeapMemorySize(), is(18L));
+
+			assertThat(memoryInformationData.getTotalUsedNonHeapMemorySize(), is(19L));
+			assertThat(memoryInformationData.getMinUsedNonHeapMemorySize(), is(20L));
+			assertThat(memoryInformationData.getMaxUsedNonHeapMemorySize(), is(21L));
+
+			assertThat(memoryInformationData.getMinComittedNonHeapMemorySize(), is(22L));
+			assertThat(memoryInformationData.getMaxComittedNonHeapMemorySize(), is(23L));
+			assertThat(memoryInformationData.getTotalComittedNonHeapMemorySize(), is(24L));
+
+			assertThat(memoryInformationData.getTimeStamp().getTime(), is(25L));
+		}
 	}
 
-	@Test
-	public void twoDataSets() throws IdNotAvailableException {
-		long freePhysicalMemory = 37566L;
-		long freePhysicalMemory2 = 37000L;
-		long freeSwapSpace = 578300L;
-		long freeSwapSpace2 = 578000L;
-		long committedVirtualMemorySize = 12345L;
-		long committedVirtualMemorySize2 = 12300L;
-		long usedHeapMemorySize = 3827L;
-		long usedHeapMemorySize2 = 4000L;
-		long usedNonHeapMemorySize = 12200L;
-		long usedNonHeapMemorySize2 = 13000L;
-		long committedHeapMemorySize = 5056L;
-		long committedHeapMemorySize2 = 4000L;
-		long committedNonHeapMemorySize = 14016L;
-		long committedNonHeapMemorySize2 = 13000L;
-		long sensorTypeIdent = 13L;
-		long platformIdent = 11L;
+	/**
+	 * Tests the {@link MemoryInformation#reset()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Reset extends MemoryInformationTest {
 
-		when(memoryBean.getHeapMemoryUsage()).thenReturn(heapMemoryUsage);
-		when(memoryBean.getNonHeapMemoryUsage()).thenReturn(nonHeapMemoryUsage);
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenReturn(sensorTypeIdent);
+		@Test
+		void collectorClassIsResetted() throws Exception {
+			MemoryInformationData collector = (MemoryInformationData) this.cut.getSystemSensorData();
 
-		// ------------------------
-		// FIRST UPDATE CALL
-		// ------------------------
-		when(osBean.getFreePhysicalMemorySize()).thenReturn(freePhysicalMemory);
-		when(osBean.getFreeSwapSpaceSize()).thenReturn(freeSwapSpace);
-		when(osBean.getCommittedVirtualMemorySize()).thenReturn(committedVirtualMemorySize);
-		when(memoryBean.getHeapMemoryUsage().getCommitted()).thenReturn(committedHeapMemorySize);
-		when(memoryBean.getHeapMemoryUsage().getUsed()).thenReturn(usedHeapMemorySize);
-		when(memoryBean.getNonHeapMemoryUsage().getCommitted()).thenReturn(committedNonHeapMemorySize);
-		when(memoryBean.getNonHeapMemoryUsage().getUsed()).thenReturn(usedNonHeapMemorySize);
+			collector.setPlatformIdent(1L);
+			collector.setSensorTypeIdent(2L);
+			collector.setCount(3);
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		memoryInfo.update(coreService, sensorTypeIdent);
+			collector.setTotalFreePhysMemory(4L);
+			collector.setMinFreePhysMemory(5L);
+			collector.setMaxFreePhysMemory(6L);
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			collector.setTotalFreeSwapSpace(7L);
+			collector.setMinFreeSwapSpace(8L);
+			collector.setMaxFreeSwapSpace(9L);
 
-		SystemSensorData sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(MemoryInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			collector.setTotalComittedVirtualMemSize(10L);
+			collector.setMinComittedVirtualMemSize(11L);
+			collector.setMaxComittedVirtualMemSize(12L);
 
-		MemoryInformationData memoryData = (MemoryInformationData) sensorData;
-		assertThat(memoryData.getCount(), is(equalTo(1)));
+			collector.setTotalUsedHeapMemorySize(13L);
+			collector.setMinUsedHeapMemorySize(14L);
+			collector.setMaxUsedHeapMemorySize(15L);
 
-		// as there was only one data object min/max/total the values must be the
-		// same
-		assertThat(memoryData.getMinComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
-		assertThat(memoryData.getMaxComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
-		assertThat(memoryData.getTotalComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
+			collector.setTotalComittedHeapMemorySize(16L);
+			collector.setMinComittedHeapMemorySize(17L);
+			collector.setMaxComittedHeapMemorySize(18L);
 
-		assertThat(memoryData.getMinComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
-		assertThat(memoryData.getMaxComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
-		assertThat(memoryData.getTotalComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
+			collector.setTotalUsedNonHeapMemorySize(19L);
+			collector.setMinUsedNonHeapMemorySize(20L);
+			collector.setMaxUsedNonHeapMemorySize(21L);
 
-		assertThat(memoryData.getMinComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
-		assertThat(memoryData.getMaxComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
-		assertThat(memoryData.getTotalComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
+			collector.setMinComittedNonHeapMemorySize(22L);
+			collector.setMaxComittedNonHeapMemorySize(23L);
+			collector.setTotalComittedNonHeapMemorySize(24L);
 
-		assertThat(memoryData.getMinFreePhysMemory(), is(equalTo(freePhysicalMemory)));
-		assertThat(memoryData.getMaxFreePhysMemory(), is(equalTo(freePhysicalMemory)));
-		assertThat(memoryData.getTotalFreePhysMemory(), is(equalTo(freePhysicalMemory)));
+			collector.setTimeStamp(new Timestamp(25L));
 
-		assertThat(memoryData.getMinFreeSwapSpace(), is(equalTo(freeSwapSpace)));
-		assertThat(memoryData.getMaxFreeSwapSpace(), is(equalTo(freeSwapSpace)));
-		assertThat(memoryData.getTotalFreeSwapSpace(), is(equalTo(freeSwapSpace)));
+			this.cut.reset();
+			MemoryInformationData memoryInformationData = (MemoryInformationData) this.cut.get();
 
-		assertThat(memoryData.getMinUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
-		assertThat(memoryData.getMaxUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
-		assertThat(memoryData.getTotalUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
+			assertThat(memoryInformationData.getPlatformIdent(), is(1L));
+			assertThat(memoryInformationData.getSensorTypeIdent(), is(2L));
+			assertThat(memoryInformationData.getCount(), is(0));
 
-		assertThat(memoryData.getMinUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
-		assertThat(memoryData.getMaxUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
-		assertThat(memoryData.getTotalUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
+			assertThat(memoryInformationData.getTotalFreePhysMemory(), is(0L));
+			assertThat(memoryInformationData.getMinFreePhysMemory(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxFreePhysMemory(), is(0L));
 
-		// ------------------------
-		// SECOND UPDATE CALL
-		// ------------------------
-		when(osBean.getFreePhysicalMemorySize()).thenReturn(freePhysicalMemory2);
-		when(osBean.getFreeSwapSpaceSize()).thenReturn(freeSwapSpace2);
-		when(osBean.getCommittedVirtualMemorySize()).thenReturn(committedVirtualMemorySize2);
-		when(memoryBean.getHeapMemoryUsage().getCommitted()).thenReturn(committedHeapMemorySize2);
-		when(memoryBean.getHeapMemoryUsage().getUsed()).thenReturn(usedHeapMemorySize2);
-		when(memoryBean.getNonHeapMemoryUsage().getCommitted()).thenReturn(committedNonHeapMemorySize2);
-		when(memoryBean.getNonHeapMemoryUsage().getUsed()).thenReturn(usedNonHeapMemorySize2);
+			assertThat(memoryInformationData.getTotalFreeSwapSpace(), is(0L));
+			assertThat(memoryInformationData.getMinFreeSwapSpace(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxFreeSwapSpace(), is(0L));
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(memoryData);
-		memoryInfo.update(coreService, sensorTypeIdent);
+			assertThat(memoryInformationData.getTotalComittedVirtualMemSize(), is(0L));
+			assertThat(memoryInformationData.getMinComittedVirtualMemSize(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxComittedVirtualMemSize(), is(0L));
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			assertThat(memoryInformationData.getTotalUsedHeapMemorySize(), is(0L));
+			assertThat(memoryInformationData.getMinUsedHeapMemorySize(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxUsedHeapMemorySize(), is(0L));
 
-		sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(MemoryInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			assertThat(memoryInformationData.getTotalComittedHeapMemorySize(), is(0L));
+			assertThat(memoryInformationData.getMinComittedHeapMemorySize(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxComittedHeapMemorySize(), is(0L));
 
-		memoryData = (MemoryInformationData) sensorData;
-		assertThat(memoryData.getCount(), is(equalTo(2)));
+			assertThat(memoryInformationData.getTotalUsedNonHeapMemorySize(), is(0L));
+			assertThat(memoryInformationData.getMinUsedNonHeapMemorySize(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxUsedNonHeapMemorySize(), is(0L));
 
-		// as there was only one data object min/max/total values must be the
-		// same
-		assertThat(memoryData.getMinComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize2)));
-		assertThat(memoryData.getMaxComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize)));
-		assertThat(memoryData.getTotalComittedHeapMemorySize(), is(equalTo(committedHeapMemorySize + committedHeapMemorySize2)));
+			assertThat(memoryInformationData.getTotalComittedNonHeapMemorySize(), is(0L));
+			assertThat(memoryInformationData.getMinComittedNonHeapMemorySize(), is(Long.MAX_VALUE));
+			assertThat(memoryInformationData.getMaxComittedNonHeapMemorySize(), is(0L));
 
-		assertThat(memoryData.getMinComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize2)));
-		assertThat(memoryData.getMaxComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize)));
-		assertThat(memoryData.getTotalComittedNonHeapMemorySize(), is(equalTo(committedNonHeapMemorySize + committedNonHeapMemorySize2)));
-
-		assertThat(memoryData.getMinComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize2)));
-		assertThat(memoryData.getMaxComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize)));
-		assertThat(memoryData.getTotalComittedVirtualMemSize(), is(equalTo(committedVirtualMemorySize + committedVirtualMemorySize2)));
-
-		assertThat(memoryData.getMinFreePhysMemory(), is(equalTo(freePhysicalMemory2)));
-		assertThat(memoryData.getMaxFreePhysMemory(), is(equalTo(freePhysicalMemory)));
-		assertThat(memoryData.getTotalFreePhysMemory(), is(equalTo(freePhysicalMemory + freePhysicalMemory2)));
-
-		assertThat(memoryData.getMinFreeSwapSpace(), is(equalTo(freeSwapSpace2)));
-		assertThat(memoryData.getMaxFreeSwapSpace(), is(equalTo(freeSwapSpace)));
-		assertThat(memoryData.getTotalFreeSwapSpace(), is(equalTo(freeSwapSpace + freeSwapSpace2)));
-
-		assertThat(memoryData.getMinUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize)));
-		assertThat(memoryData.getMaxUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize2)));
-		assertThat(memoryData.getTotalUsedHeapMemorySize(), is(equalTo(usedHeapMemorySize + usedHeapMemorySize2)));
-
-		assertThat(memoryData.getMinUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize)));
-		assertThat(memoryData.getMaxUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize2)));
-		assertThat(memoryData.getTotalUsedNonHeapMemorySize(), is(equalTo(usedNonHeapMemorySize + usedNonHeapMemorySize2)));
+			assertThat(memoryInformationData.getTimeStamp().getTime(), is(not(25L)));
+		}
 	}
 
-	@Test
-	public void idNotAvailableTest() throws IdNotAvailableException {
-		long freePhysicalMemory = 37566L;
-		long freeSwapSpace = 578300L;
-		long committedVirtualMemorySize = 12345L;
-		long usedHeapMemorySize = 3827L;
-		long usedNonHeapMemorySize = 12200L;
-		long committedHeapMemorySize = 5056L;
-		long committedNonHeapMemorySize = 14016L;
-		long sensorTypeIdent = 13L;
+	protected void mockCollectorWithDefaults() {
+		MemoryUsage heapMemoryUsage = Mockito.mock(MemoryUsage.class);
+		when(heapMemoryUsage.getUsed()).thenReturn(0L);
+		when(heapMemoryUsage.getCommitted()).thenReturn(0L);
 
-		when(memoryBean.getHeapMemoryUsage()).thenReturn(heapMemoryUsage);
-		when(memoryBean.getNonHeapMemoryUsage()).thenReturn(nonHeapMemoryUsage);
+		MemoryUsage nonHeapMemoryUsage = Mockito.mock(MemoryUsage.class);
+		when(nonHeapMemoryUsage.getUsed()).thenReturn(0L);
+		when(nonHeapMemoryUsage.getCommitted()).thenReturn(0L);
 
-		when(osBean.getFreePhysicalMemorySize()).thenReturn(freePhysicalMemory);
-		when(osBean.getFreeSwapSpaceSize()).thenReturn(freeSwapSpace);
-		when(osBean.getCommittedVirtualMemorySize()).thenReturn(committedVirtualMemorySize);
-		when(memoryBean.getHeapMemoryUsage().getCommitted()).thenReturn(committedHeapMemorySize);
-		when(memoryBean.getHeapMemoryUsage().getUsed()).thenReturn(usedHeapMemorySize);
-		when(memoryBean.getNonHeapMemoryUsage().getCommitted()).thenReturn(committedNonHeapMemorySize);
-		when(memoryBean.getNonHeapMemoryUsage().getUsed()).thenReturn(usedNonHeapMemorySize);
-
-		when(idManager.getPlatformId()).thenThrow(new IdNotAvailableException("expected"));
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenThrow(new IdNotAvailableException("expected"));
-
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		memoryInfo.update(coreService, sensorTypeIdent);
-
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(0)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
-	}
-
-	protected Level getLogLevel() {
-		return Level.FINEST;
+		when(this.osBean.getFreePhysicalMemorySize()).thenReturn(0L);
+		when(this.osBean.getFreeSwapSpaceSize()).thenReturn(0L);
+		when(this.osBean.getCommittedVirtualMemorySize()).thenReturn(0L);
+		when(this.memoryBean.getHeapMemoryUsage()).thenReturn(heapMemoryUsage);
+		when(this.memoryBean.getNonHeapMemoryUsage()).thenReturn(nonHeapMemoryUsage);
 	}
 }

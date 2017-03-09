@@ -10,6 +10,7 @@ import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.stereotype.Component;
 
 import rocks.inspectit.shared.all.util.ResourcesPathResolver;
+import rocks.inspectit.shared.cs.ci.AlertingDefinition;
 import rocks.inspectit.shared.cs.ci.Environment;
 import rocks.inspectit.shared.cs.ci.Profile;
 
@@ -53,6 +54,21 @@ public class ConfigurationInterfacePathResolver {
 	private static final String AGENT_MAPPING_FILE = "agent-mappings.xml";
 
 	/**
+	 * File name where default configuration is stored.
+	 */
+	private static final String BUSINESS_CONTEXT_CONFIG_FILE = "businessContext.xml";
+
+	/**
+	 * Sub-folder for saving alert thresholds.
+	 */
+	private static final String ALERTING_DEFINITIONS_FOLDER = "alerting";
+
+	/**
+	 * Migration folder name.
+	 */
+	private static final String MIGRATION_FOLDER = "migration";
+
+	/**
 	 * Used with {@link ResourcesPathResolver} to get the file of the ci dir.
 	 */
 	private File ciDirFile;
@@ -88,6 +104,15 @@ public class ConfigurationInterfacePathResolver {
 	}
 
 	/**
+	 * Returns the schema path.
+	 *
+	 * @return Returns the schema path.
+	 */
+	public Path getMigrationPath() {
+		return getDefaultCiPath().resolve(SCHEMA_FOLDER).resolve(MIGRATION_FOLDER);
+	}
+
+	/**
 	 * Returns the directory where profiles are saved.
 	 *
 	 * @return Profiles directory path.
@@ -104,7 +129,8 @@ public class ConfigurationInterfacePathResolver {
 	 * @return Path to the file.
 	 */
 	public Path getProfileFilePath(Profile profile) {
-		String fileName = profile.getId() + "-" + profile.getName().replace(' ', '-') + ".xml";
+		String secureProfileName = removeIllegalFilenameCharacters(profile.getName());
+		String fileName = profile.getId() + "-" + secureProfileName + ".xml";
 		return getProfilesPath().resolve(fileName);
 	}
 
@@ -125,7 +151,8 @@ public class ConfigurationInterfacePathResolver {
 	 * @return Path to the file.
 	 */
 	public Path getEnvironmentFilePath(Environment environment) {
-		String fileName = environment.getId() + "-" + environment.getName().replace(' ', '-') + ".xml";
+		String secureEnvironmentName = removeIllegalFilenameCharacters(environment.getName());
+		String fileName = environment.getId() + "-" + secureEnvironmentName + ".xml";
 		return getEnvironmentPath().resolve(fileName);
 	}
 
@@ -136,5 +163,48 @@ public class ConfigurationInterfacePathResolver {
 	 */
 	public Path getAgentMappingFilePath() {
 		return getDefaultCiPath().resolve(AGENT_MAPPING_FILE);
+	}
+
+	/**
+	 * Returns path pointing to the business context file.
+	 *
+	 * @return Path to the file.
+	 */
+	public Path getBusinessContextFilePath() {
+		return getDefaultCiPath().resolve(BUSINESS_CONTEXT_CONFIG_FILE);
+	}
+
+	/**
+	 * Returns the directory where alert thresholds are saved.
+	 *
+	 * @return Path to the folder of the alert thresholds.
+	 */
+	public Path getAlertingDefinitionsPath() {
+		return getDefaultCiPath().resolve(ALERTING_DEFINITIONS_FOLDER);
+	}
+
+	/**
+	 * Returns path pointing to the alerting definition file.
+	 *
+	 * @param alertingDefinition
+	 *            {@link AlertingDefinition}
+	 * @return Path to the file.
+	 */
+	public Path getAlertingDefinitionFilePath(AlertingDefinition alertingDefinition) {
+		String secureDefinitionName = removeIllegalFilenameCharacters(alertingDefinition.getName());
+		String fileName = alertingDefinition.getId() + "-" + secureDefinitionName + ".xml";
+		return getAlertingDefinitionsPath().resolve(fileName);
+	}
+
+	/**
+	 * Removes replaces all characters which match not the following <code>a-zA-Z0-9.-</code> by
+	 * <code>_</code> and ensures a valid filename.
+	 *
+	 * @param input
+	 *            {@link String} possibly containing illegal filename chars.
+	 * @return {@link String} without illegal filename characters
+	 */
+	private String removeIllegalFilenameCharacters(String input) {
+		return input.replaceAll("[^a-zA-Z0-9.-]", "_");
 	}
 }

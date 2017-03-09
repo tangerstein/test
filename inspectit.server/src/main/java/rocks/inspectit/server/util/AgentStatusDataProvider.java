@@ -13,21 +13,24 @@ import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import rocks.inspectit.server.event.AgentDeletedEvent;
 import rocks.inspectit.shared.all.cmr.service.IKeepAliveService;
 import rocks.inspectit.shared.all.communication.data.cmr.AgentStatusData;
 import rocks.inspectit.shared.all.communication.data.cmr.AgentStatusData.AgentConnection;
+import rocks.inspectit.shared.all.communication.data.cmr.AgentStatusData.InstrumentationStatus;
 import rocks.inspectit.shared.all.spring.logger.Log;
 
 /**
  * Bean that saves the time when the last time platform ident received the data.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Component
-public class AgentStatusDataProvider implements InitializingBean {
+public class AgentStatusDataProvider implements InitializingBean, ApplicationListener<AgentDeletedEvent> {
 
 	/**
 	 * Runnable for checking the status of the received keep-alive signals.
@@ -38,11 +41,6 @@ public class AgentStatusDataProvider implements InitializingBean {
 			long currentTime = System.currentTimeMillis();
 			for (Entry<Long, AgentStatusData> entry : agentStatusDataMap.entrySet()) {
 				if (entry.getValue().getAgentConnection() != AgentConnection.CONNECTED) {
-					continue;
-				}
-
-				// Skip recently connected agents
-				if (currentTime - entry.getValue().getConnectionTimestamp() < IKeepAliveService.KA_TIMEOUT) {
 					continue;
 				}
 
@@ -75,11 +73,19 @@ public class AgentStatusDataProvider implements InitializingBean {
 	/**
 	 * Map that holds IDs of the platform idents and {@link AgentStatusData} objects.
 	 */
-	private ConcurrentHashMap<Long, AgentStatusData> agentStatusDataMap = new ConcurrentHashMap<Long, AgentStatusData>(8, 0.75f, 1);
+	private final ConcurrentHashMap<Long, AgentStatusData> agentStatusDataMap = new ConcurrentHashMap<>(8, 0.75f, 1);
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void onApplicationEvent(AgentDeletedEvent event) {
+		agentStatusDataMap.remove(event.getPlatformId());
+	}
 
 	/**
 	 * Registers that the agent was connected.
-	 * 
+	 *
 	 * @param platformIdent
 	 *            ID of the platform ident.
 	 */
@@ -92,26 +98,37 @@ public class AgentStatusDataProvider implements InitializingBean {
 				agentStatusData = existing;
 			}
 		}
-		agentStatusData.setConnectionTimestamp(System.currentTimeMillis());
+		long currentTimeMillis = System.currentTimeMillis();
+		agentStatusData.setLastKeepAliveTimestamp(currentTimeMillis);
+		agentStatusData.setConnectionTimestamp(currentTimeMillis);
 		agentStatusData.setAgentConnection(AgentConnection.CONNECTED);
+		agentStatusData.setPendingSinceTime(currentTimeMillis);
+
+		// set instrumentation status up-to-date
+		agentStatusData.setInstrumentationStatus(InstrumentationStatus.UP_TO_DATE);
 	}
 
 	/**
 	 * Registers that the agent has been disconnected.
-	 * 
+	 *
 	 * @param platformIdent
 	 *            ID of the platform ident.
+	 * @return Returns <code>true</code> if the agent has been marked as disconnected,
+	 *         <code>false</code> if the agent with given ID does not exist.
 	 */
-	public void registerDisconnected(long platformIdent) {
+	public boolean registerDisconnected(long platformIdent) {
 		AgentStatusData agentStatusData = agentStatusDataMap.get(platformIdent);
 		if (null != agentStatusData) {
 			agentStatusData.setAgentConnection(AgentConnection.DISCONNECTED);
+			return true;
+		} else {
+			return false;
 		}
 	}
 
 	/**
 	 * Registers the time when last data was received for a given platform ident.
-	 * 
+	 *
 	 * @param platformIdent
 	 *            ID of the platform ident.
 	 */
@@ -124,7 +141,7 @@ public class AgentStatusDataProvider implements InitializingBean {
 
 	/**
 	 * Registers the time when the last keep-alive was received for a given platform ident.
-	 * 
+	 *
 	 * @param platformIdent
 	 *            ID of the platform ident.
 	 */
@@ -146,7 +163,7 @@ public class AgentStatusDataProvider implements InitializingBean {
 
 	/**
 	 * Registers that the agent is not sending keep-alive messages anymore.
-	 * 
+	 *
 	 * @param platformIdent
 	 *            ID of the platform ident.
 	 */
@@ -158,22 +175,11 @@ public class AgentStatusDataProvider implements InitializingBean {
 	}
 
 	/**
-	 * Informs the {@link AgentStatusDataProvider} that the platform has been deleted from the CMR.
-	 * All kept information will be deleted.
-	 * 
-	 * @param platformId
-	 *            ID of the platform ident.
-	 */
-	public void registerDeleted(long platformId) {
-		agentStatusDataMap.remove(platformId);
-	}
-
-	/**
 	 * @return Returns the map of platform ident IDs and dates when the last data was received.
 	 */
 	public Map<Long, AgentStatusData> getAgentStatusDataMap() {
 		long currentTime = System.currentTimeMillis();
-		Map<Long, AgentStatusData> map = new HashMap<Long, AgentStatusData>();
+		Map<Long, AgentStatusData> map = new HashMap<>();
 		for (Entry<Long, AgentStatusData> entry : agentStatusDataMap.entrySet()) {
 			entry.getValue().setServerTimestamp(currentTime);
 			map.put(entry.getKey(), entry.getValue());
@@ -183,7 +189,7 @@ public class AgentStatusDataProvider implements InitializingBean {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * Starts the continuous check of the keep-alive signals.
 	 */
 	@Override

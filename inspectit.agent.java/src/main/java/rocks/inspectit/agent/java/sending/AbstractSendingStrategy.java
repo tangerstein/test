@@ -4,7 +4,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import rocks.inspectit.agent.java.config.IConfigurationStorage;
-import rocks.inspectit.agent.java.config.impl.StrategyConfig;
 import rocks.inspectit.agent.java.core.ICoreService;
 
 /**
@@ -12,9 +11,9 @@ import rocks.inspectit.agent.java.core.ICoreService;
  * creating an instance is {@link #start()}. An event listener or starting a thread has to be
  * implemented there. {@link #stop()} immediately stops the strategy. {@link #reset()} is called
  * after a successful {@link #sendNow()} is executed.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public abstract class AbstractSendingStrategy implements ISendingStrategy, InitializingBean {
 
@@ -39,6 +38,7 @@ public abstract class AbstractSendingStrategy implements ISendingStrategy, Initi
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final void start(ICoreService coreService) {
 		this.coreService = coreService;
 		startStrategy();
@@ -53,11 +53,12 @@ public abstract class AbstractSendingStrategy implements ISendingStrategy, Initi
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public abstract void stop();
 
 	/**
 	 * Returns the value storage.
-	 * 
+	 *
 	 * @return The value storage implementation.
 	 */
 	protected final ICoreService getCoreService() {
@@ -67,13 +68,9 @@ public abstract class AbstractSendingStrategy implements ISendingStrategy, Initi
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void afterPropertiesSet() throws Exception {
-		for (StrategyConfig sendingStrategyConfig : configurationStorage.getSendingStrategyConfigs()) {
-			if (sendingStrategyConfig.getClazzName().equals(this.getClass().getName())) {
-				this.init(sendingStrategyConfig.getSettings());
-				break;
-			}
-		}
+		this.init(configurationStorage.getSendingStrategyConfig().getSettings());
 	}
 
 }

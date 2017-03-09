@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -37,16 +37,12 @@ import org.testng.annotations.Test;
 
 import rocks.inspectit.server.cache.IBuffer;
 import rocks.inspectit.server.dao.StorageDataDao;
-import rocks.inspectit.server.storage.CmrStorageManager;
-import rocks.inspectit.server.storage.CmrStorageRecorder;
-import rocks.inspectit.server.storage.CmrStorageWriter;
-import rocks.inspectit.server.storage.CmrStorageWriterProvider;
 import rocks.inspectit.server.test.AbstractTestNGLogSupport;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.exception.BusinessException;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
-import rocks.inspectit.shared.all.storage.serializer.impl.SerializationManager;
-import rocks.inspectit.shared.all.storage.serializer.provider.SerializationManagerProvider;
+import rocks.inspectit.shared.all.serializer.SerializationException;
+import rocks.inspectit.shared.all.serializer.impl.SerializationManager;
+import rocks.inspectit.shared.all.serializer.provider.SerializationManagerProvider;
 import rocks.inspectit.shared.all.version.VersionService;
 import rocks.inspectit.shared.cs.cmr.service.IServerStatusService;
 import rocks.inspectit.shared.cs.communication.data.cmr.WritingStatus;
@@ -58,9 +54,9 @@ import rocks.inspectit.shared.cs.storage.recording.RecordingState;
 
 /**
  * Test the {@link CmrStorageManager} class.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @SuppressWarnings("PMD")
 public class CmrStorageManagerTest extends AbstractTestNGLogSupport {
@@ -103,7 +99,7 @@ public class CmrStorageManagerTest extends AbstractTestNGLogSupport {
 
 	/**
 	 * Init method.
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	@BeforeMethod
@@ -397,16 +393,16 @@ public class CmrStorageManagerTest extends AbstractTestNGLogSupport {
 		Long platformId = 10L;
 		List<Long> platformIdents = Collections.singletonList(platformId);
 		storageManager = spy(storageManager);
-		when(storageDataDao.getAllDefaultDataForAgent(eq(platformId), Mockito.<Date> any(), Mockito.<Date> any())).thenReturn(data);
+		when(storageDataDao.getAllDefaultDataForAgent(eq(platformId), Matchers.<Date> any(), Matchers.<Date> any())).thenReturn(data);
 
 		// first with no auto-finalize
 		storageManager.copyBufferToStorage(storageData, platformIdents, processors, false);
-		verify(storageDataDao, times(1)).getAllDefaultDataForAgent(eq(platformId), Mockito.<Date> any(), Mockito.<Date> any());
+		verify(storageDataDao, times(1)).getAllDefaultDataForAgent(eq(platformId), Matchers.<Date> any(), Matchers.<Date> any());
 		verify(storageManager, times(1)).writeToStorage(storageData, data, processors, true);
 
 		// first with auto-finalize
 		storageManager.copyBufferToStorage(storageData, platformIdents, processors, true);
-		verify(storageDataDao, times(2)).getAllDefaultDataForAgent(eq(platformId), Mockito.<Date> any(), Mockito.<Date> any());
+		verify(storageDataDao, times(2)).getAllDefaultDataForAgent(eq(platformId), Matchers.<Date> any(), Matchers.<Date> any());
 		verify(storageManager, times(2)).writeToStorage(storageData, data, processors, true);
 		assertThat(storageManager.isStorageClosed(storageData), is(true));
 	}

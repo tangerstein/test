@@ -22,6 +22,8 @@ import rocks.inspectit.shared.cs.cmr.property.configuration.impl.StringProperty;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validation.PropertyValidation;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validation.PropertyValidationException;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.ISinglePropertyValidator;
+import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.EMailListValidator;
+import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.EMailValidator;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.FullyQualifiedClassNameValidator;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.GreaterOrEqualValidator;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.GreaterValidator;
@@ -37,9 +39,9 @@ import rocks.inspectit.shared.cs.cmr.property.update.impl.RestoreDefaultProperty
 
 /**
  * Single property denotes one concrete configuration in the CMR with logical name and value.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  * @param <T>
  *            Type of the value property is defining.
  */
@@ -70,8 +72,9 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 	 */
 	@XmlElementWrapper(name = "validators")
 	@XmlElementRefs({ @XmlElementRef(type = LessValidator.class), @XmlElementRef(type = LessOrEqualValidator.class), @XmlElementRef(type = GreaterValidator.class),
-			@XmlElementRef(type = GreaterOrEqualValidator.class), @XmlElementRef(type = PercentageValidator.class), @XmlElementRef(type = PositiveValidator.class),
-			@XmlElementRef(type = NegativeValidator.class), @XmlElementRef(type = FullyQualifiedClassNameValidator.class), @XmlElementRef(type = NotEmptyValidator.class) })
+		@XmlElementRef(type = GreaterOrEqualValidator.class), @XmlElementRef(type = PercentageValidator.class), @XmlElementRef(type = PositiveValidator.class),
+		@XmlElementRef(type = NegativeValidator.class), @XmlElementRef(type = FullyQualifiedClassNameValidator.class), @XmlElementRef(type = NotEmptyValidator.class),
+		@XmlElementRef(type = EMailValidator.class), @XmlElementRef(type = EMailListValidator.class) })
 	private List<ISinglePropertyValidator<? super T>> validators;
 
 	/**
@@ -81,7 +84,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param name
 	 *            Display name of the property. Can not be <code>null</code>.
 	 * @param description
@@ -114,14 +117,14 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Gets the default value.
-	 * 
+	 *
 	 * @return Gets the default value.
 	 */
 	public abstract T getDefaultValue();
 
 	/**
 	 * Sets the default value.
-	 * 
+	 *
 	 * @param defaultValue
 	 *            New value for the default value.
 	 */
@@ -129,14 +132,14 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Gets the currently used value.
-	 * 
+	 *
 	 * @return Gets the currently used value.
 	 */
 	protected abstract T getUsedValue();
 
 	/**
 	 * Sets the currently used value.
-	 * 
+	 *
 	 * @param usedValue
 	 *            New value for the currently used value.
 	 */
@@ -145,7 +148,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 	/**
 	 * Parses the given string literal to the correct type of the property. <br>
 	 * Needed for property validation against literals.
-	 * 
+	 *
 	 * @param literal
 	 *            String to parse.
 	 * @return Object of the value type or <code>null</code> is parsing can not be done.
@@ -154,7 +157,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Creates a {@link AbstractPropertyUpdate} of this property with the given update value.
-	 * 
+	 *
 	 * @param updateValue
 	 *            Update value.
 	 * @return {@link AbstractPropertyUpdate}.
@@ -191,7 +194,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Check if the property would have validation errors if given value would be set.
-	 * 
+	 *
 	 * @param value
 	 *            Value to check for.
 	 * @return {@link PropertyValidation} with errors if ones exist.
@@ -236,7 +239,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 	/**
 	 * Validates the update value against the property and if validation passes returns the
 	 * {@link AbstractPropertyUpdate} object.
-	 * 
+	 *
 	 * @param updateValue
 	 *            Update value
 	 * @return {@link AbstractPropertyUpdate}
@@ -259,11 +262,11 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Creates a {@link RestoreDefaultPropertyUpdate} for this property.
-	 * 
+	 *
 	 * @return {@link RestoreDefaultPropertyUpdate}
 	 */
 	public RestoreDefaultPropertyUpdate<T> createRestoreDefaultPropertyUpdate() {
-		return new RestoreDefaultPropertyUpdate<T>(this);
+		return new RestoreDefaultPropertyUpdate<>(this);
 	}
 
 	/**
@@ -276,7 +279,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 	 * <li>Value and update value must not be equal
 	 * <li>Update value must pass all validations
 	 * </ul>
-	 * 
+	 *
 	 * @param propertyUpdate
 	 *            {@link AbstractPropertyUpdate}.
 	 * @return True if this property can be update with given {@link AbstractPropertyUpdate}.
@@ -303,20 +306,20 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Adds {@link ISinglePropertyValidator} to be used for validating this property value.
-	 * 
+	 *
 	 * @param validator
 	 *            Validator.
 	 */
 	public void addValidator(ISinglePropertyValidator<? super T> validator) {
 		if (null == validators) {
-			validators = new ArrayList<ISinglePropertyValidator<? super T>>();
+			validators = new ArrayList<>();
 		}
 		validators.add(validator);
 	}
 
 	/**
 	 * If default value is used for this property.
-	 * 
+	 *
 	 * @return If default value is used for this property.
 	 */
 	public boolean isDefaultValueUsed() {
@@ -329,7 +332,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Gets {@link #value}.
-	 * 
+	 *
 	 * @return {@link #value}
 	 */
 	public T getValue() {
@@ -342,7 +345,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Sets {@link #value}.
-	 * 
+	 *
 	 * @param value
 	 *            New value for {@link #value}
 	 */
@@ -352,7 +355,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Gets {@link #logicalName}.
-	 * 
+	 *
 	 * @return {@link #logicalName}
 	 */
 	public String getLogicalName() {
@@ -361,7 +364,7 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 
 	/**
 	 * Returns property value as human-readable string .
-	 * 
+	 *
 	 * @return Returns property value as human-readable string .
 	 */
 	public String getFormattedValue() {
@@ -375,9 +378,9 @@ public abstract class SingleProperty<T> extends AbstractProperty {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((getDefaultValue() == null) ? 0 : getDefaultValue().hashCode());
-		result = prime * result + ((logicalName == null) ? 0 : logicalName.hashCode());
-		result = prime * result + ((getUsedValue() == null) ? 0 : getUsedValue().hashCode());
+		result = (prime * result) + ((getDefaultValue() == null) ? 0 : getDefaultValue().hashCode());
+		result = (prime * result) + ((logicalName == null) ? 0 : logicalName.hashCode());
+		result = (prime * result) + ((getUsedValue() == null) ? 0 : getUsedValue().hashCode());
 		return result;
 	}
 

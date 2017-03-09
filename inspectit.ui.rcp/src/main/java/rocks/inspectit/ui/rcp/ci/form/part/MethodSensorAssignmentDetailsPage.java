@@ -25,25 +25,29 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 
+import rocks.inspectit.shared.cs.ci.assignment.AbstractClassSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
+import rocks.inspectit.ui.rcp.ci.listener.IDetailsModifiedListener;
+import rocks.inspectit.ui.rcp.validation.AbstractValidationManager;
 import rocks.inspectit.ui.rcp.validation.ValidationControlDecoration;
 import rocks.inspectit.ui.rcp.validation.validator.FqnWildcardValidator;
 
 /**
  * The details page for the {@link MethodSensorAssignment}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
-public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssignmentDetailsPage {
+public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssignmentDetailsPage<AbstractClassSensorAssignment<?>> {
 
 	/**
 	 * Element being displayed.
@@ -53,7 +57,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 	/**
 	 * List of parameters.
 	 */
-	private List<String> parametersList = new ArrayList<>();
+	private final List<String> parametersList = new ArrayList<>();
 
 	/**
 	 * Text box for the method name.
@@ -112,20 +116,24 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param masterBlockListener
+	 *
+	 * @param detailsModifiedListener
 	 *            listener to inform the master block on changes to the input
+	 * @param validationManager
+	 *            validation manager of the master part
 	 * @param canEdit
 	 *            If the data can be edited.
 	 */
-	public MethodSensorAssignmentDetailsPage(ISensorAssignmentUpdateListener masterBlockListener, boolean canEdit) {
-		super(masterBlockListener, canEdit);
+	public MethodSensorAssignmentDetailsPage(IDetailsModifiedListener<AbstractClassSensorAssignment<?>> detailsModifiedListener,
+			AbstractValidationManager<AbstractClassSensorAssignment<?>> validationManager, boolean canEdit) {
+		super(detailsModifiedListener, validationManager, canEdit);
 	}
 
 	/**
 	 * @return Returns currently displayed {@link MethodSensorAssignment} or <code>null</code> if
 	 *         one does not exists.
 	 */
+	@Override
 	protected MethodSensorAssignment getInput() {
 		return assignment;
 	}
@@ -141,7 +149,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 	/**
 	 * Creates content. Boolean finish defines the content should be finished by adding the
 	 * OK/cancel buttons.
-	 * 
+	 *
 	 * @param parent
 	 *            Parent composite
 	 * @param finish
@@ -166,7 +174,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 		title.setLayoutData(twd);
 
 		// section
-		Section section = toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+		Section section = toolkit.createSection(parent, ExpandableComposite.TITLE_BAR | ExpandableComposite.EXPANDED);
 		section.setText("Method definition");
 		section.marginWidth = 10;
 		section.marginHeight = 5;
@@ -201,7 +209,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 
 	/**
 	 * Adds content related to class.
-	 * 
+	 *
 	 * @param mainComposite
 	 *            Composite to create on.
 	 */
@@ -233,7 +241,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 		methodValidationDecoration.registerListener(SWT.Modify);
 		addValidationControlDecoration(methodValidationDecoration);
 		// listeners
-		methodButton.addSelectionListener(new SelectionAdapter() {
+		SelectionAdapter methodConstructorListener = new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				methodText.setEnabled(methodButton.getSelection());
@@ -242,7 +250,9 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 				}
 				methodValidationDecoration.executeValidation();
 			}
-		});
+		};
+		methodButton.addSelectionListener(methodConstructorListener);
+		constructorButton.addSelectionListener(methodConstructorListener);
 
 		// parameters
 		// first row
@@ -250,9 +260,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 		parametersButton = toolkit.createButton(mainComposite, "Only method/constructor with selected parameters", SWT.CHECK);
 		parametersButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 4, 1));
 		toolkit.createLabel(mainComposite, "");
-		createInfoLabel(
-				mainComposite,
-				toolkit,
+		createInfoLabel(mainComposite, toolkit,
 				"Restriction of the method or constructor. Only the method/constructor with specified fully qualified parameter names is monitored. For primitive type parameters use primitive names like boolean, int, long, etc. Use wildcard * to match any parameter.");
 		// second row
 		toolkit.createLabel(mainComposite, "");
@@ -290,7 +298,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 			@Override
 			public void handleEvent(Event event) {
 				InputDialog inputDialog = new InputDialog(managedForm.getForm().getShell(), "Add Parameter", "Specify fully qualified parameter name:", "", new FqnWildcardValidator(false, true));
-				if (inputDialog.open() == Window.OK && StringUtils.isNotBlank(inputDialog.getValue())) {
+				if ((inputDialog.open() == Window.OK) && StringUtils.isNotBlank(inputDialog.getValue())) {
 					parametersList.add(inputDialog.getValue());
 					parametersTableViewer.refresh();
 					getMarkDirtyListener().handleEvent(event);
@@ -317,7 +325,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 				if (!selection.isEmpty()) {
 					String selected = (String) selection.getFirstElement();
 					InputDialog inputDialog = new InputDialog(managedForm.getForm().getShell(), "Edit Parameter", "Specify fully qualified parameter name:", selected, null);
-					if (inputDialog.open() == Window.OK && StringUtils.isNotBlank(inputDialog.getValue())) {
+					if ((inputDialog.open() == Window.OK) && StringUtils.isNotBlank(inputDialog.getValue())) {
 						String value = inputDialog.getValue();
 						int index = 0;
 						for (int i = 0; i < parametersList.size(); i++) {
@@ -347,9 +355,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 		privateButton = toolkit.createButton(mainComposite, "private", SWT.CHECK);
 		privateButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		toolkit.createLabel(mainComposite, "");
-		createInfoLabel(
-				mainComposite,
-				toolkit,
+		createInfoLabel(mainComposite, toolkit,
 				"The additional options of the sensor assignment can include the definition of the method/constructor visibility modifier(s) that should be instrumented. Thus, the methods can be additionally filtered by the visibility modifier that can be: public, protected, private or default");
 
 		ValidationControlDecoration<Button> modifiersControlDecoration = new ValidationControlDecoration<Button>(publicButton, null, this) {
@@ -414,7 +420,7 @@ public class MethodSensorAssignmentDetailsPage extends AbstractClassSensorAssign
 				constructorButton.setSelection(true);
 			} else {
 				methodText.setEnabled(isCanEdit());
-				methodText.setText(getEmptyIfNull(assignment.getMethodName()));
+				methodText.setText(StringUtils.defaultString(assignment.getMethodName()));
 				methodButton.setSelection(true);
 			}
 			if (null != assignment.getParameters()) {

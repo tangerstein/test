@@ -1,131 +1,110 @@
 package rocks.inspectit.agent.java.sensor.platform;
 
 import java.sql.Timestamp;
-import java.util.GregorianCalendar;
-import java.util.Map;
+import java.util.Calendar;
 
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import rocks.inspectit.agent.java.core.ICoreService;
-import rocks.inspectit.agent.java.core.IIdManager;
-import rocks.inspectit.agent.java.core.IdNotAvailableException;
 import rocks.inspectit.agent.java.sensor.platform.provider.OperatingSystemInfoProvider;
 import rocks.inspectit.agent.java.sensor.platform.provider.factory.PlatformSensorInfoProviderFactory;
+import rocks.inspectit.shared.all.communication.SystemSensorData;
 import rocks.inspectit.shared.all.communication.data.CpuInformationData;
-import rocks.inspectit.shared.all.spring.logger.Log;
 
 /**
  * This class provides dynamic information about the underlying operating system through MXBeans.
- * 
+ *
  * @author Eduard Tudenhoefner
- * 
+ * @author Max Wassiljew (NovaTec Consulting GmbH)
  */
-public class CpuInformation extends AbstractPlatformSensor implements IPlatformSensor {
+public class CpuInformation extends AbstractPlatformSensor {
 
-	/**
-	 * The logger of the class.
-	 */
-	@Log
-	Logger log;
-
-	/**
-	 * The ID Manager used to get the correct IDs.
-	 */
-	@Autowired
-	private IIdManager idManager;
+	/** Collector class. */
+	private CpuInformationData cpuInformationData = new CpuInformationData();
 
 	/**
 	 * The {@link OperatingSystemInfoProvider} used to retrieve information from the operating
 	 * system.
 	 */
-	private OperatingSystemInfoProvider osBean = PlatformSensorInfoProviderFactory.getPlatformSensorInfoProvider().getOperatingSystemInfoProvider();
+	private OperatingSystemInfoProvider osBean;
 
 	/**
-	 * No-arg constructor needed for Spring.
+	 * {@inheritDoc}
 	 */
-	public CpuInformation() {
-	}
+	@Override
+	public void gather() {
+		// The timestamp is set in the {@link CpuInformation#reset()} to avoid multiple renewal. It
+		// will not be set on the first execution of {@link CpuInformation#gather()}, but shortly
+		// before.
+		float cpuUsage = this.getOsBean().retrieveCpuUsage();
+		long cpuTime = this.getOsBean().getProcessCpuTime();
 
-	/**
-	 * The default constructor which needs one parameter.
-	 * 
-	 * @param idManager
-	 *            The ID Manager.
-	 */
-	public CpuInformation(IIdManager idManager) {
-		this.idManager = idManager;
-	}
+		this.cpuInformationData.incrementCount();
+		this.cpuInformationData.updateProcessCpuTime(cpuTime);
+		this.cpuInformationData.addCpuUsage(cpuUsage);
 
-	/**
-	 * Returns the process cpu time.
-	 * 
-	 * @return the process cpu time.
-	 */
-	public long getProcessCpuTime() {
-		return osBean.getProcessCpuTime();
-	}
-
-	/**
-	 * Updates all dynamic cpu information.
-	 * 
-	 * @param coreService
-	 *            The {@link ICoreService}.
-	 * 
-	 * @param sensorTypeIdent
-	 *            The sensorTypeIdent.
-	 */
-	public void update(ICoreService coreService, long sensorTypeIdent) {
-		long processCpuTime = this.getProcessCpuTime();
-		float cpuUsage = osBean.retrieveCpuUsage();
-
-		CpuInformationData osData = (CpuInformationData) coreService.getPlatformSensorData(sensorTypeIdent);
-
-		if (osData == null) {
-			try {
-				long platformId = idManager.getPlatformId();
-				long registeredSensorTypeId = idManager.getRegisteredSensorTypeId(sensorTypeIdent);
-				Timestamp timestamp = new Timestamp(GregorianCalendar.getInstance().getTimeInMillis());
-
-				osData = new CpuInformationData(timestamp, platformId, registeredSensorTypeId);
-				osData.incrementCount();
-
-				osData.updateProcessCpuTime(processCpuTime);
-
-				osData.addCpuUsage(cpuUsage);
-				osData.setMinCpuUsage(cpuUsage);
-				osData.setMaxCpuUsage(cpuUsage);
-
-				coreService.addPlatformSensorData(sensorTypeIdent, osData);
-			} catch (IdNotAvailableException e) {
-				if (log.isDebugEnabled()) {
-					log.debug("Could not save the cpu information because of an unavailable id. " + e.getMessage());
-				}
-			}
-		} else {
-			osData.incrementCount();
-			osData.updateProcessCpuTime(processCpuTime);
-			osData.addCpuUsage(cpuUsage);
-
-			if (cpuUsage < osData.getMinCpuUsage()) {
-				osData.setMinCpuUsage(cpuUsage);
-			} else if (cpuUsage > osData.getMaxCpuUsage()) {
-				osData.setMaxCpuUsage(cpuUsage);
-			}
+		if (cpuUsage < this.cpuInformationData.getMinCpuUsage()) {
+			this.cpuInformationData.setMinCpuUsage(cpuUsage);
 		}
-
+		if (cpuUsage > this.cpuInformationData.getMaxCpuUsage()) {
+			this.cpuInformationData.setMaxCpuUsage(cpuUsage);
+		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void init(Map<String, Object> parameter) {
+	@Override
+	public SystemSensorData get() {
+		CpuInformationData newCpuInformationData = new CpuInformationData();
+
+		newCpuInformationData.setPlatformIdent(this.cpuInformationData.getPlatformIdent());
+		newCpuInformationData.setSensorTypeIdent(this.cpuInformationData.getSensorTypeIdent());
+		newCpuInformationData.setCount(this.cpuInformationData.getCount());
+
+		newCpuInformationData.setProcessCpuTime(this.cpuInformationData.getProcessCpuTime());
+
+		newCpuInformationData.setTotalCpuUsage(this.cpuInformationData.getTotalCpuUsage());
+		newCpuInformationData.setMinCpuUsage(this.cpuInformationData.getMinCpuUsage());
+		newCpuInformationData.setMaxCpuUsage(this.cpuInformationData.getMaxCpuUsage());
+
+		newCpuInformationData.setTimeStamp(this.cpuInformationData.getTimeStamp());
+
+		return newCpuInformationData;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public boolean automaticUpdate() {
-		return true;
+	@Override
+	public void reset() {
+		this.cpuInformationData.setCount(0);
+
+		this.cpuInformationData.setProcessCpuTime(0L);
+
+		this.cpuInformationData.setTotalCpuUsage(0f);
+		this.cpuInformationData.setMinCpuUsage(Float.MAX_VALUE);
+		this.cpuInformationData.setMaxCpuUsage(0f);
+
+		Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
+		this.cpuInformationData.setTimeStamp(timestamp);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected SystemSensorData getSystemSensorData() {
+		return this.cpuInformationData;
+	}
+
+	/**
+	 * Gets the {@link OperatingSystemInfoProvider}. The getter method is provided for better
+	 * testability.
+	 *
+	 * @return {@link OperatingSystemInfoProvider}.
+	 */
+	private OperatingSystemInfoProvider getOsBean() {
+		if (this.osBean == null) {
+			this.osBean = PlatformSensorInfoProviderFactory.getPlatformSensorInfoProvider().getOperatingSystemInfoProvider();
+		}
+		return this.osBean;
 	}
 }

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import rocks.inspectit.server.dao.DefaultDataDao;
 import rocks.inspectit.server.dao.HttpTimerDataDao;
@@ -18,10 +19,11 @@ import rocks.inspectit.shared.cs.cmr.service.IHttpTimerDataAccessService;
 
 /**
  * This class provides access to the http related data in the CMR.
- * 
+ *
  * @author Stefan Siegl
  */
 @Service
+@Transactional
 public class HttpTimerDataAccessService implements IHttpTimerDataAccessService, InitializingBean {
 
 	/** The logger of this class. */
@@ -43,6 +45,7 @@ public class HttpTimerDataAccessService implements IHttpTimerDataAccessService, 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<HttpTimerData> getAggregatedTimerData(HttpTimerData httpData, boolean includeRequestMethod) {
 		return dao.getAggregatedHttpTimerData(httpData, includeRequestMethod);
@@ -51,6 +54,7 @@ public class HttpTimerDataAccessService implements IHttpTimerDataAccessService, 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<HttpTimerData> getAggregatedTimerData(HttpTimerData httpData, boolean includeRequestMethod, Date fromDate, Date toDate) {
 		return dao.getAggregatedHttpTimerData(httpData, includeRequestMethod, fromDate, toDate);
@@ -59,6 +63,7 @@ public class HttpTimerDataAccessService implements IHttpTimerDataAccessService, 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<HttpTimerData> getTaggedAggregatedTimerData(HttpTimerData httpData, boolean includeRequestMethod) {
 		return dao.getTaggedAggregatedHttpTimerData(httpData, includeRequestMethod);
@@ -67,6 +72,7 @@ public class HttpTimerDataAccessService implements IHttpTimerDataAccessService, 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<HttpTimerData> getTaggedAggregatedTimerData(HttpTimerData httpData, boolean includeRequestMethod, Date fromDate, Date toDate) {
 		return dao.getTaggedAggregatedHttpTimerData(httpData, includeRequestMethod, fromDate, toDate);
@@ -80,6 +86,7 @@ public class HttpTimerDataAccessService implements IHttpTimerDataAccessService, 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void afterPropertiesSet() throws Exception {
 		if (log.isInfoEnabled()) {
 			log.info("|-Http Timer Data Access Service active...");

@@ -1,31 +1,24 @@
 package rocks.inspectit.agent.java.config.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import rocks.inspectit.agent.java.config.impl.PropertyAccessor.PropertyPathStart;
 
 /**
- * The abstract sensor configuration which is used by the registered and unregistered sensor
- * configuration classes.
- * 
- * @author Patrice Bouillet
- * 
+ * Abstract class for both our normal and special sensor configs.
+ *
+ * @author Ivan Senic
+ *
  */
-public abstract class AbstractSensorConfig {
+public class AbstractSensorConfig {
+
+	/**
+	 * The method id.
+	 */
+	private long id;
 
 	/**
 	 * The name of the target class.
 	 */
-	private String targetPackageName;
-
-	/**
-	 * The name of the target class.
-	 */
-	private String targetClassName;
+	private String targetClassFqn;
 
 	/**
 	 * The name of the target method.
@@ -33,192 +26,172 @@ public abstract class AbstractSensorConfig {
 	private String targetMethodName;
 
 	/**
+	 * The return type of the method.
+	 */
+	private String returnType;
+
+	/**
 	 * The parameter types (as the fully qualified name) of the method.
 	 */
-	private List<String> parameterTypes = new ArrayList<String>();
+	private List<String> parameterTypes;
 
 	/**
-	 * Additional settings are stored in this map.
+	 * Gets {@link #id}.
+	 *
+	 * @return {@link #id}
 	 */
-	private Map<String, Object> settings = new HashMap<String, Object>();
-
-	/**
-	 * Defines if this sensor configuration contains one or many definitions for a property access
-	 * (class field / method parameter) to save.
-	 */
-	private boolean propertyAccess = false;
-
-	/**
-	 * If <code>propertyAccess</code> is set to true, then this list contains at least one element.
-	 * The contents is of type {@link PropertyPathStart}.
-	 */
-	private List<PropertyPathStart> propertyAccessorList = new CopyOnWriteArrayList<PropertyPathStart>();
-
-	/**
-	 * If this config defines a constructor.
-	 */
-	private boolean constructor = false;
-
-	/**
-	 * Returns a map of the defined settings.
-	 * 
-	 * @return The map of settings.
-	 */
-	public Map<String, Object> getSettings() {
-		return settings;
+	public long getId() {
+		return this.id;
 	}
 
 	/**
-	 * The map of settings. Both, key and value, should be standard strings.
-	 * 
-	 * @param settings
-	 *            The map of settings.
+	 * Sets {@link #id}.
+	 *
+	 * @param id
+	 *            New value for {@link #id}
 	 */
-	public void setSettings(Map<String, Object> settings) {
-		this.settings = settings;
+	public void setId(long id) {
+		this.id = id;
 	}
 
 	/**
-	 * Returns the package name.
-	 * 
-	 * @return The package name.
+	 * Gets {@link #targetClassFqn}.
+	 *
+	 * @return {@link #targetClassFqn}
 	 */
-	public String getTargetPackageName() {
-		return targetPackageName;
+	public String getTargetClassFqn() {
+		return this.targetClassFqn;
 	}
 
 	/**
-	 * Sets the package name.
-	 * 
-	 * @param targetPackageName
-	 *            The package name to set.
+	 * Sets {@link #targetClassFqn}.
+	 *
+	 * @param targetClassFqn
+	 *            New value for {@link #targetClassFqn}
 	 */
-	public void setTargetPackageName(String targetPackageName) {
-		this.targetPackageName = targetPackageName;
+	public void setTargetClassFqn(String targetClassFqn) {
+		this.targetClassFqn = targetClassFqn;
 	}
 
 	/**
-	 * Returns the class name as a name only string.
-	 * 
-	 * @return The class name. Example: String
-	 */
-	public String getTargetClassName() {
-		return targetClassName;
-	}
-
-	/**
-	 * Returns the fully qualified class name.
-	 * 
-	 * @return FQN of a class. Example: java.lang.String
-	 */
-	public String getQualifiedTargetClassName() {
-		return targetPackageName + '.' + targetClassName;
-	}
-
-	/**
-	 * Sets the class name. Has to be a fully qualified class name, example:
-	 * <code>java.lang.String</code>
-	 * 
-	 * @param targetClassName
-	 *            The target class name to set.
-	 */
-	public void setTargetClassName(String targetClassName) {
-		this.targetClassName = targetClassName;
-	}
-
-	/**
-	 * Returns the method name without the signature.
-	 * 
-	 * @return The method name.
+	 * Gets {@link #targetMethodName}.
+	 *
+	 * @return {@link #targetMethodName}
 	 */
 	public String getTargetMethodName() {
-		return targetMethodName;
+		return this.targetMethodName;
 	}
 
 	/**
-	 * Sets the method name. Has to be without the signature. So a defined method in the config file
-	 * as <code>test(java.lang.String)</code> has to be extracted as just <code>test</code>.
-	 * 
+	 * Sets {@link #targetMethodName}.
+	 *
 	 * @param targetMethodName
-	 *            The method name.
+	 *            New value for {@link #targetMethodName}
 	 */
 	public void setTargetMethodName(String targetMethodName) {
 		this.targetMethodName = targetMethodName;
 	}
 
 	/**
-	 * The parameter types or the signature of the method. Returns a {@link List} of {@link String}
-	 * instances containing the fully qualified name of the classes.
-	 * 
-	 * @return The {@link List} of parameter types.
+	 * Gets {@link #returnType}.
+	 *
+	 * @return {@link #returnType}
 	 */
-	public List<String> getParameterTypes() {
-		return parameterTypes;
+	public String getReturnType() {
+		return this.returnType;
 	}
 
 	/**
-	 * Sets the parameter types. The {@link List} contains just of {@link String} instances.
-	 * 
+	 * Sets {@link #returnType}.
+	 *
+	 * @param returnType
+	 *            New value for {@link #returnType}
+	 */
+	public void setReturnType(String returnType) {
+		this.returnType = returnType;
+	}
+
+	/**
+	 * Gets {@link #parameterTypes}.
+	 *
+	 * @return {@link #parameterTypes}
+	 */
+	public List<String> getParameterTypes() {
+		return this.parameterTypes;
+	}
+
+	/**
+	 * Sets {@link #parameterTypes}.
+	 *
 	 * @param parameterTypes
-	 *            The {@link List} of parameter types.
+	 *            New value for {@link #parameterTypes}
 	 */
 	public void setParameterTypes(List<String> parameterTypes) {
 		this.parameterTypes = parameterTypes;
 	}
 
 	/**
-	 * If this configuration defines a property access.
-	 * 
-	 * @return Returns <code>true</code> if a property access is defines.
+	 * {@inheritDoc}
 	 */
-	public boolean isPropertyAccess() {
-		return propertyAccess;
-	}
-
-	/**
-	 * Sets if this sensor configuration defines a property access.
-	 * 
-	 * @param propertyAccess
-	 *            If this sensor configuration defines a property access.
-	 */
-	public void setPropertyAccess(boolean propertyAccess) {
-		this.propertyAccess = propertyAccess;
-	}
-
-	/**
-	 * Returns the {@link List} containing {@link PropertyPathStart} objects. Only contains
-	 * something if {@link #isPropertyAccess()} returns <code>true</code>.
-	 * 
-	 * @return The {@link List} of {@link PropertyPathStart} objects.
-	 */
-	public List<PropertyPathStart> getPropertyAccessorList() {
-		return propertyAccessorList;
-	}
-
-	/**
-	 * If this sensor config defines a constructor.
-	 * 
-	 * @param isConstructor
-	 *            the isConstructor to set
-	 */
-	public void setConstructor(boolean isConstructor) {
-		this.constructor = isConstructor;
-	}
-
-	/**
-	 * Is this sensor config defining an constructor?
-	 * 
-	 * @return the isConstructor
-	 */
-	public boolean isConstructor() {
-		return constructor;
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = (prime * result) + (int) (this.id ^ (this.id >>> 32));
+		result = (prime * result) + ((this.parameterTypes == null) ? 0 : this.parameterTypes.hashCode());
+		result = (prime * result) + ((this.returnType == null) ? 0 : this.returnType.hashCode());
+		result = (prime * result) + ((this.targetClassFqn == null) ? 0 : this.targetClassFqn.hashCode());
+		result = (prime * result) + ((this.targetMethodName == null) ? 0 : this.targetMethodName.hashCode());
+		return result;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public String toString() {
-		return targetClassName + "#" + targetMethodName + parameterTypes;
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		AbstractSensorConfig other = (AbstractSensorConfig) obj;
+		if (this.id != other.id) {
+			return false;
+		}
+		if (this.parameterTypes == null) {
+			if (other.parameterTypes != null) {
+				return false;
+			}
+		} else if (!this.parameterTypes.equals(other.parameterTypes)) {
+			return false;
+		}
+		if (this.returnType == null) {
+			if (other.returnType != null) {
+				return false;
+			}
+		} else if (!this.returnType.equals(other.returnType)) {
+			return false;
+		}
+		if (this.targetClassFqn == null) {
+			if (other.targetClassFqn != null) {
+				return false;
+			}
+		} else if (!this.targetClassFqn.equals(other.targetClassFqn)) {
+			return false;
+		}
+		if (this.targetMethodName == null) {
+			if (other.targetMethodName != null) {
+				return false;
+			}
+		} else if (!this.targetMethodName.equals(other.targetMethodName)) {
+			return false;
+		}
+		return true;
 	}
 
 }

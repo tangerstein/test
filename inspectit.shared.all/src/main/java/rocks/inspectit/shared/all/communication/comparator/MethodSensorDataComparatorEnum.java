@@ -10,9 +10,9 @@ import rocks.inspectit.shared.all.util.ObjectUtils;
 
 /**
  * Comparators for {@link MethodSensorData}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public enum MethodSensorDataComparatorEnum implements IDataComparator<MethodSensorData>, Comparator<MethodIdent> {
 
@@ -34,13 +34,14 @@ public enum MethodSensorDataComparatorEnum implements IDataComparator<MethodSens
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int compare(MethodSensorData o1, MethodSensorData o2, ICachedDataService cachedDataService) {
 		if (null == cachedDataService) {
 			return 0;
 		}
 		MethodIdent methodIdent1 = cachedDataService.getMethodIdentForId(o1.getMethodIdent());
 		MethodIdent methodIdent2 = cachedDataService.getMethodIdentForId(o2.getMethodIdent());
-		if (null != methodIdent1 && null != methodIdent2) {
+		if ((null != methodIdent1) && (null != methodIdent2)) {
 			return compare(methodIdent1, methodIdent2);
 		} else {
 			return 0;
@@ -50,6 +51,7 @@ public enum MethodSensorDataComparatorEnum implements IDataComparator<MethodSens
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int compare(MethodIdent methodIdent1, MethodIdent methodIdent2) {
 		switch (this) {
 		case PACKAGE:

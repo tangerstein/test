@@ -15,7 +15,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import rocks.inspectit.shared.all.exception.BusinessException;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
+import rocks.inspectit.shared.all.serializer.SerializationException;
 import rocks.inspectit.shared.cs.storage.StorageData;
 import rocks.inspectit.shared.cs.storage.label.AbstractStorageLabel;
 import rocks.inspectit.ui.rcp.InspectIT;
@@ -26,9 +26,9 @@ import rocks.inspectit.ui.rcp.view.impl.StorageManagerView;
 
 /**
  * Handler for removing a list of labels from storage.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class RemoveStorageLabelHandler extends AbstractHandler implements IHandler {
 
@@ -62,7 +62,7 @@ public class RemoveStorageLabelHandler extends AbstractHandler implements IHandl
 			}
 		}
 
-		if (null != storageProvider && null != inputList) {
+		if ((null != storageProvider) && (null != inputList)) {
 			CmrRepositoryDefinition cmrRepositoryDefinition = storageProvider.getCmrRepositoryDefinition();
 			if (cmrRepositoryDefinition.getOnlineStatus() != OnlineStatus.OFFLINE) {
 				try {

@@ -4,21 +4,18 @@ import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import rocks.inspectit.server.dao.JmxSensorTypeIdentDao;
-import rocks.inspectit.server.util.PlatformIdentCache;
 import rocks.inspectit.shared.all.cmr.model.JmxSensorTypeIdent;
-import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 
 /**
- * The default implementation of the {@link JmxSensorTypeIdentDao}  interface by using Entity
+ * The default implementation of the {@link JmxSensorTypeIdentDao} interface by using Entity
  * manager.
- * 
+ *
  * @author Alfred Krauss
  * @author Marius Oehler
- * 
+ *
  */
 @Repository
 public class JmxSensorTypeIdentDaoImpl extends AbstractJpaDao<JmxSensorTypeIdent> implements JmxSensorTypeIdentDao {
@@ -31,16 +28,11 @@ public class JmxSensorTypeIdentDaoImpl extends AbstractJpaDao<JmxSensorTypeIdent
 	}
 
 	/**
-	 * {@link PlatformIdent} cache.
-	 */
-	@Autowired
-	private PlatformIdentCache platformIdentCache;
-
-	/**
 	 * {@inheritDoc}
 	 */
-	public List<JmxSensorTypeIdent> findByExample(long platformId, JmxSensorTypeIdent jmxSensorTypeIdent) {
-		TypedQuery<JmxSensorTypeIdent> query = getEntityManager().createNamedQuery(JmxSensorTypeIdent.FIND_BY_PLATFORM, JmxSensorTypeIdent.class);
+	@Override
+	public List<Long> findIdByExample(long platformId, JmxSensorTypeIdent jmxSensorTypeIdent) {
+		TypedQuery<Long> query = getEntityManager().createNamedQuery(JmxSensorTypeIdent.FIND_ID_BY_PLATFORM, Long.class);
 		query.setParameter("platformIdentId", platformId);
 
 		return query.getResultList();
@@ -49,6 +41,7 @@ public class JmxSensorTypeIdentDaoImpl extends AbstractJpaDao<JmxSensorTypeIdent
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public JmxSensorTypeIdent load(Long id) {
 		return getEntityManager().find(JmxSensorTypeIdent.class, id);
 	}
@@ -56,6 +49,7 @@ public class JmxSensorTypeIdentDaoImpl extends AbstractJpaDao<JmxSensorTypeIdent
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void saveOrUpdate(JmxSensorTypeIdent jmxSensorTypeIdent) {
 		// we save if id is not set, otherwise merge
 		if (null == jmxSensorTypeIdent.getId()) {
@@ -63,7 +57,6 @@ public class JmxSensorTypeIdentDaoImpl extends AbstractJpaDao<JmxSensorTypeIdent
 		} else {
 			super.update(jmxSensorTypeIdent);
 		}
-		platformIdentCache.markDirty(jmxSensorTypeIdent.getPlatformIdent());
 	}
 
 }

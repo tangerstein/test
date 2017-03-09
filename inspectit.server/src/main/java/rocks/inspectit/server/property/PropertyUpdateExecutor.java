@@ -13,6 +13,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -29,9 +31,9 @@ import rocks.inspectit.shared.cs.cmr.property.configuration.SingleProperty;
 
 /**
  * This class executes method annotated with {@link PropertyUpdate} annotation.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Component
 public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAware {
@@ -61,7 +63,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 	/**
 	 * Executes the methods that declare the {@link PropertyUpdate} annotations if the list of
 	 * updated properties names matches the ones specified in the annotation.
-	 * 
+	 *
 	 * @param properties
 	 *            List of updated properties.
 	 */
@@ -99,7 +101,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 				if (LOG.isDebugEnabled()) {
 					LOG.debug("Invoked the method " + methodInfo.getMethod().toGenericString() + " on target object " + methodInfo.getTarget()
-							+ ". The method was invoked cause it defines the following properties of which at least one was updated: " + Arrays.toString(methodInfo.getProperties()));
+					+ ". The method was invoked cause it defines the following properties of which at least one was updated: " + Arrays.toString(methodInfo.getProperties()));
 				}
 			}
 		}
@@ -119,8 +121,27 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 	 */
 	@Override
 	public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
+		Object realBean = null;
+		try {
+			realBean = getTargetObject(bean);
+		} catch (Exception e) {
+			if (LOG.isWarnEnabled()) {
+				LOG.warn("Unable to get the real bean object for bean named " + beanName + ".", e);
+			}
+			return bean;
+		}
+
+		// if we don't have the real object return
+		if (null == realBean) {
+			if (LOG.isWarnEnabled()) {
+				LOG.warn("Target bean object is null for bean named " + beanName + ".");
+			}
+			return bean;
+		}
+
+		final Object realBeanFinal = realBean;
 		// process methods for @PropertyUpdate
-		ReflectionUtils.doWithMethods(bean.getClass(), new MethodCallback() {
+		ReflectionUtils.doWithMethods(realBean.getClass(), new MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
 				// make sure only no-arg methods with annotation are added
@@ -128,7 +149,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 					PropertyUpdate propertyUpdate = method.getAnnotation(PropertyUpdate.class);
 					if (ArrayUtils.isNotEmpty(propertyUpdate.properties())) {
 						ReflectionUtils.makeAccessible(method);
-						PropertyUpdateMethodInfo methodInfo = new PropertyUpdateMethodInfo(bean, method, propertyUpdate.properties());
+						PropertyUpdateMethodInfo methodInfo = new PropertyUpdateMethodInfo(realBeanFinal, method, propertyUpdate.properties());
 						methodInfoList.add(methodInfo);
 					}
 				}
@@ -136,7 +157,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 		});
 
 		// process fields for @Value
-		ReflectionUtils.doWithFields(bean.getClass(), new FieldCallback() {
+		ReflectionUtils.doWithFields(realBean.getClass(), new FieldCallback() {
 			@Override
 			public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 				if (field.isAnnotationPresent(Value.class)) {
@@ -152,24 +173,44 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 					int startChar = placeholder.indexOf('{');
 					int endChar = placeholder.indexOf('}');
 					String property;
-					if (startChar > 0 && endChar > startChar) {
+					if ((startChar > 0) && (endChar > startChar)) {
 						property = placeholder.substring(startChar + 1, endChar);
 					} else {
 						property = placeholder;
 					}
 					ReflectionUtils.makeAccessible(field);
-					PropertyUpdateFieldInfo fieldInfo = new PropertyUpdateFieldInfo(bean, field, property);
+					PropertyUpdateFieldInfo fieldInfo = new PropertyUpdateFieldInfo(realBeanFinal, field, property);
 					fieldInfoList.add(fieldInfo);
 				}
 			}
 		});
 
+		// always return original bean
 		return bean;
+	}
+
+	/**
+	 * Checks if the given bean is proxy and if so tries to get the target object. Otherwise returns
+	 * the original bean.
+	 *
+	 * @param bean
+	 *            bean
+	 * @return Target object of a bean if it's a proxy or bean itself.
+	 * @throws Exception
+	 *             passing exception
+	 */
+	private Object getTargetObject(Object bean) throws Exception {
+		if (AopUtils.isJdkDynamicProxy(bean)) {
+			return ((Advised) bean).getTargetSource().getTarget();
+		} else {
+			return bean;
+		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		if (!(beanFactory instanceof ConfigurableListableBeanFactory)) {
 			throw new IllegalArgumentException("PropertyUpdateExecutor requires a ConfigurableListableBeanFactory");
@@ -180,9 +221,9 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 	/**
 	 * Class that combines all needed information for one field that needs to be updated when
 	 * certain property is changed.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static final class PropertyUpdateFieldInfo {
 
@@ -209,7 +250,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 		 * @param property
 		 *            Property name.
 		 */
-		public PropertyUpdateFieldInfo(Object target, Field field, String property) {
+		PropertyUpdateFieldInfo(Object target, Field field, String property) {
 			if (null == target) {
 				throw new IllegalArgumentException("Target object can not be null.");
 			}
@@ -226,7 +267,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Gets {@link #target}.
-		 * 
+		 *
 		 * @return {@link #target}
 		 */
 		public Object getTarget() {
@@ -235,7 +276,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Gets {@link #field}.
-		 * 
+		 *
 		 * @return {@link #field}
 		 */
 		public Field getField() {
@@ -244,7 +285,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Gets {@link #property}.
-		 * 
+		 *
 		 * @return {@link #property}
 		 */
 		public String getProperty() {
@@ -254,7 +295,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 		/**
 		 * Returns true if the name of the property field is bounded to is matching the logical name
 		 * of the update property.
-		 * 
+		 *
 		 * @param updatedProperty
 		 *            {@link SingleProperty}.
 		 * @return Returns true if the name of the property field is bounded to is matching the
@@ -268,9 +309,9 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 	/**
 	 * Class that combines all needed information for one method that needs to be executed when
 	 * certain properties are changed.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static final class PropertyUpdateMethodInfo {
 
@@ -291,7 +332,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Default constructor.
-		 * 
+		 *
 		 * @param target
 		 *            Target object.
 		 * @param method
@@ -316,7 +357,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Gets {@link #target}.
-		 * 
+		 *
 		 * @return {@link #target}
 		 */
 		public Object getTarget() {
@@ -325,7 +366,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Gets {@link #method}.
-		 * 
+		 *
 		 * @return {@link #method}
 		 */
 		public Method getMethod() {
@@ -334,7 +375,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 
 		/**
 		 * Gets {@link #properties}.
-		 * 
+		 *
 		 * @return {@link #properties}
 		 */
 		public String[] getProperties() {
@@ -344,7 +385,7 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 		/**
 		 * Returns true if given list of properties are matching any property name in this
 		 * {@link PropertyUpdateMethodInfo} object.
-		 * 
+		 *
 		 * @param updatedProperties
 		 *            Updated properties.
 		 * @return Returns true if given list of are matching any property name in this
@@ -368,8 +409,8 @@ public class PropertyUpdateExecutor implements BeanPostProcessor, BeanFactoryAwa
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + ((method == null) ? 0 : method.hashCode());
-			result = prime * result + ((target == null) ? 0 : System.identityHashCode(target));
+			result = (prime * result) + ((method == null) ? 0 : method.hashCode());
+			result = (prime * result) + ((target == null) ? 0 : System.identityHashCode(target));
 			return result;
 		}
 

@@ -1,6 +1,8 @@
 package rocks.inspectit.shared.cs.ci.assignment.impl;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -13,9 +15,9 @@ import rocks.inspectit.shared.cs.ci.sensor.method.IMethodSensorConfig;
 
 /**
  * Class for method sensor assignment.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlSeeAlso({ TimerMethodSensorAssignment.class })
@@ -27,7 +29,7 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 	 */
 	@XmlAttribute(name = "sensor-config-class", required = true)
 	private Class<? extends IMethodSensorConfig> sensorConfig;
-	
+
 	/**
 	 * Method name/pattern.
 	 */
@@ -44,31 +46,31 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 	 * If is constructor.
 	 */
 	@XmlAttribute(name = "constructor")
-	private boolean constructor;
+	private Boolean constructor = Boolean.FALSE;
 
 	/**
 	 * If public methods should be included. By default <code>true</code>.
 	 */
 	@XmlAttribute(name = "public-mod")
-	private boolean publicModifier = true;
+	private Boolean publicModifier = Boolean.TRUE;
 
 	/**
 	 * If protected methods should be included. By default <code>true</code>.
 	 */
 	@XmlAttribute(name = "protected-mod")
-	private boolean protectedModifier = true;
+	private Boolean protectedModifier = Boolean.TRUE;
 
 	/**
 	 * If private methods should be included. By default <code>true</code>.
 	 */
 	@XmlAttribute(name = "private-mod")
-	private boolean privateModifier = true;
+	private Boolean privateModifier = Boolean.TRUE;
 
 	/**
 	 * If default methods should be included. By default <code>true</code>.
 	 */
 	@XmlAttribute(name = "default-mod")
-	private boolean defaultModifier = true;
+	private Boolean defaultModifier = Boolean.TRUE;
 
 	/**
 	 * No-args constructor.
@@ -78,8 +80,9 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 
 	/**
 	 * Default constructor.
-	 * 
-	 * @param sensorConfig Method sensor config class begin assigned.
+	 *
+	 * @param sensorConfig
+	 *            Method sensor config class begin assigned.
 	 */
 	public MethodSensorAssignment(Class<? extends IMethodSensorConfig> sensorConfig) {
 		this.sensorConfig = sensorConfig;
@@ -94,8 +97,16 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 	}
 
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, Object> getSettings() {
+		return Collections.emptyMap();
+	}
+
+	/**
 	 * Gets {@link #methodName}.
-	 * 
+	 *
 	 * @return {@link #methodName}
 	 */
 	public String getMethodName() {
@@ -104,7 +115,7 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 
 	/**
 	 * Sets {@link #methodName}.
-	 * 
+	 *
 	 * @param methodName
 	 *            New value for {@link #methodName}
 	 */
@@ -114,7 +125,7 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 
 	/**
 	 * Gets {@link #parameters}.
-	 * 
+	 *
 	 * @return {@link #parameters}
 	 */
 	public List<String> getParameters() {
@@ -123,7 +134,7 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 
 	/**
 	 * Sets {@link #parameters}.
-	 * 
+	 *
 	 * @param parameters
 	 *            New value for {@link #parameters}
 	 */
@@ -133,97 +144,97 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 
 	/**
 	 * Gets {@link #constructor}.
-	 * 
+	 *
 	 * @return {@link #constructor}
 	 */
 	public boolean isConstructor() {
-		return constructor;
+		return constructor.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #constructor}.
-	 * 
+	 *
 	 * @param constructor
 	 *            New value for {@link #constructor}
 	 */
 	public void setConstructor(boolean constructor) {
-		this.constructor = constructor;
+		this.constructor = Boolean.valueOf(constructor);
 	}
 
 	/**
 	 * Gets {@link #publicModifier}.
-	 * 
+	 *
 	 * @return {@link #publicModifier}
 	 */
 	public boolean isPublicModifier() {
-		return publicModifier;
+		return publicModifier.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #publicModifier}.
-	 * 
+	 *
 	 * @param publicModifier
 	 *            New value for {@link #publicModifier}
 	 */
 	public void setPublicModifier(boolean publicModifier) {
-		this.publicModifier = publicModifier;
+		this.publicModifier = Boolean.valueOf(publicModifier);
 	}
 
 	/**
 	 * Gets {@link #protectedModifier}.
-	 * 
+	 *
 	 * @return {@link #protectedModifier}
 	 */
 	public boolean isProtectedModifier() {
-		return protectedModifier;
+		return protectedModifier.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #protectedModifier}.
-	 * 
+	 *
 	 * @param protectedModifier
 	 *            New value for {@link #protectedModifier}
 	 */
 	public void setProtectedModifier(boolean protectedModifier) {
-		this.protectedModifier = protectedModifier;
+		this.protectedModifier = Boolean.valueOf(protectedModifier);
 	}
 
 	/**
 	 * Gets {@link #privateModifier}.
-	 * 
+	 *
 	 * @return {@link #privateModifier}
 	 */
 	public boolean isPrivateModifier() {
-		return privateModifier;
+		return privateModifier.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #privateModifier}.
-	 * 
+	 *
 	 * @param privateModifier
 	 *            New value for {@link #privateModifier}
 	 */
 	public void setPrivateModifier(boolean privateModifier) {
-		this.privateModifier = privateModifier;
+		this.privateModifier = Boolean.valueOf(privateModifier);
 	}
 
 	/**
 	 * Gets {@link #defaultModifier}.
-	 * 
+	 *
 	 * @return {@link #defaultModifier}
 	 */
 	public boolean isDefaultModifier() {
-		return defaultModifier;
+		return defaultModifier.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #defaultModifier}.
-	 * 
+	 *
 	 * @param defaultModifier
 	 *            New value for {@link #defaultModifier}
 	 */
 	public void setDefaultModifier(boolean defaultModifier) {
-		this.defaultModifier = defaultModifier;
+		this.defaultModifier = Boolean.valueOf(defaultModifier);
 	}
 
 	/**
@@ -233,14 +244,14 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + (constructor ? 1231 : 1237);
-		result = prime * result + (defaultModifier ? 1231 : 1237);
-		result = prime * result + ((methodName == null) ? 0 : methodName.hashCode());
-		result = prime * result + ((parameters == null) ? 0 : parameters.hashCode());
-		result = prime * result + (privateModifier ? 1231 : 1237);
-		result = prime * result + (protectedModifier ? 1231 : 1237);
-		result = prime * result + (publicModifier ? 1231 : 1237);
-		result = prime * result + ((sensorConfig == null) ? 0 : sensorConfig.getName().hashCode());
+		result = (prime * result) + ((this.constructor == null) ? 0 : this.constructor.hashCode());
+		result = (prime * result) + ((this.defaultModifier == null) ? 0 : this.defaultModifier.hashCode());
+		result = (prime * result) + ((this.methodName == null) ? 0 : this.methodName.hashCode());
+		result = (prime * result) + ((this.parameters == null) ? 0 : this.parameters.hashCode());
+		result = (prime * result) + ((this.privateModifier == null) ? 0 : this.privateModifier.hashCode());
+		result = (prime * result) + ((this.protectedModifier == null) ? 0 : this.protectedModifier.hashCode());
+		result = (prime * result) + ((this.publicModifier == null) ? 0 : this.publicModifier.hashCode());
+		result = (prime * result) + ((this.sensorConfig == null) ? 0 : this.sensorConfig.getName().hashCode());
 		return result;
 	}
 
@@ -259,40 +270,60 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 			return false;
 		}
 		MethodSensorAssignment other = (MethodSensorAssignment) obj;
-		if (constructor != other.constructor) {
+		if (this.constructor == null) {
+			if (other.constructor != null) {
+				return false;
+			}
+		} else if (!this.constructor.equals(other.constructor)) {
 			return false;
 		}
-		if (defaultModifier != other.defaultModifier) {
+		if (this.defaultModifier == null) {
+			if (other.defaultModifier != null) {
+				return false;
+			}
+		} else if (!this.defaultModifier.equals(other.defaultModifier)) {
 			return false;
 		}
-		if (methodName == null) {
+		if (this.methodName == null) {
 			if (other.methodName != null) {
 				return false;
 			}
-		} else if (!methodName.equals(other.methodName)) {
+		} else if (!this.methodName.equals(other.methodName)) {
 			return false;
 		}
-		if (parameters == null) {
+		if (this.parameters == null) {
 			if (other.parameters != null) {
 				return false;
 			}
-		} else if (!parameters.equals(other.parameters)) {
+		} else if (!this.parameters.equals(other.parameters)) {
 			return false;
 		}
-		if (privateModifier != other.privateModifier) {
-			return false;
-		}
-		if (protectedModifier != other.protectedModifier) {
-			return false;
-		}
-		if (publicModifier != other.publicModifier) {
-			return false;
-		}
-		if (sensorConfig.getName() == null) {
-			if (other.sensorConfig.getName() != null) {
+		if (this.privateModifier == null) {
+			if (other.privateModifier != null) {
 				return false;
 			}
-		} else if (!sensorConfig.getName().equals(other.sensorConfig.getName())) {
+		} else if (!this.privateModifier.equals(other.privateModifier)) {
+			return false;
+		}
+		if (this.protectedModifier == null) {
+			if (other.protectedModifier != null) {
+				return false;
+			}
+		} else if (!this.protectedModifier.equals(other.protectedModifier)) {
+			return false;
+		}
+		if (this.publicModifier == null) {
+			if (other.publicModifier != null) {
+				return false;
+			}
+		} else if (!this.publicModifier.equals(other.publicModifier)) {
+			return false;
+		}
+		if (this.sensorConfig == null) {
+			if (other.sensorConfig != null) {
+				return false;
+			}
+		} else if (!this.sensorConfig.equals(other.sensorConfig)) {
 			return false;
 		}
 		return true;

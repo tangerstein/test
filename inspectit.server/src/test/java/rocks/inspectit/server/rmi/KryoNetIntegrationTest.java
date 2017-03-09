@@ -19,8 +19,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
+import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -41,9 +41,9 @@ import rocks.inspectit.shared.all.kryonet.IExtendedSerialization;
 import rocks.inspectit.shared.all.kryonet.Listener;
 import rocks.inspectit.shared.all.kryonet.Server;
 import rocks.inspectit.shared.all.kryonet.rmi.ObjectSpace;
+import rocks.inspectit.shared.all.serializer.IKryoProvider;
+import rocks.inspectit.shared.all.serializer.provider.SerializationManagerProvider;
 import rocks.inspectit.shared.all.storage.nio.stream.StreamProvider;
-import rocks.inspectit.shared.all.storage.serializer.IKryoProvider;
-import rocks.inspectit.shared.all.storage.serializer.provider.SerializationManagerProvider;
 
 /**
  * Tests the complete kryonet server-client communication.
@@ -119,7 +119,7 @@ public class KryoNetIntegrationTest extends AbstractTransactionalTestNGLogSuppor
 			public Object answer(InvocationOnMock invocation) throws Throwable {
 				return invocation.getArguments()[0];
 			}
-		}).when(service).returnSame(Mockito.any());
+		}).when(service).returnSame(Matchers.any());
 		objectSpace.register(1, service);
 	}
 
@@ -129,7 +129,7 @@ public class KryoNetIntegrationTest extends AbstractTransactionalTestNGLogSuppor
 		server.stop();
 	}
 
-	public class RemothMethodInvocation extends KryoNetIntegrationTest {
+	public class RemoteMethodInvocation extends KryoNetIntegrationTest {
 
 		@Test
 		public void simple() {
@@ -183,7 +183,7 @@ public class KryoNetIntegrationTest extends AbstractTransactionalTestNGLogSuppor
 			// sleep as the receiving is done in another thread
 			Thread.sleep(100);
 
-			verify(listener).received(Mockito.<Connection> anyObject(), eq(toSend));
+			verify(listener).received(Matchers.<Connection> anyObject(), eq(toSend));
 		}
 
 		@Test(invocationCount = 10)
@@ -213,7 +213,7 @@ public class KryoNetIntegrationTest extends AbstractTransactionalTestNGLogSuppor
 			Thread.sleep(100);
 
 			for (Object toSend : sendingObjectsSet) {
-				verify(listener).received(Mockito.<Connection> anyObject(), eq(toSend));
+				verify(listener).received(Matchers.<Connection> anyObject(), eq(toSend));
 			}
 		}
 	}
@@ -268,7 +268,7 @@ public class KryoNetIntegrationTest extends AbstractTransactionalTestNGLogSuppor
 	}
 
 	/**
-	 * Invoker for the {@link RemothMethodInvocation#multiThreaded()} method.
+	 * Invoker for the {@link RemoteMethodInvocation#multiThreaded()} method.
 	 *
 	 * @author Ivan Senic
 	 *

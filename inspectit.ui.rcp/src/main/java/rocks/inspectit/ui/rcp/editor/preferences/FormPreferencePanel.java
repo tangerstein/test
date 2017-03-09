@@ -10,9 +10,11 @@ import java.util.UUID;
 import org.eclipse.core.commands.ParameterizedCommand;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.bindings.Binding;
 import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.osgi.util.NLS;
@@ -22,6 +24,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.internal.menus.CommandMessages;
@@ -52,7 +55,7 @@ import rocks.inspectit.ui.rcp.preferences.PreferencesUtils;
 
 /**
  * This is the class where the preference panel is created.
- * 
+ *
  * @author Eduard Tudenhoefner
  * @author Patrice Bouillet
  * @author Stefan Siegl
@@ -63,7 +66,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * ID of the preference panel.
 	 */
-	private String id;
+	private final String id;
 
 	/**
 	 * The used toolkit.
@@ -74,7 +77,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	 * Callbacks which are containing the fire method which is executed whenever something is
 	 * changed and updated.
 	 */
-	private List<PreferenceEventCallback> callbacks = new ArrayList<PreferenceEventCallback>();
+	private List<PreferenceEventCallback> callbacks = new ArrayList<>();
 
 	/**
 	 * The button for live mode switching.
@@ -94,7 +97,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * The list of created preference controls.
 	 */
-	private List<IPreferenceControl> preferenceControlList = new ArrayList<IPreferenceControl>();
+	private List<IPreferenceControl> preferenceControlList = new ArrayList<>();
 
 	/**
 	 * The created section.
@@ -103,7 +106,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * The constructor which needs a {@link ViewController} reference.
-	 * 
+	 *
 	 * @param toolkit
 	 *            The Form toolkit which defines the used colors.
 	 */
@@ -125,6 +128,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void registerCallback(PreferenceEventCallback callback) {
 		Assert.isNotNull(callback);
 
@@ -134,6 +138,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void removeCallback(PreferenceEventCallback callback) {
 		Assert.isNotNull(callback);
 
@@ -143,6 +148,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void fireEvent(PreferenceEvent event) {
 		for (PreferenceEventCallback callback : callbacks) {
 			callback.eventFired(event);
@@ -152,8 +158,9 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void createPartControl(Composite parent, Set<PreferenceId> preferenceSet, InputDefinition inputDefinition, IToolBarManager toolBarManager) {
-		section = toolkit.createSection(parent, Section.NO_TITLE);
+		section = toolkit.createSection(parent, ExpandableComposite.NO_TITLE);
 		section.setText("Preferences");
 		section.setLayout(new GridLayout(1, false));
 		section.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -164,11 +171,11 @@ public class FormPreferencePanel implements IPreferencePanel {
 		innerComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
 		// only add buttons and some controls if the set is not empty
-		if (null != preferenceSet && !preferenceSet.isEmpty()) {
+		if ((null != preferenceSet) && !preferenceSet.isEmpty()) {
 			if (null != toolBarManager) {
 				createButtons(preferenceSet, toolBarManager, inputDefinition);
 			}
-			createPreferenceControls(innerComposite, preferenceSet);
+			createPreferenceControls(innerComposite, preferenceSet, inputDefinition);
 		}
 
 		section.setClient(innerComposite);
@@ -178,6 +185,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void setVisible(boolean visible) {
 		section.setVisible(visible);
 		section.setExpanded(visible);
@@ -186,6 +194,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void disableLiveMode() {
 		if (switchLiveMode.isChecked()) {
 			switchLiveMode.setChecked(false);
@@ -198,6 +207,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void update() {
 		if (switchPreferences.isChecked()) {
 			for (IPreferenceControl preferenceControl : preferenceControlList) {
@@ -221,6 +231,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void setSteppingControlChecked(boolean checked) {
 		if (null != switchSteppingControl) {
 			switchSteppingControl.setChecked(checked);
@@ -229,15 +240,17 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Creates the preference controls in the preference control panel.
-	 * 
+	 *
 	 * @param parent
 	 *            The parent {@link Composite} to which the controls will be added.
 	 * @param preferenceSet
 	 *            The set containing the preference IDs.
+	 * @param inputDefinition
+	 *            {@link InputDefinition} instance
 	 */
-	private void createPreferenceControls(Composite parent, Set<PreferenceId> preferenceSet) {
+	private void createPreferenceControls(Composite parent, Set<PreferenceId> preferenceSet, InputDefinition inputDefinition) {
 		for (PreferenceId preferenceIdEnum : preferenceSet) {
-			IPreferenceControl preferenceControl = PreferenceControlFactory.createPreferenceControls(parent, toolkit, preferenceIdEnum, this);
+			IPreferenceControl preferenceControl = PreferenceControlFactory.createPreferenceControls(parent, toolkit, preferenceIdEnum, this, inputDefinition);
 			if (null != preferenceControl) {
 				preferenceControlList.add(preferenceControl);
 			}
@@ -246,7 +259,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Creates the buttons for this panel.
-	 * 
+	 *
 	 * @param preferenceSet
 	 *            the list containing the preference ids.
 	 * @param toolBarManager
@@ -263,10 +276,10 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 		// add the maximize to all forms, let eclipse hide it as declared in plugin.xml
 		IWorkbenchWindow workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-		Map<Object, Object> params = new HashMap<Object, Object>();
+		Map<Object, Object> params = new HashMap<>();
 		params.put(MaximizeActiveViewHandler.PREFERENCE_PANEL_ID_PARAMETER, id);
-		CommandContributionItemParameter contributionParameters = new CommandContributionItemParameter(workbenchWindow, null, MaximizeActiveViewHandler.COMMAND_ID, params, InspectIT.getDefault()
-				.getImageDescriptor(InspectITImages.IMG_WINDOW), null, null, null, null, getTooltipTextForMaximizeContributionItem(), SWT.CHECK, null, true);
+		CommandContributionItemParameter contributionParameters = new CommandContributionItemParameter(workbenchWindow, null, MaximizeActiveViewHandler.COMMAND_ID, params,
+				InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_WINDOW), null, null, null, null, getTooltipTextForMaximizeContributionItem(), SWT.CHECK, null, true);
 		CommandContributionItem maximizeCommandContribution = new CommandContributionItem(contributionParameters);
 		toolBarManager.add(maximizeCommandContribution);
 
@@ -416,6 +429,8 @@ public class FormPreferencePanel implements IPreferencePanel {
 		}
 
 		toolBarManager.update(true);
+
+		menuAction.setRunTask(new MenuAction.ToolbarDropDownTask(((ToolBarManager) toolBarManager).getControl()));
 	}
 
 	/**
@@ -423,7 +438,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	 * sequence for the maximize active sub-view command.
 	 * <p>
 	 * <i>This method should be removed when Eclipse fixes the bug.</i>
-	 * 
+	 *
 	 * @return Returns tool-tip text with key binding sequence.
 	 */
 	private String getTooltipTextForMaximizeContributionItem() {
@@ -443,9 +458,9 @@ public class FormPreferencePanel implements IPreferencePanel {
 			}
 		}
 
-		if (activeBinding != null && !activeBinding.isEmpty()) {
+		if ((activeBinding != null) && !activeBinding.isEmpty()) {
 			String acceleratorText = activeBinding.format();
-			if (acceleratorText != null && acceleratorText.length() != 0) {
+			if ((acceleratorText != null) && (acceleratorText.length() != 0)) {
 				tooltipText = NLS.bind(CommandMessages.Tooltip_Accelerator, tooltipText, acceleratorText);
 			}
 		}
@@ -455,14 +470,14 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Switches the Preference View on/off.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private final class SwitchPreferences extends Action {
 		/**
 		 * Switches the preferences.
-		 * 
+		 *
 		 * @param text
 		 *            The text.
 		 */
@@ -482,14 +497,14 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Updates the Preferences.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private final class UpdateAction extends Action {
 		/**
 		 * Updates an action.
-		 * 
+		 *
 		 * @param text
 		 *            The text.
 		 */
@@ -509,15 +524,15 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Switches the live mode.
-	 * 
+	 *
 	 * @author Eduard Tudenhoefner
-	 * 
+	 *
 	 */
 	private final class SwitchLiveMode extends Action {
 
 		/**
 		 * Switches the Live Mode.
-		 * 
+		 *
 		 * @param text
 		 *            The text.
 		 */
@@ -538,16 +553,16 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Filters by the maximum number of elements shown.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	private final class SetItemCountAction extends Action {
 		/** the maximum number of elements shown. */
-		private int limit;
+		private final int limit;
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the text
 		 * @param limit
@@ -556,7 +571,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 *            current items to show, button will be selected if it matches the passed limit
 		 */
 		public SetItemCountAction(String text, int limit, int currentItemsToShow) {
-			super(text, Action.AS_RADIO_BUTTON);
+			super(text, IAction.AS_RADIO_BUTTON);
 			this.limit = limit;
 			setChecked(currentItemsToShow == limit);
 		}
@@ -568,7 +583,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		public void run() {
 			if (isChecked()) {
 				PreferencesUtils.saveIntValue(PreferencesConstants.ITEMS_COUNT_TO_SHOW, limit, false);
-				Map<IPreferenceGroup, Object> countPreference = new HashMap<IPreferenceGroup, Object>();
+				Map<IPreferenceGroup, Object> countPreference = new HashMap<>();
 				countPreference.put(PreferenceId.ItemCount.COUNT_SELECTION_ID, limit);
 				PreferenceEvent event = new PreferenceEvent(PreferenceId.ITEMCOUNT);
 				event.setPreferenceMap(countPreference);
@@ -579,17 +594,17 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Filters by data type.
-	 * 
+	 *
 	 * @author Ivan Senic
 	 */
 	private final class FilterByDataTypeAction extends Action {
 
 		/** The sensor type. */
-		private Class<?> dataClass;
+		private final Class<?> dataClass;
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the text
 		 * @param dataClass
@@ -599,7 +614,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 *            contained in the set
 		 */
 		public FilterByDataTypeAction(String text, Class<?> dataClass, Set<Class<?>> activeDatas) {
-			super(text, Action.AS_CHECK_BOX);
+			super(text, IAction.AS_CHECK_BOX);
 			this.dataClass = dataClass;
 			setChecked(activeDatas.contains(dataClass));
 		}
@@ -617,7 +632,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 				activeDatas.remove(dataClass);
 				PreferencesUtils.saveObject(PreferencesConstants.INVOCATION_FILTER_DATA_TYPES, activeDatas, false);
 			}
-			Map<IPreferenceGroup, Object> sensorTypePreference = new HashMap<IPreferenceGroup, Object>();
+			Map<IPreferenceGroup, Object> sensorTypePreference = new HashMap<>();
 			sensorTypePreference.put(PreferenceId.DataTypeSelection.SENSOR_DATA_SELECTION_ID, dataClass);
 			PreferenceEvent event = new PreferenceEvent(PreferenceId.FILTERDATATYPE);
 			event.setPreferenceMap(sensorTypePreference);
@@ -627,16 +642,16 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Filters by exclusive time.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	private final class FilterByExclusiveTimeAction extends Action {
 		/** the time. */
-		private double time;
+		private final double time;
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the text
 		 * @param time
@@ -646,9 +661,9 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 *            matches passed time
 		 */
 		public FilterByExclusiveTimeAction(String text, double time, double currentInvocFilterExclusive) {
-			super(text, Action.AS_RADIO_BUTTON);
+			super(text, IAction.AS_RADIO_BUTTON);
 			this.time = time;
-			setChecked(currentInvocFilterExclusive == time || (Double.isNaN(time)) && Double.isNaN(currentInvocFilterExclusive));
+			setChecked((currentInvocFilterExclusive == time) || ((Double.isNaN(time)) && Double.isNaN(currentInvocFilterExclusive)));
 		}
 
 		/**
@@ -658,7 +673,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		public void run() {
 			if (isChecked()) {
 				PreferencesUtils.saveDoubleValue(PreferencesConstants.INVOCATION_FILTER_EXCLUSIVE_TIME, time, false);
-				Map<IPreferenceGroup, Object> sensorTypePreference = new HashMap<IPreferenceGroup, Object>();
+				Map<IPreferenceGroup, Object> sensorTypePreference = new HashMap<>();
 				sensorTypePreference.put(PreferenceId.InvocExclusiveTimeSelection.TIME_SELECTION_ID, new Double(time));
 				PreferenceEvent event = new PreferenceEvent(PreferenceId.INVOCFILTEREXCLUSIVETIME);
 				event.setPreferenceMap(sensorTypePreference);
@@ -669,16 +684,16 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Filters by total time.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	private final class FilterByTotalTimeAction extends Action {
 		/** the time. */
-		private double time;
+		private final double time;
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the text
 		 * @param time
@@ -688,9 +703,9 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 *            matches passed time
 		 */
 		public FilterByTotalTimeAction(String text, double time, double currentInvocFilterTotal) {
-			super(text, Action.AS_RADIO_BUTTON);
+			super(text, IAction.AS_RADIO_BUTTON);
 			this.time = time;
-			setChecked(currentInvocFilterTotal == time || (Double.isNaN(time)) && Double.isNaN(currentInvocFilterTotal));
+			setChecked((currentInvocFilterTotal == time) || ((Double.isNaN(time)) && Double.isNaN(currentInvocFilterTotal)));
 		}
 
 		/**
@@ -700,7 +715,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		public void run() {
 			if (isChecked()) {
 				PreferencesUtils.saveDoubleValue(PreferencesConstants.INVOCATION_FILTER_TOTAL_TIME, time, false);
-				Map<IPreferenceGroup, Object> sensorTypePreference = new HashMap<IPreferenceGroup, Object>();
+				Map<IPreferenceGroup, Object> sensorTypePreference = new HashMap<>();
 				sensorTypePreference.put(PreferenceId.InvocTotalTimeSelection.TIME_SELECTION_ID, new Double(time));
 				PreferenceEvent event = new PreferenceEvent(PreferenceId.INVOCFILTERTOTALTIME);
 				event.setPreferenceMap(sensorTypePreference);
@@ -711,7 +726,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Sets the automatic refresh rate.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	private final class SetRefreshRateAction extends Action {
@@ -719,11 +734,11 @@ public class FormPreferencePanel implements IPreferencePanel {
 		/**
 		 * Refresh rate in ms.
 		 */
-		private long rate;
+		private final long rate;
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the text
 		 * @param rate
@@ -733,7 +748,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 *            same
 		 */
 		public SetRefreshRateAction(String text, long rate, long currentRate) {
-			super(text, Action.AS_RADIO_BUTTON);
+			super(text, IAction.AS_RADIO_BUTTON);
 			this.rate = rate;
 			setChecked(rate == currentRate);
 		}
@@ -745,7 +760,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		public void run() {
 			if (isChecked()) {
 				PreferencesUtils.saveLongValue(PreferencesConstants.REFRESH_RATE, rate, false);
-				Map<IPreferenceGroup, Object> refreshPreference = new HashMap<IPreferenceGroup, Object>();
+				Map<IPreferenceGroup, Object> refreshPreference = new HashMap<>();
 				refreshPreference.put(LiveMode.REFRESH_RATE, rate);
 				PreferenceEvent event = new PreferenceEvent(PreferenceId.LIVEMODE);
 				event.setPreferenceMap(refreshPreference);
@@ -758,7 +773,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	 * Creates and fires a new live mode event.
 	 */
 	private void createLiveModeEvent() {
-		Map<IPreferenceGroup, Object> livePreference = new HashMap<IPreferenceGroup, Object>();
+		Map<IPreferenceGroup, Object> livePreference = new HashMap<>();
 		livePreference.put(PreferenceId.LiveMode.BUTTON_LIVE_ID, switchLiveMode.isChecked());
 		PreferenceEvent event = new PreferenceEvent(PreferenceId.LIVEMODE);
 		event.setPreferenceMap(livePreference);
@@ -768,6 +783,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispose() {
 		for (IPreferenceControl preferenceControl : preferenceControlList) {
 			preferenceControl.dispose();
@@ -778,15 +794,15 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Action for turning the stepping control off and on.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private final class SwitchSteppingControl extends Action {
 
 		/**
 		 * Default constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the action's text, or <code>null</code> if there is no text
 		 * @see Action
@@ -802,7 +818,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		@Override
 		public void run() {
 			PreferenceEvent event = new PreferenceEvent(PreferenceId.STEPPABLE_CONTROL);
-			Map<IPreferenceGroup, Object> steppablePreference = new HashMap<IPreferenceGroup, Object>();
+			Map<IPreferenceGroup, Object> steppablePreference = new HashMap<>();
 			steppablePreference.put(PreferenceId.SteppableControl.BUTTON_STEPPABLE_CONTROL_ID, this.isChecked());
 			event.setPreferenceMap(steppablePreference);
 			fireEvent(event);
@@ -812,20 +828,20 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Sets the decimal places.
-	 * 
+	 *
 	 * @author Stefan Siegl
-	 * 
+	 *
 	 */
 	private final class SetTimeDecimalPlaces extends Action {
 
 		/**
 		 * The number of decimal places.
-		 * */
-		private int decimalPlaces;
+		 */
+		private final int decimalPlaces;
 
 		/**
 		 * Default constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the action's text, or <code>null</code> if there is no text
 		 * @param decimalPlaces
@@ -836,7 +852,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 * @see Action
 		 */
 		public SetTimeDecimalPlaces(String text, int decimalPlaces, int currentDecimalPlaces) {
-			super(text, Action.AS_RADIO_BUTTON);
+			super(text, IAction.AS_RADIO_BUTTON);
 			this.decimalPlaces = decimalPlaces;
 			setChecked(decimalPlaces == currentDecimalPlaces);
 		}
@@ -848,7 +864,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		public void run() {
 			if (isChecked()) {
 				PreferencesUtils.saveIntValue(PreferencesConstants.DECIMAL_PLACES, decimalPlaces, false);
-				Map<IPreferenceGroup, Object> decimalPlacesPreference = new HashMap<IPreferenceGroup, Object>();
+				Map<IPreferenceGroup, Object> decimalPlacesPreference = new HashMap<>();
 				decimalPlacesPreference.put(TimeResolution.TIME_DECIMAL_PLACES_ID, decimalPlaces);
 				PreferenceEvent event = new PreferenceEvent(PreferenceId.TIME_RESOLUTION);
 				event.setPreferenceMap(decimalPlacesPreference);
@@ -859,14 +875,14 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Option to switch between categorization based on request method or not.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	private final class SwitchHttpCategorizationRequestMethod extends Action {
 
 		/**
 		 * Default Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the action's text, or <code>null</code> if there is no text
 		 */
@@ -881,7 +897,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		@Override
 		public void run() {
 			PreferenceEvent event = new PreferenceEvent(PreferenceId.HTTP_AGGREGATION_REQUESTMETHOD);
-			Map<IPreferenceGroup, Object> httpCategoriation = new HashMap<IPreferenceGroup, Object>();
+			Map<IPreferenceGroup, Object> httpCategoriation = new HashMap<>();
 			httpCategoriation.put(PreferenceId.HttpAggregationRequestMethod.BUTTON_HTTP_AGGREGATION_REQUESTMETHOD_ID, this.isChecked());
 			event.setPreferenceMap(httpCategoriation);
 			fireEvent(event);
@@ -893,15 +909,15 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Option to active Http URI transformation with regular expression.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private final class SwitchHttpUriTransformation extends Action {
 
 		/**
 		 * Default Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the action's text, or <code>null</code> if there is no text
 		 */
@@ -916,7 +932,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		@Override
 		public void run() {
 			PreferenceEvent event = new PreferenceEvent(PreferenceId.HTTP_URI_TRANSFORMING);
-			Map<IPreferenceGroup, Object> preferenceMap = new HashMap<IPreferenceGroup, Object>();
+			Map<IPreferenceGroup, Object> preferenceMap = new HashMap<>();
 			preferenceMap.put(PreferenceId.HttpUriTransformation.URI_TRANSFORMATION_ACTIVE, this.isChecked());
 			event.setPreferenceMap(preferenceMap);
 			fireEvent(event);
@@ -928,15 +944,15 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Action for switching the mode of the invocation subviews from/to raw/aggregated.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private final class SwitchInvocationSubviewMode extends Action {
 
 		/**
 		 * Default constructor.
-		 * 
+		 *
 		 * @param text
 		 *            Text on the action.
 		 */
@@ -951,7 +967,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		@Override
 		public void run() {
 			PreferenceEvent event = new PreferenceEvent(PreferenceId.INVOCATION_SUBVIEW_MODE);
-			Map<IPreferenceGroup, Object> httpCategoriation = new HashMap<IPreferenceGroup, Object>();
+			Map<IPreferenceGroup, Object> httpCategoriation = new HashMap<>();
 			httpCategoriation.put(PreferenceId.InvocationSubviewMode.RAW, this.isChecked());
 			event.setPreferenceMap(httpCategoriation);
 			fireEvent(event);
@@ -960,7 +976,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 
 	/**
 	 * Action for setting the data solver to plot JMX data.
-	 * 
+	 *
 	 * @author Marius Oehler
 	 *
 	 */
@@ -969,11 +985,11 @@ public class FormPreferencePanel implements IPreferencePanel {
 		/**
 		 * The data solver of this element.
 		 */
-		private PlotDataSolver dataSolver;
+		private final PlotDataSolver dataSolver;
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param text
 		 *            the label of this item
 		 * @param dataSolver
@@ -982,7 +998,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		 *            the current selected {@link AbstractPlotDataSolver}
 		 */
 		public SetJmxPlotDataSolver(String text, PlotDataSolver dataSolver, PlotDataSolver currentDataSolver) {
-			super(text, Action.AS_RADIO_BUTTON);
+			super(text, IAction.AS_RADIO_BUTTON);
 			this.dataSolver = dataSolver;
 			setChecked(dataSolver.equals(currentDataSolver));
 		}
@@ -991,7 +1007,7 @@ public class FormPreferencePanel implements IPreferencePanel {
 		public void run() {
 			if (isChecked()) {
 				PreferenceEvent event = new PreferenceEvent(PreferenceId.JMX_PLOTDATASOLVER);
-				Map<IPreferenceGroup, Object> preferenceMap = new HashMap<IPreferenceGroup, Object>();
+				Map<IPreferenceGroup, Object> preferenceMap = new HashMap<>();
 				preferenceMap.put(PreferenceId.JmxPlotDataSolver.DATA_SOLVER, dataSolver);
 				event.setPreferenceMap(preferenceMap);
 				fireEvent(event);

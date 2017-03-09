@@ -14,9 +14,9 @@ import rocks.inspectit.shared.all.spring.logger.Log;
 /**
  * The simplest version of a buffer strategy contains just the reference to one measurement list.
  * Every time a new one is added, the old one is thrown away.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class SimpleBufferStrategy extends AbstractBufferStrategy<MethodSensorData> implements IBufferStrategy<MethodSensorData> {
 
@@ -39,6 +39,7 @@ public class SimpleBufferStrategy extends AbstractBufferStrategy<MethodSensorDat
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final void addMeasurements(final List<MethodSensorData> measurements) {
 		if (null == measurements) {
 			throw new IllegalArgumentException("Measurements cannot be null!");
@@ -60,6 +61,7 @@ public class SimpleBufferStrategy extends AbstractBufferStrategy<MethodSensorDat
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final boolean hasNext() {
 		return newMeasurements;
 	}
@@ -67,6 +69,7 @@ public class SimpleBufferStrategy extends AbstractBufferStrategy<MethodSensorDat
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final List<MethodSensorData> next() {
 		synchronized (this) {
 			if (newMeasurements) {
@@ -81,6 +84,7 @@ public class SimpleBufferStrategy extends AbstractBufferStrategy<MethodSensorDat
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final void remove() {
 		throw new UnsupportedOperationException();
 	}
@@ -88,6 +92,7 @@ public class SimpleBufferStrategy extends AbstractBufferStrategy<MethodSensorDat
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final void init(final Map<String, String> settings) {
 		// nothing to do
 	}

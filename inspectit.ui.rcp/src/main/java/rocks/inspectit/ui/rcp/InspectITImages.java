@@ -47,6 +47,7 @@ public interface InspectITImages {
 	String IMG_EXCEPTION_SENSOR = InspectITConstants.ICON_PATH_ECLIPSE + "exceptiontracer.gif";
 	String IMG_EXCEPTION_TREE = InspectITConstants.ICON_PATH_ECLIPSE + "exceptiontree.gif";
 	String IMG_EXPORT = InspectITConstants.ICON_PATH_ECLIPSE + "export.gif";
+	String IMG_EXTERNALIZE = InspectITConstants.ICON_PATH_ECLIPSE + "externalize.gif";
 	String IMG_FILTER = InspectITConstants.ICON_PATH_ECLIPSE + "filter_ps.gif";
 	String IMG_FOLDER = InspectITConstants.ICON_PATH_ECLIPSE + "prj_obj.gif";
 	String IMG_FONT = InspectITConstants.ICON_PATH_ECLIPSE + "font.gif";
@@ -61,9 +62,13 @@ public interface InspectITImages {
 	String IMG_ITEM_NA_GREY = InspectITConstants.ICON_PATH_ECLIPSE + "remove_exc.gif";
 	String IMG_LIVE_MODE = InspectITConstants.ICON_PATH_ECLIPSE + "start_task.gif";
 	String IMG_METHOD_PUBLIC = InspectITConstants.ICON_PATH_ECLIPSE + "methpub_obj.gif";
+	String IMG_METHOD_PUBLIC_DISABLED = InspectITConstants.ICON_PATH_ECLIPSE + "methpub_obj_dis.gif";
 	String IMG_METHOD_PROTECTED = InspectITConstants.ICON_PATH_ECLIPSE + "methpro_obj.gif";
+	String IMG_METHOD_PROTECTED_DISABLED = InspectITConstants.ICON_PATH_ECLIPSE + "methpro_obj_dis.gif";
 	String IMG_METHOD_DEFAULT = InspectITConstants.ICON_PATH_ECLIPSE + "methdef_obj.gif";
+	String IMG_METHOD_DEFAULT_DISABLED = InspectITConstants.ICON_PATH_ECLIPSE + "methdef_obj_dis.gif";
 	String IMG_METHOD_PRIVATE = InspectITConstants.ICON_PATH_ECLIPSE + "methpri_obj.gif";
+	String IMG_METHOD_PRIVATE_DISABLED = InspectITConstants.ICON_PATH_ECLIPSE + "methpri_obj_dis.gif";
 	String IMG_NEXT = InspectITConstants.ICON_PATH_ECLIPSE + "next_nav.gif";
 	String IMG_OVERLAY_UP = InspectITConstants.ICON_PATH_ECLIPSE + "over_co.gif";
 	String IMG_PACKAGE = InspectITConstants.ICON_PATH_ECLIPSE + "package_obj.gif";
@@ -129,6 +134,8 @@ public interface InspectITImages {
 	String IMG_PREFERENCES = InspectITConstants.ICON_PATH_ECLIPSE + "preferences.gif";
 	String IMG_RECORD = InspectITConstants.ICON_PATH_ECLIPSE + "record.gif";
 	String IMG_RECORD_GRAY = InspectITConstants.ICON_PATH_ECLIPSE + "record_gray.gif";
+	String IMG_RECORD_GREEN = InspectITConstants.ICON_PATH_ECLIPSE + "record_green.gif";
+	String IMG_RECORD_YELLOW = InspectITConstants.ICON_PATH_ECLIPSE + "record_yellow.gif";
 	String IMG_RECORD_SCHEDULED = InspectITConstants.ICON_PATH_ECLIPSE + "record_schedule.gif";
 	String IMG_RECORD_STOP = InspectITConstants.ICON_PATH_ECLIPSE + "record_term.gif";
 	String IMG_OPTIONS = InspectITConstants.ICON_PATH_ECLIPSE + "options.gif";
@@ -151,6 +158,7 @@ public interface InspectITImages {
 	String IMG_TOOL = InspectITConstants.ICON_PATH_ECLIPSE + "build.gif";
 	String IMG_TRANSFORM = InspectITConstants.ICON_PATH_ECLIPSE + "transform.gif";
 	String IMG_USER = InspectITConstants.ICON_PATH_ECLIPSE + "user.gif";
+	String IMG_METHOD_PARAMETER = InspectITConstants.ICON_PATH_ECLIPSE + "method-parameter.png";
 
 	// Fugue set - license Creative Commons v3.0
 	String IMG_ADDRESSBOOK = InspectITConstants.ICON_PATH_FUGUE + "address-book.png";
@@ -172,6 +180,37 @@ public interface InspectITImages {
 	String IMG_BOOK = InspectITConstants.ICON_PATH_FUGUE + "book.png";
 	String IMG_DUMMY = InspectITConstants.ICON_PATH_FUGUE + "dummy-happy.png";
 	String IMG_COUNTER = InspectITConstants.ICON_PATH_FUGUE + "counter.png";
+	String IMG_BUSINESS_CONTEXT = InspectITConstants.ICON_PATH_FUGUE + "briefcase.png";
+	String IMG_APPLICATION = InspectITConstants.ICON_PATH_FUGUE + "application-blue.png";
+	String IMG_APPLICATION_GREY = InspectITConstants.ICON_PATH_FUGUE + "application.png";
+	String IMG_APPLICATIONS = InspectITConstants.ICON_PATH_FUGUE + "applications-blue.png";
+	String IMG_BUSINESS_TRANSACTION = InspectITConstants.ICON_PATH_FUGUE + "application-dock.png";
+	String IMG_BUSINESS_TRANSACTION_GREY = InspectITConstants.ICON_PATH_FUGUE + "application-dock-grey.png";
+	String IMG_ADVANCED_MODE = InspectITConstants.ICON_PATH_FUGUE + "blue-document-node.png";
+	String IMG_ASTERISK = InspectITConstants.ICON_PATH_FUGUE + "asterisk.png";
+	String IMG_CONJUNCTION = InspectITConstants.ICON_PATH_FUGUE + "conjunction.png";
+	String IMG_DISJUNCTION = InspectITConstants.ICON_PATH_FUGUE + "disjunction.png";
+	String IMG_NOT = InspectITConstants.ICON_PATH_FUGUE + "exclamation-diamond.png";
+	String IMG_YES_NO = InspectITConstants.ICON_PATH_FUGUE + "status-y-n.png";
+	String IMG_BROWSER = InspectITConstants.ICON_PATH_FUGUE + "application-browser.png";
+	String IMG_SERVER = InspectITConstants.ICON_PATH_FUGUE + "server.png";
+	String IMG_ALARM = InspectITConstants.ICON_PATH_FUGUE + "flag.png";
+	String IMG_WARN_CIRCLE_FRAME = InspectITConstants.ICON_PATH_FUGUE + "exclamation-circle-frame.png";
+	String IMG_ERROR_CIRCLE_FRAME = InspectITConstants.ICON_PATH_FUGUE + "exclamation-red-frame.png";
+	String IMG_OK_CIRCLE_FRAME = InspectITConstants.ICON_PATH_FUGUE + "tick-circle-frame.png";
+	String IMG_INFO_CIRCLE_FRAME = InspectITConstants.ICON_PATH_FUGUE + "information-frame.png";
+	String IMG_NAVIGATION_CIRCLE_FRAME = InspectITConstants.ICON_PATH_FUGUE + "navigation-frame.png";
+	String IMG_QUESTION_CIRCLE_FRAME = InspectITConstants.ICON_PATH_FUGUE + "question-frame.png";
+
+	// Images originally from Fugue set we modified - license Creative Commons v3.0
+	String IMG_HTTP_PARAMETER = InspectITConstants.ICON_PATH_FUGUE + "http-parameter.png";
+	String IMG_HTTP_METHOD = InspectITConstants.ICON_PATH_FUGUE + "http-method.png";
+	String IMG_ALARM_INVOCATION = InspectITConstants.ICON_PATH_FUGUE + "invocFlag.png";
+	String IMG_HTTP_SCHEME = InspectITConstants.ICON_PATH_FUGUE + "http-scheme.png";
+	String IMG_HTTP_SERVER = InspectITConstants.ICON_PATH_FUGUE + "http-server.png";
+	String IMG_HTTP_PORT = InspectITConstants.ICON_PATH_FUGUE + "http-port.png";
+	String IMG_HTTP_URI = InspectITConstants.ICON_PATH_FUGUE + "http-uri.png";
+	String IMG_HTTP_QUERY = InspectITConstants.ICON_PATH_FUGUE + "http-query.png";
 
 	// labels just pointing to existing ones
 	String IMG_ASSIGNEE_LABEL_ICON = IMG_USER;
@@ -181,5 +220,4 @@ public interface InspectITImages {
 	String IMG_STATUS_LABEL_ICON = IMG_ALERT;
 	String IMG_USECASE_LABEL_ICON = IMG_BUSINESS;
 	String IMG_USER_LABEL_ICON = IMG_DISABLED;
-
 }

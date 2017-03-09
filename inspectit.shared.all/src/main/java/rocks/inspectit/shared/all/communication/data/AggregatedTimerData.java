@@ -9,9 +9,9 @@ import rocks.inspectit.shared.all.communication.IIdsAwareAggregatedData;
 
 /**
  * Aggregated {@link TimerData} object.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class AggregatedTimerData extends TimerData implements IIdsAwareAggregatedData<TimerData> {
 
@@ -31,6 +31,7 @@ public class AggregatedTimerData extends TimerData implements IIdsAwareAggregate
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void aggregate(TimerData data) {
 		this.aggregateTimerData(data);
 		if (data instanceof AggregatedTimerData) {
@@ -46,9 +47,10 @@ public class AggregatedTimerData extends TimerData implements IIdsAwareAggregate
 	}
 
 	/**
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Collection<Long> getAggregatedIds() {
 		return aggregatedIds.keySet();
 	}
@@ -56,6 +58,7 @@ public class AggregatedTimerData extends TimerData implements IIdsAwareAggregate
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void clearAggregatedIds() {
 		aggregatedIds.clear();
 
@@ -64,6 +67,7 @@ public class AggregatedTimerData extends TimerData implements IIdsAwareAggregate
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public TimerData getData() {
 		return this;
 	}
@@ -71,6 +75,7 @@ public class AggregatedTimerData extends TimerData implements IIdsAwareAggregate
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = super.getObjectSize(objectSizes, doAlign);
 		size += objectSizes.getPrimitiveTypesSize(1, 0, 0, 0, 0, 0);
@@ -92,7 +97,7 @@ public class AggregatedTimerData extends TimerData implements IIdsAwareAggregate
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((aggregatedIds == null) ? 0 : aggregatedIds.hashCode());
+		result = (prime * result) + ((aggregatedIds == null) ? 0 : aggregatedIds.hashCode());
 		return result;
 	}
 

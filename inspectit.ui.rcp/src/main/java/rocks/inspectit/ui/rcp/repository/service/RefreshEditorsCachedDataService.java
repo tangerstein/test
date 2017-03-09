@@ -8,6 +8,7 @@ import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
+import rocks.inspectit.shared.cs.cmr.service.IBusinessContextManagementService;
 import rocks.inspectit.shared.cs.cmr.service.IGlobalDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.cache.CachedDataService;
 import rocks.inspectit.ui.rcp.editor.root.IRootEditor;
@@ -18,9 +19,9 @@ import rocks.inspectit.ui.rcp.repository.RepositoryDefinition;
  * The {@link CachedDataService} to be used on the UI. When refresh of idents is triggered, all
  * editors on the given {@link CmrRepositoryDefinition} are refreshed so that correct data is
  * displayed.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class RefreshEditorsCachedDataService extends CachedDataService {
 
@@ -32,11 +33,13 @@ public class RefreshEditorsCachedDataService extends CachedDataService {
 	/**
 	 * @param globalDataAccessService
 	 *            {@link IGlobalDataAccessService}
+	 * @param businessContextService
+	 *            {@link IBusinessContextManagementService}
 	 * @param repositoryDefinition
 	 *            {@link RepositoryDefinition}
 	 */
-	public RefreshEditorsCachedDataService(IGlobalDataAccessService globalDataAccessService, CmrRepositoryDefinition repositoryDefinition) {
-		super(globalDataAccessService);
+	public RefreshEditorsCachedDataService(IGlobalDataAccessService globalDataAccessService, IBusinessContextManagementService businessContextService, CmrRepositoryDefinition repositoryDefinition) {
+		super(globalDataAccessService, businessContextService);
 		this.repositoryDefinition = repositoryDefinition;
 	}
 

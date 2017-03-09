@@ -10,17 +10,24 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+
 import rocks.inspectit.shared.all.cmr.cache.IObjectSizes;
 import rocks.inspectit.shared.all.communication.Sizeable;
 
 /**
  * Entity for holding HTTP info information.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Entity
 @Table(indexes = { @Index(name = "uri_idx", columnList = "uri"), @Index(name = "tag_idx", columnList = "inspectItTaggingHeaderValue") })
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
 public class HttpInfo implements Sizeable, Serializable {
 
 	/**
@@ -41,6 +48,7 @@ public class HttpInfo implements Sizeable, Serializable {
 	/**
 	 * The id of this instance (if persisted, otherwise <code>null</code>).
 	 */
+	@JsonIgnore
 	@Id
 	@GeneratedValue(strategy = GenerationType.TABLE)
 	private long id;
@@ -52,6 +60,30 @@ public class HttpInfo implements Sizeable, Serializable {
 	private String uri = UNDEFINED;
 
 	/**
+	 * The request scheme.
+	 */
+	@Column
+	private String scheme;
+
+	/**
+	 * The request server name.
+	 */
+	@Column
+	private String serverName;
+
+	/**
+	 * The request server port.
+	 */
+	@Column
+	private Integer serverPort;
+
+	/**
+	 * The request query string.
+	 */
+	@Column
+	private String queryString;
+
+	/**
 	 * The request method.
 	 */
 	private String requestMethod = UNDEFINED;
@@ -59,6 +91,7 @@ public class HttpInfo implements Sizeable, Serializable {
 	/**
 	 * The inspectIT tag.
 	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	private String inspectItTaggingHeaderValue;
 
 	/**
@@ -69,7 +102,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Secondary constructor.
-	 * 
+	 *
 	 * @param uri
 	 *            The uri.
 	 * @param requestMethod
@@ -85,7 +118,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Gets {@link #id}.
-	 * 
+	 *
 	 * @return {@link #id}
 	 */
 	public long getId() {
@@ -94,7 +127,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Sets {@link #id}.
-	 * 
+	 *
 	 * @param id
 	 *            New value for {@link #id}
 	 */
@@ -104,16 +137,17 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Returns if the URI is defined for this instance.
-	 * 
+	 *
 	 * @return True if {@link #uri} is not null and is different from {@value HttpInfo#UNDEFINED}.
 	 */
+	@JsonIgnore
 	public boolean isUriDefined() {
-		return uri != null && !HttpInfo.UNDEFINED.equals(uri);
+		return (uri != null) && !HttpInfo.UNDEFINED.equals(uri);
 	}
 
 	/**
 	 * Gets {@link #uri}.
-	 * 
+	 *
 	 * @return {@link #uri}
 	 */
 	public String getUri() {
@@ -122,7 +156,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Sets {@link #uri}.
-	 * 
+	 *
 	 * @param uri
 	 *            New value for {@link #uri}
 	 */
@@ -138,7 +172,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Gets {@link #requestMethod}.
-	 * 
+	 *
 	 * @return {@link #requestMethod}
 	 */
 	public String getRequestMethod() {
@@ -147,7 +181,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Sets {@link #requestMethod}.
-	 * 
+	 *
 	 * @param requestMethod
 	 *            New value for {@link #requestMethod}
 	 */
@@ -156,8 +190,84 @@ public class HttpInfo implements Sizeable, Serializable {
 	}
 
 	/**
+	 * Gets {@link #scheme}.
+	 *
+	 * @return {@link #scheme}
+	 */
+	public String getScheme() {
+		return this.scheme;
+	}
+
+	/**
+	 * Sets {@link #scheme}.
+	 *
+	 * @param scheme
+	 *            New value for {@link #scheme}
+	 */
+	public void setScheme(String scheme) {
+		this.scheme = scheme;
+	}
+
+	/**
+	 * Gets {@link #serverName}.
+	 *
+	 * @return {@link #serverName}
+	 */
+	public String getServerName() {
+		return this.serverName;
+	}
+
+	/**
+	 * Sets {@link #serverName}.
+	 *
+	 * @param serverName
+	 *            New value for {@link #serverName}
+	 */
+	public void setServerName(String serverName) {
+		this.serverName = serverName;
+	}
+
+	/**
+	 * Gets {@link #serverPort}.
+	 *
+	 * @return {@link #serverPort}
+	 */
+	public Integer getServerPort() {
+		return this.serverPort;
+	}
+
+	/**
+	 * Sets {@link #serverPort}.
+	 *
+	 * @param serverPort
+	 *            New value for {@link #serverPort}
+	 */
+	public void setServerPort(Integer serverPort) {
+		this.serverPort = serverPort;
+	}
+
+	/**
+	 * Gets {@link #queryString}.
+	 *
+	 * @return {@link #queryString}
+	 */
+	public String getQueryString() {
+		return this.queryString;
+	}
+
+	/**
+	 * Sets {@link #queryString}.
+	 *
+	 * @param queryString
+	 *            New value for {@link #queryString}
+	 */
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
+	}
+
+	/**
 	 * Checks if this data has the inspectIT tagging header set.
-	 * 
+	 *
 	 * @return if this data has the inspectIT tagging header set.
 	 */
 	public boolean hasInspectItTaggingHeader() {
@@ -166,7 +276,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Gets {@link #inspectItTaggingHeaderValue}.
-	 * 
+	 *
 	 * @return {@link #inspectItTaggingHeaderValue}
 	 */
 	public String getInspectItTaggingHeaderValue() {
@@ -175,7 +285,7 @@ public class HttpInfo implements Sizeable, Serializable {
 
 	/**
 	 * Sets {@link #inspectItTaggingHeaderValue}.
-	 * 
+	 *
 	 * @param inspectItTaggingHeaderValue
 	 *            New value for {@link #inspectItTaggingHeaderValue}
 	 */
@@ -184,8 +294,27 @@ public class HttpInfo implements Sizeable, Serializable {
 	}
 
 	/**
+	 * Returns the URL.
+	 *
+	 * @return the URL
+	 */
+	public String getUrl() {
+		StringBuilder builder = new StringBuilder();
+		builder.append(scheme).append("://").append(serverName);
+		if (serverPort > 0) {
+			builder.append(':').append(serverPort);
+		}
+		builder.append(uri);
+		if (StringUtils.isNotEmpty(queryString)) {
+			builder.append('?').append(queryString);
+		}
+		return builder.toString();
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes) {
 		return getObjectSize(objectSizes, true);
 	}
@@ -193,10 +322,11 @@ public class HttpInfo implements Sizeable, Serializable {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = objectSizes.getSizeOfObjectHeader();
-		size += objectSizes.getPrimitiveTypesSize(3, 0, 0, 0, 1, 0);
-		size += objectSizes.getSizeOf(uri, requestMethod, inspectItTaggingHeaderValue);
+		size += objectSizes.getPrimitiveTypesSize(7, 0, 0, 0, 1, 0);
+		size += objectSizes.getSizeOf(uri, requestMethod, inspectItTaggingHeaderValue, scheme, serverName, queryString);
 
 		if (doAlign) {
 			return objectSizes.alignTo8Bytes(size);
@@ -212,10 +342,10 @@ public class HttpInfo implements Sizeable, Serializable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (id ^ (id >>> 32));
-		result = prime * result + ((inspectItTaggingHeaderValue == null) ? 0 : inspectItTaggingHeaderValue.hashCode());
-		result = prime * result + ((requestMethod == null) ? 0 : requestMethod.hashCode());
-		result = prime * result + ((uri == null) ? 0 : uri.hashCode());
+		result = (prime * result) + (int) (id ^ (id >>> 32));
+		result = (prime * result) + ((inspectItTaggingHeaderValue == null) ? 0 : inspectItTaggingHeaderValue.hashCode());
+		result = (prime * result) + ((requestMethod == null) ? 0 : requestMethod.hashCode());
+		result = (prime * result) + ((uri == null) ? 0 : uri.hashCode());
 		return result;
 	}
 

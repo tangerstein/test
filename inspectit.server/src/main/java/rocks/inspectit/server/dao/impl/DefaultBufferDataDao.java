@@ -14,12 +14,12 @@ import rocks.inspectit.shared.cs.indexing.buffer.IBufferTreeComponent;
 
 /**
  * Abstract class for all buffer data DAO service.
- * 
+ *
  * @param <E>
  *            Type of the data to be queried.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class DefaultBufferDataDao<E extends DefaultData> {
 
@@ -27,12 +27,12 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	 * Indexing tree to search for data.
 	 */
 	private IBufferTreeComponent<E> indexingTree;
-	
+
 	/**
 	 * ForkJoinPool to manage the forks.
 	 */
 	private ForkJoinPool forkJoinPool;
-	
+
 	public DefaultBufferDataDao(IBufferTreeComponent<E> indexingTree, ForkJoinPool forkJoinPool) {
 		this.indexingTree = indexingTree;
 		this.forkJoinPool = forkJoinPool;
@@ -40,11 +40,11 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 
 	/**
 	 * Executes the query on the indexing tree.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, boolean useForkJoin) {
@@ -54,13 +54,13 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	/**
 	 * Executes the query on the indexing tree. If the {@link IAggregator} is not <code>null</code>
 	 * then the results will be aggregated based on the given {@link IAggregator}.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param aggregator
 	 *            {@link IAggregator}. Pass <code>null</code> if no aggregation is needed.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, IAggregator<E> aggregator, boolean useForkJoin) {
@@ -69,28 +69,28 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 
 	/**
 	 * Executes the query on the indexing tree. Results can be sorted by comparator.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param comparator
 	 *            If supplied the final result list will be sorted by this comparator.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
-	protected List<E> executeQuery(IIndexQuery indexQuery, Comparator<E> comparator, boolean useForkJoin) {
+	protected List<E> executeQuery(IIndexQuery indexQuery, Comparator<? super E> comparator, boolean useForkJoin) {
 		return this.executeQuery(indexQuery, null, comparator, -1, useForkJoin);
 	}
 
 	/**
 	 * Executes the query on the indexing tree. Furthermore the result list can be limited.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param limit
 	 *            Limit the number of results by given number. Value <code>-1</code> means no limit.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, int limit, boolean useForkJoin) {
@@ -100,7 +100,7 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	/**
 	 * Executes the query on the indexing tree. If the {@link IAggregator} is not <code>null</code>
 	 * then the results will be aggregated based on the given {@link IAggregator}.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param aggregator
@@ -108,7 +108,7 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	 * @param comparator
 	 *            If supplied the final result list will be sorted by this comparator.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, IAggregator<E> aggregator, Comparator<? super E> comparator, boolean useForkJoin) {
@@ -119,7 +119,7 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	 * Executes the query on the indexing tree. If the {@link IAggregator} is not <code>null</code>
 	 * then the results will be aggregated based on the given {@link IAggregator}. Furthermore the
 	 * result list can be limited.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param aggregator
@@ -127,7 +127,7 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	 * @param limit
 	 *            Limit the number of results by given number. Value <code>-1</code> means no limit.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, IAggregator<E> aggregator, int limit, boolean useForkJoin) {
@@ -137,16 +137,16 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	/**
 	 * Executes the query on the indexing tree. Results can be sorted by comparator. Furthermore the
 	 * result list can be limited.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
-	 * 
+	 *
 	 * @param comparator
 	 *            If supplied the final result list will be sorted by this comparator.
 	 * @param limit
 	 *            Limit the number of results by given number. Value <code>-1</code> means no limit.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, Comparator<? super E> comparator, int limit, boolean useForkJoin) {
@@ -157,7 +157,7 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	 * Executes the query on the indexing tree. If the {@link IAggregator} is not <code>null</code>
 	 * then the results will be aggregated based on the given {@link IAggregator}. Results can be
 	 * sorted by comparator. Furthermore the result list can be limited.
-	 * 
+	 *
 	 * @param indexQuery
 	 *            Index query to execute.
 	 * @param aggregator
@@ -167,19 +167,19 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 	 * @param limit
 	 *            Limit the number of results by given number. Value <code>-1</code> means no limit.
 	 * @param useForkJoin
-	 * 			  true, if forkJoinPool should be used
+	 *            true, if forkJoinPool should be used
 	 * @return Result list.
 	 */
 	protected List<E> executeQuery(IIndexQuery indexQuery, IAggregator<E> aggregator, Comparator<? super E> comparator, int limit, boolean useForkJoin) {
 		List<E> data;
-		
+
 		if (useForkJoin) {
 			data = indexingTree.query(indexQuery, forkJoinPool);
 		} else {
 			data = indexingTree.query(indexQuery);
 		}
 		if (null != aggregator) {
-			AggregationPerformer<E> aggregationPerformer = new AggregationPerformer<E>(aggregator);
+			AggregationPerformer<E> aggregationPerformer = new AggregationPerformer<>(aggregator);
 			aggregationPerformer.processCollection(data);
 			data = aggregationPerformer.getResultList();
 		}
@@ -188,8 +188,8 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 			Collections.sort(data, comparator);
 		}
 
-		if (limit > -1 && data.size() > limit) {
-			data = new ArrayList<E>(data.subList(0, limit));
+		if ((limit > -1) && (data.size() > limit)) {
+			data = new ArrayList<>(data.subList(0, limit));
 		}
 
 		return data;
@@ -197,11 +197,10 @@ public class DefaultBufferDataDao<E extends DefaultData> {
 
 	/**
 	 * Gets {@link #indexingTree}.
-	 * 
+	 *
 	 * @return {@link #indexingTree}
 	 */
 	protected IBufferTreeComponent<E> getIndexingTree() {
 		return indexingTree;
 	}
-
 }

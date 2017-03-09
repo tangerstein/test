@@ -6,10 +6,15 @@
  */
 defaultTasks 'releaseAndAnalyze'
 
+/** used by the eclipse buildship plugin */
+sourceCompatibility = '1.6'
+targetCompatibility = '1.6'
+
 /** Artifact names */
 ext {
 	distJarName = 'inspectit-shared-all'
 	pluginName = 'rocks.inspectit.shared.all'
+	versionFile = new File(buildDir.getAbsolutePath(), 'version/version.log')
 }
 
 /** Setting compile configuration as plugin in Eclipse needs it */
@@ -20,15 +25,31 @@ configurations {
 	testCompile {
 		extendsFrom configurations.sharedAllTest
 	}
+	testArchives.extendsFrom (testCompile)
 }
 
-/** Compile compatibility to 1.5 for all compile tasks */
+/** Compile compatibility to 1.6 for all compile tasks */
 tasks.withType(JavaCompile) { 
-	sourceCompatibility = '1.5'
-	targetCompatibility = '1.5'
+	sourceCompatibility = '1.6'
+	targetCompatibility = '1.6'
 
-	options.bootClasspath = configurations.java15rt.asPath
+	options.bootClasspath = configurations.java16rt.asPath
 }
+
+/** Task for creating the version file if needed. */
+task createVersionFile {
+	inputs.property(versionInfo, null)
+	outputs.file versionFile
+	
+	doLast {
+		versionFile.getParentFile().mkdirs()
+		if (!versionFile.exists()) {
+			versionFile.createNewFile()
+		}
+		versionFile.text = versionInfo
+	}
+}
+createVersionFile.onlyIf { project.hasProperty('versionInfo') }
 
 /** 
  * Creates the jar. If needed create version.log on the fly and update the version in the MANIFEST.MF.
@@ -36,16 +57,8 @@ tasks.withType(JavaCompile) {
 jar {
 	archivesBaseName = distJarName
 	
-	// add version.log only to shared.all
-	if (project.hasProperty('versionInfo')) {
-		def tempFile = File.createTempFile('version', '.log')
-		tempFile.text = versionInfo
-		tempFile.deleteOnExit()
-		
-		into('') {
-			from tempFile
-			rename tempFile.getName(), 'version.log'
-		}
+	into('') {
+		from versionFile
 	}
 	
 	manifest  {
@@ -58,10 +71,28 @@ jar {
 		}
 	}
 }
+jar.dependsOn createVersionFile
 
 task releaseAndAnalyze {
 	description = "Runs all unit tests, all checks and assembles a jar archive."
 	group = 'Release'
 
 	dependsOn(analyze, jar)
+}
+
+/**
+ * The following task is needed because we want to have our base test classes available in the other sub-projects, too.
+ */
+task ('jarTest', type:Jar, dependsOn: testClasses, description: 'Assembles a jar archive from the test source set') {
+	group = BasePlugin.BUILD_GROUP
+	from project.sourceSets.test.output
+	include '**/testbase/*'
+	classifier = 'test'
+}
+
+/**
+ * The artifact definition for this new test jar defined by the jarTest task.
+ */
+artifacts {
+	testArchives project.jarTest
 }

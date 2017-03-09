@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelection;
@@ -14,13 +13,13 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
@@ -28,11 +27,8 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import org.eclipse.ui.forms.widgets.Section;
-import org.eclipse.ui.forms.widgets.TableWrapData;
-import org.eclipse.ui.forms.widgets.TableWrapLayout;
 
-import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
+import rocks.inspectit.shared.cs.ci.assignment.AbstractClassSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.TimerMethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.context.AbstractContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.FieldContextCapture;
@@ -41,15 +37,17 @@ import rocks.inspectit.shared.cs.ci.context.impl.ReturnContextCapture;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
 import rocks.inspectit.ui.rcp.ci.dialog.CaptureContextDialog;
+import rocks.inspectit.ui.rcp.ci.listener.IDetailsModifiedListener;
+import rocks.inspectit.ui.rcp.validation.AbstractValidationManager;
 import rocks.inspectit.ui.rcp.validation.ValidationControlDecoration;
 
 /**
  * The details page for the {@link TimerMethodSensorAssignment}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
-public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDetailsPage {
+public class TimerSensorAssignmentDetailsPage extends ChartingMethodSensorAssignmentDetailsPage {
 
 	/**
 	 * Element being displayed.
@@ -59,7 +57,7 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 	/**
 	 * Context captures being displayed.
 	 */
-	private List<AbstractContextCapture> contextCaptures = new ArrayList<>();
+	private final List<AbstractContextCapture> contextCaptures = new ArrayList<>();
 
 	/**
 	 * Selection for activating context capturing.
@@ -92,20 +90,18 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 	private Text minDurationText;
 
 	/**
-	 * Selection for if charting should be active.
-	 */
-	private Button chartingButton;
-
-	/**
 	 * Constructor.
-	 * 
-	 * @param masterBlockListener
+	 *
+	 * @param detailsModifiedListener
 	 *            listener to inform the master block on changes to the input
+	 * @param validationManager
+	 *            validation manager of the master part
 	 * @param canEdit
 	 *            If the data can be edited.
 	 */
-	public TimerSensorAssignmentDetailsPage(ISensorAssignmentUpdateListener masterBlockListener, boolean canEdit) {
-		super(masterBlockListener, canEdit);
+	public TimerSensorAssignmentDetailsPage(IDetailsModifiedListener<AbstractClassSensorAssignment<?>> detailsModifiedListener,
+			AbstractValidationManager<AbstractClassSensorAssignment<?>> validationManager, boolean canEdit) {
+		super(detailsModifiedListener, validationManager, canEdit);
 	}
 
 	/**
@@ -113,44 +109,20 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 	 */
 	@Override
 	public void createContents(Composite parent) {
-		TableWrapLayout parentLayout = new TableWrapLayout();
-		parentLayout.topMargin = 5;
-		parentLayout.leftMargin = 5;
-		parentLayout.rightMargin = 2;
-		parentLayout.bottomMargin = 2;
-		parentLayout.numColumns = 2;
-		parentLayout.makeColumnsEqualWidth = true;
-		parent.setLayout(parentLayout);
-
 		FormToolkit toolkit = managedForm.getToolkit();
 
 		// abstract method definition
 		super.createContents(parent, false);
-
-		// special sensor definitions
-		// section
-		Section section = toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
-		section.setText("Sensor specific options");
-		section.marginWidth = 10;
-		section.marginHeight = 5;
-		TableWrapData td = new TableWrapData(TableWrapData.FILL, TableWrapData.TOP);
-		td.grabHorizontal = true;
-		section.setLayoutData(td);
-
 		// main composite
-		Composite mainComposite = toolkit.createComposite(section);
-		GridLayout layout = new GridLayout(7, false);
-		layout.marginHeight = 5;
-		layout.marginWidth = 5;
-		mainComposite.setLayout(layout);
-		section.setClient(mainComposite);
+		Composite mainComposite = super.getSensorOptionsComposite();
 
 		// capture context
 		// first row
 		toolkit.createLabel(mainComposite, "Capture context:");
 		captureContextButton = toolkit.createButton(mainComposite, "Yes", SWT.CHECK);
 		captureContextButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 5, 1));
-		createInfoLabel(mainComposite, toolkit, "");
+		createInfoLabel(mainComposite, toolkit,
+				"If additional context should be captured alongside the method execution time. inspectIT currently supports capturing method return value, method parameters or fields of the object defining the method to monitor.");
 
 		// second row
 		toolkit.createLabel(mainComposite, "");
@@ -201,7 +173,7 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 			@Override
 			public void handleEvent(Event event) {
 				CaptureContextDialog dialog = new CaptureContextDialog(managedForm.getForm().getShell());
-				if (dialog.open() == Dialog.OK) {
+				if (dialog.open() == Window.OK) {
 					AbstractContextCapture contextCapture = dialog.getContextCapture();
 					contextCaptures.add(contextCapture);
 					captureContextTableViewer.refresh();
@@ -231,7 +203,7 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 				if (!selection.isEmpty()) {
 					AbstractContextCapture selected = (AbstractContextCapture) selection.getFirstElement();
 					CaptureContextDialog dialog = new CaptureContextDialog(managedForm.getForm().getShell(), selected);
-					if (dialog.open() == Dialog.OK) {
+					if (dialog.open() == Window.OK) {
 						AbstractContextCapture contextCapture = dialog.getContextCapture();
 						int index = contextCaptures.indexOf(selected);
 						contextCaptures.remove(index);
@@ -243,15 +215,6 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 				}
 			}
 		});
-
-		// charting
-		toolkit.createLabel(mainComposite, "Charting:");
-		chartingButton = toolkit.createButton(mainComposite, "Yes", SWT.CHECK);
-		chartingButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 5, 1));
-		createInfoLabel(
-				mainComposite,
-				toolkit,
-				"With the charting option it is possible to define what data should be considered as the long-term data available for charting in inspectIT User interface. This data is additionally saved to the database, thus even when the CMR is shutdown or buffer is cleared the data will be available via charts.");
 
 		// starts invocation
 		toolkit.createLabel(mainComposite, "Starts invocation:");
@@ -295,7 +258,6 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 
 		// dirty listener
 		captureContextButton.addListener(SWT.Selection, getMarkDirtyListener());
-		chartingButton.addListener(SWT.Selection, getMarkDirtyListener());
 		startInvocationButton.addListener(SWT.Selection, getMarkDirtyListener());
 		minDurationText.addListener(SWT.Modify, getMarkDirtyListener());
 
@@ -379,7 +341,6 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 	protected void updateFromInput() {
 		super.updateFromInput();
 		captureContextButton.setSelection(false);
-		chartingButton.setSelection(false);
 		startInvocationButton.setSelection(false);
 		minDurationText.setEnabled(false);
 		minDurationText.setText("");
@@ -397,7 +358,6 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 				addCaptureButton.setEnabled(false);
 				removeCaptureButton.setEnabled(false);
 			}
-			chartingButton.setSelection(assignment.isCharting());
 			if (assignment.isStartsInvocation()) {
 				startInvocationButton.setSelection(true);
 				minDurationText.setEnabled(isCanEdit());
@@ -433,14 +393,13 @@ public class TimerSensorAssignmentDetailsPage extends MethodSensorAssignmentDeta
 				assignment.setMinInvocationDuration(0L);
 			}
 		}
-		assignment.setCharting(chartingButton.getSelection());
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected MethodSensorAssignment getInput() {
+	protected TimerMethodSensorAssignment getInput() {
 		return assignment;
 	}
 

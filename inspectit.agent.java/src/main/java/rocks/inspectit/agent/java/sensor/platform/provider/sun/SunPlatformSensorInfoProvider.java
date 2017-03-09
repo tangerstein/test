@@ -11,9 +11,9 @@ import rocks.inspectit.agent.java.sensor.platform.provider.def.DefaultThreadInfo
 
 /**
  * Special {@link PlatformSensorInfoProvider} for SunVM..
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class SunPlatformSensorInfoProvider implements PlatformSensorInfoProvider {
 
@@ -40,6 +40,7 @@ public class SunPlatformSensorInfoProvider implements PlatformSensorInfoProvider
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public MemoryInfoProvider getMemoryInfoProvider() {
 		return MEMORY_INFO_PROVIDER;
 	}
@@ -47,6 +48,7 @@ public class SunPlatformSensorInfoProvider implements PlatformSensorInfoProvider
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public OperatingSystemInfoProvider getOperatingSystemInfoProvider() {
 		return OPERATING_SYSTEM_INFO_PROVIDER;
 	}
@@ -54,6 +56,7 @@ public class SunPlatformSensorInfoProvider implements PlatformSensorInfoProvider
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public RuntimeInfoProvider getRuntimeInfoProvider() {
 		return RUNTIME_INFO_PROVIDER;
 	}
@@ -61,6 +64,7 @@ public class SunPlatformSensorInfoProvider implements PlatformSensorInfoProvider
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public ThreadInfoProvider getThreadInfoProvider() {
 		return THREAD_INFO_PROVIDER;
 	}

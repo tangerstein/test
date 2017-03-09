@@ -1,18 +1,23 @@
 package rocks.inspectit.agent.java;
 
-import java.util.List;
+import java.io.File;
+import java.lang.instrument.Instrumentation;
+import java.util.Collection;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import rocks.inspectit.agent.java.analyzer.IByteCodeAnalyzer;
-import rocks.inspectit.agent.java.analyzer.IMatchPattern;
 import rocks.inspectit.agent.java.config.IConfigurationStorage;
 import rocks.inspectit.agent.java.hooking.IHookDispatcher;
+import rocks.inspectit.agent.java.instrumentation.IInstrumentationAware;
 import rocks.inspectit.agent.java.logback.LogInitializer;
 import rocks.inspectit.agent.java.spring.SpringConfiguration;
+import rocks.inspectit.shared.all.pattern.IMatchPattern;
 import rocks.inspectit.shared.all.version.VersionService;
 
 /**
@@ -25,9 +30,9 @@ import rocks.inspectit.shared.all.version.VersionService;
  * <p>
  * This class is named <b>Spring</b>Agent as its using the Spring to handle the different components
  * in the Agent.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class SpringAgent implements IAgent {
 
@@ -37,19 +42,35 @@ public class SpringAgent implements IAgent {
 	private static final Logger LOG = LoggerFactory.getLogger(SpringAgent.class);
 
 	/**
-	 * Our class start with {@value #CLASS_NAME_PREFIX}.
+	 * inspectIT jar file.
 	 */
-	private static final String CLASS_NAME_PREFIX = "rocks.inspectit.shared.all";
+	private static File inspectitJarFile;
 
 	/**
 	 * The hook dispatcher used by the instrumented methods.
 	 */
-	private IHookDispatcher hookDispatcher;
+	IHookDispatcher hookDispatcher;
 
 	/**
-	 * Set to <code>true</code> if something happened while trying to initialize the pico container.
+	 * The configuration storage.
 	 */
-	private boolean initializationError = false;
+	IConfigurationStorage configurationStorage;
+
+	/**
+	 * The byte code analyzer.
+	 */
+	IByteCodeAnalyzer byteCodeAnalyzer;
+
+	/**
+	 * The thread transform helper.
+	 */
+	IThreadTransformHelper threadTransformHelper;
+
+	/**
+	 * Set to <code>true</code> if something happened and we need to disable further
+	 * instrumentation.
+	 */
+	volatile boolean disableInstrumentation = false;
 
 	/**
 	 * Created bean factory.
@@ -57,15 +78,44 @@ public class SpringAgent implements IAgent {
 	private BeanFactory beanFactory;
 
 	/**
-	 * Constructor initializing this agent.
-	 * 
-	 * @param inspectitJarLocation
-	 *            location of inspectIT jar needed for proper logging
+	 * Ignore classes patterns.
 	 */
-	public SpringAgent(String inspectitJarLocation) {
-		LogInitializer.setInspectitJarLocation(inspectitJarLocation);
+	Collection<IMatchPattern> ignoreClassesPatterns;
+
+	/**
+	 * The used {@link Instrumentation}.
+	 */
+	private final Instrumentation instrumentation;
+
+	/**
+	 * Constructor initializing this agent.
+	 *
+	 * @param inspectitJarFile
+	 *            The inspectIT jar file needed for proper logging
+	 * @param instrumentation
+	 *            The {@link Instrumentation} to use
+	 */
+	public SpringAgent(File inspectitJarFile, Instrumentation instrumentation) {
+		this.instrumentation = instrumentation;
+
+		setInspectITJarFile(inspectitJarFile);
+
+		// init logging
 		LogInitializer.initLogging();
+
+		// init spring
 		this.initSpring();
+	}
+
+	/**
+	 * Sets {@link #inspectitJarFile} in synch mode.
+	 *
+	 * @param inspectitJarFile
+	 *            The inspectIT jar file.
+	 */
+	private synchronized void setInspectITJarFile(File inspectitJarFile) {
+		SpringAgent.inspectitJarFile = inspectitJarFile;
+		LOG.info("Location of inspectit-agent.jar set to: " + inspectitJarFile.getAbsolutePath());
 	}
 
 	/**
@@ -76,28 +126,60 @@ public class SpringAgent implements IAgent {
 			LOG.info("Initializing Spring on inspectIT Agent...");
 		}
 
+		// first add shutdown hook so we are informed when shutdown is initialized to stop
+		// instrumenting classes on the shutdown
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				disableInstrumentation = true;
+			};
+		});
+
 		// set inspectIT class loader to be the context class loader
 		// so that bean factory can use correct class loader for finding the classes
 		ClassLoader inspectITClassLoader = this.getClass().getClassLoader();
 		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(inspectITClassLoader);
 
-		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-		ctx.register(SpringConfiguration.class);
-		ctx.refresh();
-		beanFactory = ctx;
+		// load spring context in try block, catch exception and set init error to true
+		try {
+			AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+			ctx.register(SpringConfiguration.class);
+			ctx.refresh();
+			beanFactory = ctx;
 
-		if (LOG.isInfoEnabled()) {
-			LOG.info("Spring successfully initialized");
+			if (beanFactory instanceof ConfigurableApplicationContext) {
+				((ConfigurableApplicationContext) beanFactory).registerShutdownHook();
+			}
+
+			if (LOG.isInfoEnabled()) {
+				LOG.info("Spring successfully initialized");
+			}
+
+			// log version
+			if (LOG.isInfoEnabled()) {
+				VersionService versionService = beanFactory.getBean(VersionService.class);
+				LOG.info("Using agent version " + versionService.getVersionAsString() + ".");
+			}
+
+			// load all necessary beans right away
+			hookDispatcher = beanFactory.getBean(IHookDispatcher.class);
+			configurationStorage = beanFactory.getBean(IConfigurationStorage.class);
+			byteCodeAnalyzer = beanFactory.getBean(IByteCodeAnalyzer.class);
+			threadTransformHelper = beanFactory.getBean(IThreadTransformHelper.class);
+
+			// load ignore patterns only once
+			ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
+
+			// injecting instrumentation in instrumentation aware beans
+			Map<String, IInstrumentationAware> instrumentationAwareBeans = ctx.getBeansOfType(IInstrumentationAware.class);
+			for (IInstrumentationAware instrumentationAwareBean : instrumentationAwareBeans.values()) {
+				instrumentationAwareBean.setInstrumentation(instrumentation);
+			}
+		} catch (Throwable throwable) { // NOPMD
+			disableInstrumentation = true;
+			LOG.error("inspectIT agent initialization failed. Agent will not be active.", throwable);
 		}
-
-		// log version
-		if (LOG.isInfoEnabled()) {
-			VersionService versionService = beanFactory.getBean(VersionService.class);
-			LOG.info("Using agent version " + versionService.getVersionAsString() + ".");
-		}
-
-		hookDispatcher = beanFactory.getBean(IHookDispatcher.class);
 
 		// switch back to the original context class loader
 		Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -106,87 +188,80 @@ public class SpringAgent implements IAgent {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public byte[] inspectByteCode(byte[] byteCode, String className, ClassLoader classLoader) {
 		// if an error in the init method was caught, we'll do nothing here.
 		// This prevents further errors.
-		if (initializationError) {
+		if (disableInstrumentation) {
 			return byteCode;
 		}
 
-		// ignore all classes which fit to the patterns in the configuration
-		IConfigurationStorage configurationStorage = beanFactory.getBean(IConfigurationStorage.class);
-		List<IMatchPattern> ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
-		for (IMatchPattern matchPattern : ignoreClassesPatterns) {
-			if (matchPattern.match(className)) {
-				return byteCode;
-			}
+		boolean threadTransformDisabled = threadTransformHelper.isThreadTransformDisabled();
+		if (threadTransformDisabled) {
+			// if transform is currently disabled for thread trying to transform the class do
+			// nothing
+			return byteCode;
 		}
 
-		IByteCodeAnalyzer byteCodeAnalyzer = beanFactory.getBean(IByteCodeAnalyzer.class);
+		// check if it should be ignored
+		if (shouldClassBeIgnored(className)) {
+			return byteCode;
+		}
+
 		try {
+			// set transform disabled from this point for this thread
+			threadTransformHelper.setThreadTransformDisabled(true);
+
 			byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 			return instrumentedByteCode;
 		} catch (Throwable throwable) { // NOPMD
 			LOG.error("Something unexpected happened while trying to analyze or instrument the bytecode with the class name: " + className, throwable);
 			return byteCode;
+		} finally {
+			// reset the state of transform disabled if we set it originally
+			threadTransformHelper.setThreadTransformDisabled(false);
 		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public Class<?> loadClass(Object[] params) {
-		try {
-			if (null != params && params.length == 1) {
-				Object p = params[0];
-				if (p instanceof String) {
-					return loadClass((String) p);
-				}
-			}
-			return null;
-		} catch (Throwable e) { // NOPMD
-			return null;
-		}
-	}
-
-	/**
-	 * Delegates the class loading to the {@link #inspectItClassLoader} if the class name starts
-	 * with {@value #CLASS_NAME_PREFIX}. Otherwise loads the class with the target class loader. If
-	 * the inspectIT class loader throws {@link ClassNotFoundException}, the target class loader
-	 * will be used.
-	 * 
-	 * @param className
-	 *            Class name.
-	 * @return Loaded class or <code>null</code> if it can not be found with inspectIT class loader.
-	 */
-	private Class<?> loadClass(String className) {
-		if (loadWithInspectItClassLoader(className)) {
-			try {
-				return getClass().getClassLoader().loadClass(className);
-			} catch (ClassNotFoundException e) {
-				return null;
-			}
-		} else {
-			return null;
-		}
-	}
-
-	/**
-	 * Defines if the class should be loaded with our class loader.
-	 * 
-	 * @param className
-	 *            Name of the class to load.
-	 * @return True if class name starts with {@value #CLASS_NAME_PREFIX}.
-	 */
-	private boolean loadWithInspectItClassLoader(String className) {
-		return className.startsWith(CLASS_NAME_PREFIX);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
+	@Override
 	public IHookDispatcher getHookDispatcher() {
 		return hookDispatcher;
+	}
+
+	/**
+	 * Returns absolute file to the inspectit jar if the {@link #inspectitJarFile} is set, otherwise
+	 * returns <code>null</code>.
+	 *
+	 * @return Returns absolute file to the inspectit jar if the {@link #inspectitJarFile} is set,
+	 *         otherwise returns <code>null</code>.
+	 */
+	public static File getInspectitJarFile() {
+		if (null != inspectitJarFile) {
+			return inspectitJarFile.getAbsoluteFile();
+		}
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean shouldClassBeIgnored(String className) {
+		// if we are in disable instrumentation mode ignore all
+		if (disableInstrumentation) {
+			return true;
+		}
+
+		// ignore all classes which fit to the patterns in the configuration
+		for (IMatchPattern matchPattern : ignoreClassesPatterns) {
+			if (matchPattern.match(className)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

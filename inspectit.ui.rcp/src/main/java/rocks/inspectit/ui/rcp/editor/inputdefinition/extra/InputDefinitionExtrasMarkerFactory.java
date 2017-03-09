@@ -4,9 +4,9 @@ import com.google.common.base.Objects;
 
 /**
  * Factory for {@link InputDefinitionExtraMarker}s.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public final class InputDefinitionExtrasMarkerFactory {
 
@@ -83,10 +83,21 @@ public final class InputDefinitionExtrasMarkerFactory {
 	};
 
 	/**
+	 * Marker for {@link AlertInputDefinitionExtra}.
+	 */
+	public static final InputDefinitionExtraMarker<AlertInputDefinitionExtra> ALERT_EXTRAS_MARKER = new InputDefinitionExtraMarker<AlertInputDefinitionExtra>() {
+		@Override
+		public Class<AlertInputDefinitionExtra> getInputDefinitionExtraClass() {
+			return AlertInputDefinitionExtra.class;
+		}
+
+	};
+
+	/**
 	 * Abstract class for input definition extras marker.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 * @param <E>
 	 *            Type of input definition extra.
 	 */

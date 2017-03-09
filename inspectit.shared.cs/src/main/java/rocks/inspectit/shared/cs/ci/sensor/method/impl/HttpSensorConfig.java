@@ -1,10 +1,13 @@
 package rocks.inspectit.shared.cs.ci.sensor.method.impl;
 
+import java.util.Map;
+
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import rocks.inspectit.shared.all.instrumentation.config.PriorityEnum;
 import rocks.inspectit.shared.cs.ci.sensor.StringConstraintSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.IMethodSensorConfig;
-import rocks.inspectit.shared.cs.ci.sensor.method.MethodSensorPriorityEnum;
 
 /**
  * HTTP sensor configuration.
@@ -25,6 +28,11 @@ public class HttpSensorConfig extends StringConstraintSensorConfig implements IM
 	 */
 	public static final String CLASS_NAME = "rocks.inspectit.agent.java.sensor.method.http.HttpSensor";
 
+	/**
+	 * Session capture option.
+	 */
+	@XmlAttribute(name = "sessionCapture")
+	private Boolean sessionCapture = Boolean.FALSE;
 
 	/**
 	 * No-args constructor.
@@ -53,8 +61,8 @@ public class HttpSensorConfig extends StringConstraintSensorConfig implements IM
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MethodSensorPriorityEnum getPriority() {
-		return MethodSensorPriorityEnum.MAX;
+	public PriorityEnum getPriority() {
+		return PriorityEnum.MAX;
 	}
 
 	/**
@@ -63,6 +71,39 @@ public class HttpSensorConfig extends StringConstraintSensorConfig implements IM
 	@Override
 	public boolean isAdvanced() {
 		return false;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, Object> getParameters() {
+		Map<String, Object> parameters = super.getParameters();
+
+		if (sessionCapture) {
+			parameters.put("sessioncapture", "true");
+		}
+
+		return parameters;
+	}
+
+	/**
+	 * Gets {@link #sessionCapture}.
+	 *
+	 * @return {@link #sessionCapture}
+	 */
+	public boolean isSessionCapture() {
+		return sessionCapture.booleanValue();
+	}
+
+	/**
+	 * Sets {@link #sessionCapture}.
+	 *
+	 * @param sessionCapture
+	 *            New value for {@link #sessionCapture}
+	 */
+	public void setSessionCapture(boolean sessionCapture) {
+		this.sessionCapture = Boolean.valueOf(sessionCapture);
 	}
 
 }

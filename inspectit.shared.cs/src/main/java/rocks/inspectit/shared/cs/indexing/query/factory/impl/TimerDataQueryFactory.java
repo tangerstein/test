@@ -16,9 +16,9 @@ import rocks.inspectit.shared.cs.indexing.query.provider.IIndexQueryProvider;
 
 /**
  * Factory for all queries for the {@link TimerData}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  * @param <E>
  */
 @Component
@@ -29,7 +29,7 @@ public class TimerDataQueryFactory<E extends IIndexQuery> extends AbstractQueryF
 	}
 	/**
 	 * Returns the query for aggregating the {@link TimerData}.
-	 * 
+	 *
 	 * @param timerData
 	 *            The template containing the platform id.
 	 * @param fromDate
@@ -42,7 +42,7 @@ public class TimerDataQueryFactory<E extends IIndexQuery> extends AbstractQueryF
 		E query = getIndexQueryProvider().getIndexQuery();
 		query.setPlatformIdent(timerData.getPlatformIdent());
 		query.setMethodIdent(timerData.getMethodIdent());
-		ArrayList<Class<?>> searchedClasses = new ArrayList<Class<?>>();
+		ArrayList<Class<?>> searchedClasses = new ArrayList<>();
 		// we need to add the subclasses that are timers manually as the search will not include
 		// subclasses by default
 		// HttpTimerData will not be shown in the timer data view (we also do not show SQL data)

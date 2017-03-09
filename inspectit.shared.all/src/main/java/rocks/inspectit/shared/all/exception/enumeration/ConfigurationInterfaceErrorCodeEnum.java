@@ -6,11 +6,16 @@ import rocks.inspectit.shared.all.exception.IErrorCode;
 
 /**
  * Error code enumeration for the CI component.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
+
+	/**
+	 * Profile does not have profile data.
+	 */
+	PROFILE_DOES_NOT_HAVE_CORRECT_PROFILE_DATA("The profile to execute the selected does not have correct profile data set.", null, null),
 
 	/**
 	 * Profile not existing on the CMR.
@@ -25,13 +30,17 @@ public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
 	/**
 	 * Revision failed.
 	 */
-	REVISION_CHECK_FAILED("Revision check of the resource failed as the revision number is lower than one existing on the server.", "Profile/environment/mappings has a newer version.",
-			"Reload resource and try again."),
+	REVISION_CHECK_FAILED("Revision check of the resource failed as the revision number is lower than one existing on the server.", "Profile/environment/mappings has a newer version.", "Reload resource and try again."),
 
 	/**
 	 * Environment not existing on the CMR.
 	 */
 	ENVIRONMENT_DOES_NOT_EXIST("The environment to execute the selected operation on does not exist.", "The environment might be deleted.", null),
+
+	/**
+	 * Import not valid.
+	 */
+	IMPORT_DATA_NOT_VALID("The data you are trying import is not valid.", null, null),
 
 	/**
 	 * IO operation failed.
@@ -41,7 +50,22 @@ public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
 	/**
 	 * JAXB (de-)marshall failed.
 	 */
-	JAXB_MARSHALLING_OR_DEMARSHALLING_FAILED("JAXB marshaling or demarshalling to/from disk failed.", "CMR version is not compatible with the data.", "Check the CMR version.");
+	JAXB_MARSHALLING_OR_DEMARSHALLING_FAILED("JAXB marshaling or demarshalling to/from disk failed.", "CMR version is not compatible with the data.", "Check the CMR version."),
+
+	/**
+	 * No mapping exists.
+	 */
+	NO_MAPPING_DEFINED("Locating an environment for the agent to use failed.", "Not a single agent mapping definition exists.", "Add the agent mapping definition in the Configuration Interface."),
+
+	/**
+	 * Environment not found when registering the agent.
+	 */
+	ENVIRONMENT_FOR_AGENT_NOT_FOUND("Locating an environment for the agent to use failed.", "No matching environment found for the specified agent name and IP address(es).", "Check the agent mapping settings in the Configuration Interface."),
+
+	/**
+	 * More than one environment found.
+	 */
+	MORE_THAN_ONE_ENVIRONMENT_FOR_AGENT_FOUND("Locating an environment for the agent to use failed.", "More than one environment found for the specified agent name and IP address(es).", "Check the agent mapping settings in the Configuration Interface.");
 
 	/**
 	 * Name of the component.
@@ -65,7 +89,7 @@ public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param description
 	 *            Description of the error code.
 	 * @param possibleCause
@@ -85,6 +109,7 @@ public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getComponent() {
 		return COMPONENT_NAME;
 	}
@@ -92,33 +117,37 @@ public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getName() {
 		return WordUtils.capitalizeFully(this.toString().replace("_", " ").toLowerCase());
 	}
 
 	/**
 	 * Gets {@link #description}.
-	 * 
+	 *
 	 * @return {@link #description}
 	 */
+	@Override
 	public String getDescription() {
 		return description;
 	}
 
 	/**
 	 * Gets {@link #possibleCause}.
-	 * 
+	 *
 	 * @return {@link #possibleCause}
 	 */
+	@Override
 	public String getPossibleCause() {
 		return possibleCause;
 	}
 
 	/**
 	 * Gets {@link #possibleSolution}.
-	 * 
+	 *
 	 * @return {@link #possibleSolution}
 	 */
+	@Override
 	public String getPossibleSolution() {
 		return possibleSolution;
 	}

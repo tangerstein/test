@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
@@ -21,11 +22,13 @@ import org.springframework.core.io.ClassPathResource;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import rocks.inspectit.agent.java.IThreadTransformHelper;
 import rocks.inspectit.agent.java.config.IConfigurationStorage;
-import rocks.inspectit.agent.java.config.impl.JmxSensorTypeConfig;
-import rocks.inspectit.agent.java.config.impl.MethodSensorTypeConfig;
-import rocks.inspectit.agent.java.config.impl.PlatformSensorTypeConfig;
-import rocks.inspectit.agent.java.config.impl.StrategyConfig;
+import rocks.inspectit.agent.java.connection.impl.AgentAwareClient;
+import rocks.inspectit.agent.java.util.AgentAwareThread;
+import rocks.inspectit.shared.all.instrumentation.config.impl.AbstractSensorTypeConfig;
+import rocks.inspectit.shared.all.instrumentation.config.impl.JmxSensorTypeConfig;
+import rocks.inspectit.shared.all.instrumentation.config.impl.StrategyConfig;
 import rocks.inspectit.shared.all.kryonet.Client;
 import rocks.inspectit.shared.all.kryonet.ExtendedSerializationImpl;
 import rocks.inspectit.shared.all.kryonet.IExtendedSerialization;
@@ -53,6 +56,7 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		this.beanFactory = beanFactory;
 	}
@@ -60,6 +64,7 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 		this.registry = registry;
 	}
@@ -72,30 +77,50 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 	@Bean
 	public static PropertyPlaceholderConfigurer properties() {
 		PropertyPlaceholderConfigurer ppc = new PropertyPlaceholderConfigurer();
-		ClassPathResource[] resources = new ClassPathResource[] { new ClassPathResource("/config/bytebufferpool.properties"), new ClassPathResource("/config/instrumentation.properties") };
+		ClassPathResource[] resources = new ClassPathResource[] { new ClassPathResource("/config/bytebufferpool.properties") };
 		ppc.setLocations(resources);
 		ppc.setIgnoreUnresolvablePlaceholders(true);
 		return ppc;
 	}
 
 	/**
+	 * @param threadTransformHelper
+	 *            {@link IThreadTransformHelper}
 	 * @return Returns socketReadExecutorService
 	 */
 	@Bean(name = "socketReadExecutorService")
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public ExecutorService getSocketReadExecutorService() {
-		ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("inspectit-socket-read-executor-service-thread-%d").setDaemon(true).build();
+	@Autowired
+	public ExecutorService getSocketReadExecutorService(final IThreadTransformHelper threadTransformHelper) {
+		ThreadFactory inspectitThreadFactory = new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new AgentAwareThread(r, threadTransformHelper);
+			}
+		};
+
+		ThreadFactory threadFactory = new ThreadFactoryBuilder().setThreadFactory(inspectitThreadFactory).setNameFormat("inspectit-socket-read-executor-service-thread-%d").setDaemon(true).build();
 		return Executors.newFixedThreadPool(1, threadFactory);
 	}
 
 	/**
+	 * @param threadTransformHelper
+	 *            {@link IThreadTransformHelper}
 	 * @return Returns coreServiceExecutorService
 	 */
 	@Bean(name = "coreServiceExecutorService")
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
-	public ScheduledExecutorService getScheduledExecutorService() {
-		ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("inspectit-core-service-executor-service-thread-%d").setDaemon(true).build();
-		return Executors.newScheduledThreadPool(1, threadFactory);
+	@Autowired
+	public ScheduledExecutorService getCoreServiceExecutorService(final IThreadTransformHelper threadTransformHelper) {
+		ThreadFactory inspectitThreadFactory = new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new AgentAwareThread(r, threadTransformHelper);
+			}
+		};
+
+		ThreadFactory threadFactory = new ThreadFactoryBuilder().setThreadFactory(inspectitThreadFactory).setNameFormat("inspectit-core-service-executor-service-thread-%d").setDaemon(true).build();
+		return Executors.newScheduledThreadPool(3, threadFactory);
 	}
 
 	/**
@@ -103,14 +128,16 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 	 *
 	 * @param prototypesProvider
 	 *            {@link PrototypesProvider} (autowired)
+	 * @param threadTransformHelper
+	 *            {@link IThreadTransformHelper} (autowired)
 	 * @return Created bean
 	 */
 	@Bean(name = "kryonet-client")
 	@Scope(BeanDefinition.SCOPE_SINGLETON)
 	@Autowired
-	public Client getClient(PrototypesProvider prototypesProvider) {
+	public Client getClient(PrototypesProvider prototypesProvider, IThreadTransformHelper threadTransformHelper) {
 		IExtendedSerialization serialization = new ExtendedSerializationImpl(prototypesProvider);
-		return new Client(serialization, prototypesProvider);
+		return new AgentAwareClient(serialization, prototypesProvider, threadTransformHelper);
 	}
 
 	/**
@@ -128,14 +155,13 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 		registerBeanDefinitionAndInitialize(beanName, className);
 
 		// sending strategies
-		for (StrategyConfig sendingStrategyConfig : configurationStorage.getSendingStrategyConfigs()) {
-			className = sendingStrategyConfig.getClazzName();
-			beanName = "sendingStrategy[" + className + "]";
-			registerBeanDefinitionAndInitialize(beanName, className);
-		}
+		StrategyConfig sendingStrategyConfig = configurationStorage.getSendingStrategyConfig();
+		className = sendingStrategyConfig.getClazzName();
+		beanName = "sendingStrategy[" + className + "]";
+		registerBeanDefinitionAndInitialize(beanName, className);
 
 		// platform sensor types
-		for (PlatformSensorTypeConfig platformSensorTypeConfig : configurationStorage.getPlatformSensorTypes()) {
+		for (AbstractSensorTypeConfig platformSensorTypeConfig : configurationStorage.getPlatformSensorTypes()) {
 			className = platformSensorTypeConfig.getClassName();
 			beanName = "platformSensorType[" + className + "]";
 			registerBeanDefinitionAndInitialize(beanName, className);
@@ -149,7 +175,7 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 		}
 
 		// method sensor types
-		for (MethodSensorTypeConfig methodSensorTypeConfig : configurationStorage.getMethodSensorTypes()) {
+		for (AbstractSensorTypeConfig methodSensorTypeConfig : configurationStorage.getMethodSensorTypes()) {
 			className = methodSensorTypeConfig.getClassName();
 			beanName = "methodSensorType[" + className + "]";
 			registerBeanDefinitionAndInitialize(beanName, className);
@@ -176,7 +202,7 @@ public class SpringConfiguration implements BeanDefinitionRegistryPostProcessor 
 		Class<?> clazz = Class.forName(className);
 		GenericBeanDefinition definition = new GenericBeanDefinition();
 		definition.setBeanClass(clazz);
-		definition.setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_TYPE);
+		definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
 		definition.setAutowireCandidate(true);
 		registry.registerBeanDefinition(beanName, definition);
 		beanFactory.getBean(beanName, clazz);

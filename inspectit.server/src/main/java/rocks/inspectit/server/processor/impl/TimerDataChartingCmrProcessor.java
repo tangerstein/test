@@ -12,6 +12,7 @@ import javax.persistence.criteria.Root;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import rocks.inspectit.server.dao.impl.TimerDataAggregator;
 import rocks.inspectit.server.processor.AbstractCmrDataProcessor;
@@ -19,17 +20,17 @@ import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.HttpInfo;
 import rocks.inspectit.shared.all.communication.data.HttpTimerData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
+import rocks.inspectit.shared.all.serializer.SerializationException;
+import rocks.inspectit.shared.all.serializer.impl.SerializationManager;
+import rocks.inspectit.shared.all.serializer.provider.SerializationManagerProvider;
 import rocks.inspectit.shared.all.spring.logger.Log;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
-import rocks.inspectit.shared.all.storage.serializer.impl.SerializationManager;
-import rocks.inspectit.shared.all.storage.serializer.provider.SerializationManagerProvider;
 
 /**
  * Processor that saves {@link TimerData} or {@link HttpTimerData} to database correctly if the
  * charting is on.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class TimerDataChartingCmrProcessor extends AbstractCmrDataProcessor {
 
@@ -50,6 +51,13 @@ public class TimerDataChartingCmrProcessor extends AbstractCmrDataProcessor {
 	 */
 	@Autowired
 	private SerializationManagerProvider serializationManagerProvider;
+
+	/**
+	 * If writing to the influxDB is active. In that case we will not persist anything to the
+	 * relational database.
+	 */
+	@Value("${influxdb.active}")
+	boolean influxActive;
 
 	/**
 	 * {@link SerializationManager} for cloning.
@@ -81,13 +89,13 @@ public class TimerDataChartingCmrProcessor extends AbstractCmrDataProcessor {
 	 */
 	@Override
 	public boolean canBeProcessed(DefaultData defaultData) {
-		return defaultData instanceof TimerData && ((TimerData) defaultData).isCharting();
+		return !influxActive && (defaultData instanceof TimerData) && ((TimerData) defaultData).isCharting();
 	}
 
 	/**
 	 * Creates the cloned {@link HttpTimerData} by using the kryo and {@link #serializationManager}.
 	 * Sets id of the clone to zero.
-	 * 
+	 *
 	 * @param original
 	 *            Data to be cloned.
 	 * @return Cloned {@link HttpTimerData} with id zero.
@@ -102,7 +110,7 @@ public class TimerDataChartingCmrProcessor extends AbstractCmrDataProcessor {
 
 	/**
 	 * Find {@link HttpInfo} to attach to {@link HttpTimerData} when saving.
-	 * 
+	 *
 	 * @param httpTimerData
 	 *            {@link HttpTimerData} to find info for.
 	 * @param entityManager

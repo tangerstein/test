@@ -9,6 +9,19 @@ evaluationDependsOn(':inspectit.shared.all')
 evaluationDependsOn(':inspectit.shared.cs')
 defaultTasks 'releaseAndAnalyze'
 
+/** used by the eclipse buildship plugin */
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'
+
+/** defined to have it included in Eclipse as source */
+sourceSets {
+	externalResources {
+		resources {
+			srcDir mainExtResources
+		}
+	}
+}
+
 /** Some server specific properties */
 ext {
 	distJarName = 'inspectit-cmr'
@@ -30,7 +43,7 @@ configurations {
 dependencies {
 	compile project(':inspectit.shared.all')
 	compile project(':inspectit.shared.cs')
-	testCompile project(':inspectit.shared.all').sourceSets.test.output
+	testCompile project (path: ':inspectit.shared.all', configuration: 'testArchives')
 }
 
 /** Compile compatibility to 1.7 for all compile tasks */
@@ -93,8 +106,27 @@ task schemagenCi {
 	inputs.dir project(':inspectit.shared.cs').sourceSets.main.java.srcDirs
 	outputs.file file("${mainExtResources}/ci/schema/ciSchema.xsd")
 
-	dependsOn(schemagen("${sharedCsMainJava}/rocks/inspectit/shared/cs/ci", "${mainExtResources}/ci/schema", "ciSchema.xsd", ""))
+	dependsOn(schemagen("${sharedCsMainJava}/rocks/inspectit/shared/cs/ci", "${mainExtResources}/ci/schema", "ciSchema.xsd", "factory/**"))
 }
+
+/**
+ * Checks if the CI schemas as up-to-date. Set to run always after classes task.
+ */
+task ciSchemaCheck () {
+	dependsOn(schemagen("${sharedCsMainJava}/rocks/inspectit/shared/cs/ci", "${buildRoot}/schema-check", "ciSchema.xsd", "factory/**"))
+
+	doLast {
+		def fileMatch = new org.apache.tools.ant.taskdefs.condition.FilesMatch()
+		fileMatch.setTextfile true
+		fileMatch.setFile1 file("${buildRoot}/schema-check/ciSchema.xsd")
+		fileMatch.setFile2 file("${mainExtResources}/ci/schema/ciSchema.xsd")
+		if (!fileMatch.eval()) {
+			throw new GradleException("CI schema (${mainExtResources}/ci/schema/ciSchema.xsd) is not up-to-date. Please re-generate.")
+		}
+	}
+}
+classes.finalizedBy ciSchemaCheck
+
 
 /**
  * Uses ant SchemaGenTask to generate .xsd schema from the annotated classes.
@@ -105,10 +137,10 @@ task schemagenCi {
  * @param excludes Any excludes patterns to pass to the ant task.
  */
 def schemagen(sourceDir, outputDir, fileName, excludes) {
-	return tasks.create(name: "schemagen-${fileName}") {
-		inputs.sourceDir(sourceDir)
+	return tasks.create(name: "schemagen-${outputDir}/${fileName}", dependsOn: compileJava) {
+		inputs.files(fileTree(sourceDir))
 		outputs.file file("${outputDir}/${fileName}")
-	
+		
 		doLast {
 			file(outputDir).mkdirs()
 			ant.taskdef(name: 'schemagen', classname: 'com.sun.tools.jxc.SchemaGenTask', classpath: configurations.xjc.asPath)
@@ -117,9 +149,11 @@ def schemagen(sourceDir, outputDir, fileName, excludes) {
 				destdir: outputDir,
 				excludes: excludes,
 				includeAntRuntime: 'false',
+				classpath: sourceSets.main.runtimeClasspath.asPath,
 				debug: 'true'
 			)
-
+			
+			file("${outputDir}/${fileName}").delete()
 			file("${outputDir}/schema1.xsd").renameTo(file("${outputDir}/${fileName}"))
 		}
 	}
@@ -130,12 +164,6 @@ test {
 	def classmexerPath = configurations.classmexer.asPath
 	jvmArgs += '-javaagent:' + classmexerPath
 	jvmArgs += serverJavaOptsForTests
-}
-
-/** Include shared.all & shared.cs also for the coverage */
-cobertura {
-	coverageDirs += project(':inspectit.shared.all').sourceSets.main.output.classesDir.path
-	coverageDirs += project(':inspectit.shared.cs').sourceSets.main.output.classesDir.path
 }
 
 /**
@@ -208,6 +236,7 @@ def releaseSingle(os, arch) {
 			exclude('ci/profiles/*.xml')
 			// startups separatelly
 			exclude('startup.*')
+			includeEmptyDirs = false
 		}
 		into('CMR') {
 			from file("${mainExtResources}/startup.bat")

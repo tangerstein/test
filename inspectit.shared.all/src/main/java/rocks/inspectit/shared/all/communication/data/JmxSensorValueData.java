@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.PrePersist;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -16,13 +17,18 @@ import rocks.inspectit.shared.all.communication.SystemSensorData;
 
 /**
  * This class is needed to store the values of a single attribute.
- * 
+ *
  * @author Alfred Krauss
  * @author Marius Oehler
- * 
+ *
  */
 @Entity
 public class JmxSensorValueData extends SystemSensorData implements IAggregatedData<JmxSensorValueData> {
+
+	/**
+	 * Maximum {@link #value} length.
+	 */
+	private static final int MAX_VALUE_LENGTH = 10000;
 
 	/**
 	 * The serial version uid for this class.
@@ -37,7 +43,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	/**
 	 * Values of the attribute to a given time.
 	 */
-	@Column(length = 10000)
+	@Column(length = MAX_VALUE_LENGTH)
 	private String value;
 
 	/**
@@ -68,7 +74,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param jmxDefinitionDataIdentId
 	 *            the id of the related {@link JmxDefinitionDataIdent} of this
 	 *            {@link JmxSensorValueData}
@@ -93,7 +99,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	/**
 	 * Copy constructor. Copies all values (except the aggregation values) of the given
 	 * {@link JmxSensorValueData} object into the newly created.
-	 * 
+	 *
 	 * @param origin
 	 *            object to clone
 	 */
@@ -123,7 +129,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Gets the {@link #value}.
-	 * 
+	 *
 	 * @return {@link #value}
 	 */
 	public String getValue() {
@@ -132,14 +138,14 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Sets the {@link #value}.
-	 * 
+	 *
 	 * @param value
 	 *            New value for {@link #value}.
 	 */
 	public void setValue(String value) {
 		this.value = value;
 
-		if (aggregationCount <= 0 && isBooleanOrNumeric()) {
+		if ((aggregationCount <= 0) && isBooleanOrNumeric()) {
 			double currentValue = getValueAsDouble();
 			aggregationCount = 1;
 			minValue = currentValue;
@@ -150,7 +156,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Calculates and returns the average value of the aggregated objects.
-	 * 
+	 *
 	 * @return the average value
 	 */
 	public double getAverageValue() {
@@ -163,13 +169,14 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public JmxSensorValueData getData() {
 		return this;
 	}
 
 	/**
 	 * Gets {@link #aggregationCount}.
-	 * 
+	 *
 	 * @return {@link #aggregationCount}
 	 */
 	public int getAggregationCount() {
@@ -178,7 +185,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Gets {@link #minValue}.
-	 * 
+	 *
 	 * @return {@link #minValue}
 	 */
 	public double getMinValue() {
@@ -190,7 +197,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Gets {@link #maxValue}.
-	 * 
+	 *
 	 * @return {@link #maxValue}
 	 */
 	public double getMaxValue() {
@@ -202,7 +209,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Gets {@link #totalValue}.
-	 * 
+	 *
 	 * @return {@link #totalValue}
 	 */
 	public double getTotalValue() {
@@ -213,7 +220,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	 * Returns the value as a {@link Double} value. The returned value will be <code>0</code> or
 	 * <code>1</code> if the {@link #value} is a boolean value. If {@link #value} can not be
 	 * converted into a number, a {@link NumberFormatException} is thrown.
-	 * 
+	 *
 	 * @return {@link #value} as {@link Double}
 	 */
 	public double getValueAsDouble() {
@@ -228,7 +235,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Checks if the value of this object is a boolean or numeric value.
-	 * 
+	 *
 	 * @return <code>true</code> if the value is a boolean or number, otherwise <code>false</code>
 	 */
 	public boolean isBooleanOrNumeric() {
@@ -237,7 +244,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 
 	/**
 	 * Determines whether the given string contains a boolean value (false, true, yes, no).
-	 * 
+	 *
 	 * @param value
 	 *            the value to examine
 	 * @return whether the given value is a boolean value
@@ -250,6 +257,7 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void aggregate(JmxSensorValueData data) {
 		if (!data.isBooleanOrNumeric()) {
 			throw new RuntimeException("The given JMX data can not be aggregated.");
@@ -264,12 +272,22 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	}
 
 	/**
+	 * Pre-persist to ensure size of the {@link #value} is not more than {@value #MAX_VALUE_LENGTH}.
+	 */
+	@PrePersist
+	protected void prePersist() {
+		if ((null != value) && (value.length() > MAX_VALUE_LENGTH)) {
+			value = value.substring(0, MAX_VALUE_LENGTH);
+		}
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public String toString() {
 		return "JmxSensorValueData [jmxSensorDefinitionDataIdent=" + jmxSensorDefinitionDataIdentId + ", value=" + value + ", getId()=" + getId() + ", getPlatformIdent()=" + getPlatformIdent()
-				+ ", getSensorTypeIdent()=" + getSensorTypeIdent() + ", getTimeStamp()=" + getTimeStamp() + "]";
+		+ ", getSensorTypeIdent()=" + getSensorTypeIdent() + ", getTimeStamp()=" + getTimeStamp() + "]";
 	}
 
 	/**
@@ -279,16 +297,16 @@ public class JmxSensorValueData extends SystemSensorData implements IAggregatedD
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + aggregationCount;
-		result = prime * result + (int) (jmxSensorDefinitionDataIdentId ^ (jmxSensorDefinitionDataIdentId >>> 32));
+		result = (prime * result) + aggregationCount;
+		result = (prime * result) + (int) (jmxSensorDefinitionDataIdentId ^ (jmxSensorDefinitionDataIdentId >>> 32));
 		long temp;
 		temp = Double.doubleToLongBits(maxValue);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
 		temp = Double.doubleToLongBits(minValue);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
 		temp = Double.doubleToLongBits(totalValue);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + ((value == null) ? 0 : value.hashCode());
+		result = (prime * result) + (int) (temp ^ (temp >>> 32));
+		result = (prime * result) + ((value == null) ? 0 : value.hashCode());
 		return result;
 	}
 

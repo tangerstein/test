@@ -2,9 +2,9 @@ package rocks.inspectit.shared.cs.ci.sensor.method.impl;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+import rocks.inspectit.shared.all.instrumentation.config.PriorityEnum;
 import rocks.inspectit.shared.cs.ci.sensor.StringConstraintSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.IMethodSensorConfig;
-import rocks.inspectit.shared.cs.ci.sensor.method.MethodSensorPriorityEnum;
 
 /**
  * Prepared statement sensor configuration.
@@ -24,7 +24,6 @@ public class PreparedStatementSensorConfig extends StringConstraintSensorConfig 
 	 * Implementing class name.
 	 */
 	public static final String CLASS_NAME = "rocks.inspectit.agent.java.sensor.method.jdbc.PreparedStatementSensor";
-
 
 	/**
 	 * No-args constructor.
@@ -53,8 +52,8 @@ public class PreparedStatementSensorConfig extends StringConstraintSensorConfig 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MethodSensorPriorityEnum getPriority() {
-		return MethodSensorPriorityEnum.MIN;
+	public PriorityEnum getPriority() {
+		return PriorityEnum.MIN;
 	}
 
 	/**

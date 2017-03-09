@@ -28,7 +28,7 @@ public final class InvocationSequenceDataHelper {
 	 * @return if this data object contains captured parameters.
 	 */
 	public static boolean hasCapturedParametersInInvocationSequence(InvocationSequenceData data) {
-		return null != data.getParameterContentData() && !data.getParameterContentData().isEmpty();
+		return (null != data.getParameterContentData()) && !data.getParameterContentData().isEmpty();
 	}
 
 	/**
@@ -44,7 +44,7 @@ public final class InvocationSequenceDataHelper {
 		if (hasCapturedParametersInInvocationSequence(data)) {
 			return true;
 		}
-		return hasTimerData(data) && null != data.getTimerData().getParameterContentData() && !data.getTimerData().getParameterContentData().isEmpty();
+		return hasTimerData(data) && (null != data.getTimerData().getParameterContentData()) && !data.getTimerData().getParameterContentData().isEmpty();
 	}
 
 	/**
@@ -129,7 +129,7 @@ public final class InvocationSequenceDataHelper {
 	 * @return whether this data object contains exception data.
 	 */
 	public static boolean hasExceptionData(InvocationSequenceData data) {
-		return null != data.getExceptionSensorDataObjects() && !data.getExceptionSensorDataObjects().isEmpty();
+		return (null != data.getExceptionSensorDataObjects()) && !data.getExceptionSensorDataObjects().isEmpty();
 	}
 
 	/**
@@ -140,7 +140,7 @@ public final class InvocationSequenceDataHelper {
 	 * @return whether this data object contains SQL data.
 	 */
 	public static boolean hasSQLData(InvocationSequenceData data) {
-		return null != data.getSqlStatementData() && 1 == data.getSqlStatementData().getCount();
+		return (null != data.getSqlStatementData()) && (1 == data.getSqlStatementData().getCount());
 	}
 
 	/**
@@ -173,7 +173,7 @@ public final class InvocationSequenceDataHelper {
 	 * @return True if it has nested SQLs, false otherwise.
 	 */
 	public static boolean hasNestedSqlStatements(InvocationSequenceData data) {
-		return null != data.isNestedSqlStatements() && data.isNestedSqlStatements().booleanValue();
+		return (null != data.isNestedSqlStatements()) && data.isNestedSqlStatements().booleanValue();
 	}
 
 	/**
@@ -184,7 +184,7 @@ public final class InvocationSequenceDataHelper {
 	 * @return True if it has nested SQLs, false otherwise.
 	 */
 	public static boolean hasNestedExceptions(InvocationSequenceData data) {
-		return null != data.isNestedExceptions() && data.isNestedExceptions().booleanValue();
+		return (null != data.isNestedExceptions()) && data.isNestedExceptions().booleanValue();
 	}
 
 	/**

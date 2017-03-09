@@ -17,15 +17,17 @@ import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
+import rocks.inspectit.shared.all.communication.data.cmr.ApplicationData;
+import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
 import rocks.inspectit.ui.rcp.editor.search.criteria.SearchCriteria;
 import rocks.inspectit.ui.rcp.formatter.NumberFormatter;
 import rocks.inspectit.ui.rcp.repository.RepositoryDefinition;
 
 /**
  * Class for supporting the search functionality.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public final class SearchFactory {
 
@@ -67,7 +69,7 @@ public final class SearchFactory {
 
 	/**
 	 * Returns if the element is search compatible.
-	 * 
+	 *
 	 * @param element
 	 *            Element to check.
 	 * @param searchCriteria
@@ -76,7 +78,7 @@ public final class SearchFactory {
 	 *            {@link RepositoryDefinition} where the element can be found.
 	 * @return True if element is compatible with search. False otherwise. False also if the element
 	 *         to check is null.
-	 * 
+	 *
 	 */
 	public static boolean isSearchCompatible(Object element, SearchCriteria searchCriteria, RepositoryDefinition repositoryDefinition) {
 		if (null == element) {
@@ -101,9 +103,9 @@ public final class SearchFactory {
 
 	/**
 	 * Abstract class for all Search finders.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 * @param <E>
 	 *            Type of element finder can search
 	 */
@@ -111,7 +113,7 @@ public final class SearchFactory {
 
 		/**
 		 * Returns if the element is search compatible.
-		 * 
+		 *
 		 * @param element
 		 *            Element to check.
 		 * @param searchCriteria
@@ -119,13 +121,13 @@ public final class SearchFactory {
 		 * @param repositoryDefinition
 		 *            {@link RepositoryDefinition} where the element can be found.
 		 * @return True if element is compatible with search.
-		 * 
+		 *
 		 */
 		public abstract boolean isSearchCompatible(E element, SearchCriteria searchCriteria, RepositoryDefinition repositoryDefinition);
 
 		/**
 		 * Null safe checks if the string is matching the {@link SearchCriteria}.
-		 * 
+		 *
 		 * @param str
 		 *            String to check.
 		 * @param searchCriteria
@@ -147,7 +149,7 @@ public final class SearchFactory {
 		/**
 		 * Returns if the {@link MethodIdent} object is search compatible. Sub-classes can use this
 		 * method.
-		 * 
+		 *
 		 * @param methodIdent
 		 *            {@link MethodIdent} to check.
 		 * @param searchCriteria
@@ -161,7 +163,7 @@ public final class SearchFactory {
 				return true;
 			} else if (stringMatches(methodIdent.getMethodName(), searchCriteria)) {
 				return true;
-			} else if (methodIdent.getParameters() != null && !methodIdent.getParameters().isEmpty()) {
+			} else if ((methodIdent.getParameters() != null) && !methodIdent.getParameters().isEmpty()) {
 				for (String parameter : methodIdent.getParameters()) {
 					if (stringMatches(parameter, searchCriteria)) {
 						return true;
@@ -174,9 +176,9 @@ public final class SearchFactory {
 
 	/**
 	 * Search finder for {@link JmxSensorValueData}.
-	 * 
+	 *
 	 * @author Marius Oehler
-	 * 
+	 *
 	 */
 	private static class JmxSearchFinder extends AbstractSearchFinder<JmxSensorValueData> {
 
@@ -205,9 +207,9 @@ public final class SearchFactory {
 
 	/**
 	 * Search finder for {@link TimerData}.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static class TimerSearchFinder extends AbstractSearchFinder<TimerData> {
 
@@ -223,9 +225,9 @@ public final class SearchFactory {
 
 	/**
 	 * Search finder for {@link SqlStatementData}.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static class SqlSearchFinder extends AbstractSearchFinder<SqlStatementData> {
 
@@ -256,9 +258,9 @@ public final class SearchFactory {
 
 	/**
 	 * Search finder for {@link HttpTimerData}.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static class HttpSearchFinder extends AbstractSearchFinder<HttpTimerData> {
 
@@ -315,9 +317,9 @@ public final class SearchFactory {
 
 	/**
 	 * Search finder for {@link ExceptionSensorData}.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static class ExceptionSearchFinder extends AbstractSearchFinder<ExceptionSensorData> {
 
@@ -343,9 +345,9 @@ public final class SearchFactory {
 
 	/**
 	 * Search finder for {@link InvocationSequenceData}.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private static class InvocationSearchFinder extends AbstractSearchFinder<InvocationSequenceData> {
 
@@ -364,13 +366,24 @@ public final class SearchFactory {
 					return true;
 				}
 			}
-			if (null != element.getExceptionSensorDataObjects() && !element.getExceptionSensorDataObjects().isEmpty()) {
+			if ((null != element.getExceptionSensorDataObjects()) && !element.getExceptionSensorDataObjects().isEmpty()) {
 				for (ExceptionSensorData exData : element.getExceptionSensorDataObjects()) {
 					if (SearchFactory.isSearchCompatible(exData, searchCriteria, repositoryDefinition)) {
 						return true;
 					}
 				}
 			}
+
+			ApplicationData application = repositoryDefinition.getCachedDataService().getApplicationForId(element.getApplicationId());
+			if ((null != application) && stringMatches(application.getName(), searchCriteria)) {
+				return true;
+			}
+
+			BusinessTransactionData businessTxData = repositoryDefinition.getCachedDataService().getBusinessTransactionForId(element.getApplicationId(), element.getBusinessTransactionId());
+			if ((null != businessTxData) && stringMatches(businessTxData.getName(), searchCriteria)) {
+				return true;
+			}
+
 			MethodIdent methodIdent = repositoryDefinition.getCachedDataService().getMethodIdentForId(element.getMethodIdent());
 			return super.isSearchCompatible(methodIdent, searchCriteria);
 		}

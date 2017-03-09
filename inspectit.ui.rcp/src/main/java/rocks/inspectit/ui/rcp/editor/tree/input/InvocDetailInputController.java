@@ -30,6 +30,7 @@ import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.ExceptionSensorData;
 import rocks.inspectit.shared.all.communication.data.HttpInfo;
 import rocks.inspectit.shared.all.communication.data.HttpTimerData;
+import rocks.inspectit.shared.all.communication.data.HttpTimerDataHelper;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceDataHelper;
 import rocks.inspectit.shared.all.communication.data.LoggingData;
@@ -37,8 +38,8 @@ import rocks.inspectit.shared.all.communication.data.ParameterContentData;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
-import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
+import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 import rocks.inspectit.ui.rcp.editor.viewers.StyledCellIndexLabelProvider;
 import rocks.inspectit.ui.rcp.formatter.NumberFormatter;
 import rocks.inspectit.ui.rcp.formatter.TextFormatter;
@@ -49,9 +50,9 @@ import rocks.inspectit.ui.rcp.preferences.PreferencesUtils;
 
 /**
  * This input controller displays the detail contents of {@link InvocationSequenceData} objects.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class InvocDetailInputController extends AbstractTreeInputController {
 
@@ -89,9 +90,9 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	 * The private inner enumeration used to define the used IDs which are mapped into the columns.
 	 * The order in this enumeration represents the order of the columns. If it is reordered,
 	 * nothing else has to be changed.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private static enum Column {
 		/** The method column. */
@@ -118,7 +119,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 		/**
 		 * Default constructor which creates a column enumeration object.
-		 * 
+		 *
 		 * @param name
 		 *            The name of the column.
 		 * @param width
@@ -134,13 +135,13 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 		/**
 		 * Converts an ordinal into a column.
-		 * 
+		 *
 		 * @param i
 		 *            The ordinal.
 		 * @return The appropriate column.
 		 */
 		public static Column fromOrd(int i) {
-			if (i < 0 || i >= Column.values().length) {
+			if ((i < 0) || (i >= Column.values().length)) {
 				throw new IndexOutOfBoundsException("Invalid ordinal");
 			}
 			return Column.values()[i];
@@ -160,6 +161,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void setInputDefinition(InputDefinition inputDefinition) {
 		super.setInputDefinition(inputDefinition);
 		cachedDataService = inputDefinition.getRepositoryDefinition().getCachedDataService();
@@ -168,6 +170,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void createColumns(TreeViewer treeViewer) {
 		for (Column column : Column.values()) {
 			TreeViewerColumn viewerColumn = new TreeViewerColumn(treeViewer, SWT.NONE);
@@ -192,6 +195,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public IContentProvider getContentProvider() {
 		return new InvocDetailContentProvider();
 	}
@@ -199,6 +203,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public IBaseLabelProvider getLabelProvider() {
 		return new InvocDetailLabelProvider();
 	}
@@ -206,6 +211,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Set<PreferenceId> getPreferenceIds() {
 		Set<PreferenceId> preferences = EnumSet.noneOf(PreferenceId.class);
 		preferences.add(PreferenceId.FILTERDATATYPE);
@@ -217,6 +223,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void preferenceEventFired(PreferenceEvent preferenceEvent) {
 		switch (preferenceEvent.getPreferenceId()) {
 		case FILTERDATATYPE:
@@ -242,6 +249,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean canOpenInput(List<? extends DefaultData> data) {
 		if (null == data) {
 			return false;
@@ -267,15 +275,15 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 	/**
 	 * The invoc detail label provider for this view.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private final class InvocDetailLabelProvider extends StyledCellIndexLabelProvider {
 
 		/**
 		 * Creates the styled text.
-		 * 
+		 *
 		 * @param element
 		 *            The element to create the styled text for.
 		 * @param index
@@ -293,7 +301,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 		/**
 		 * Returns the column image for the given element at the given index.
-		 * 
+		 *
 		 * @param element
 		 *            The element.
 		 * @param index
@@ -346,7 +354,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 				// compute the correct color
 				int colorValue = 255 - (int) ((exclusiveTime / invocationDuration) * 100);
 
-				if (colorValue > 255 || colorValue < 0) {
+				if ((colorValue > 255) || (colorValue < 0)) {
 					InspectIT.getDefault().createErrorDialog("The computation of the color value for the detail view returned an invalid value: " + colorValue, null, -1);
 					return null;
 				}
@@ -362,7 +370,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 	/**
 	 * Returns the styled text for a specific column.
-	 * 
+	 *
 	 * @param data
 	 *            The data object to extract the information from.
 	 * @param methodIdent
@@ -423,6 +431,11 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 					styledString.append(httpInfo.getUri());
 					styledString.append(" | ");
 				}
+				if (HttpTimerDataHelper.hasResponseCode(httpTimer)) {
+					styledString.append("Status: ");
+					styledString.append(String.valueOf(httpTimer.getHttpResponseStatus()));
+					styledString.append(" | ");
+				}
 			}
 
 			if (InvocationSequenceDataHelper.hasCapturedParameters(data)) {
@@ -456,9 +469,9 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 	/**
 	 * The invoc detail content provider for this view.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private final class InvocDetailContentProvider implements ITreeContentProvider {
 
@@ -471,6 +484,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public Object[] getChildren(Object parent) {
 			if (manager.isDeferredAdapter(parent)) {
 				Object[] children = manager.getChildren(parent);
@@ -484,6 +498,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public Object getParent(Object child) {
 			if (child instanceof InvocationSequenceData) {
 				InvocationSequenceData invocationSequenceData = (InvocationSequenceData) child;
@@ -496,6 +511,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public boolean hasChildren(Object parent) {
 			if (parent == null) {
 				return false;
@@ -514,6 +530,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		@SuppressWarnings("unchecked")
 		public Object[] getElements(Object inputElement) {
 			List<InvocationSequenceData> invocationSequenceData = (List<InvocationSequenceData>) inputElement;
@@ -523,6 +540,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 			manager = new DeferredTreeContentManager((AbstractTreeViewer) viewer);
 			input = newInput;
@@ -531,6 +549,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public void dispose() {
 		}
 
@@ -568,7 +587,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 			}
 
 			private boolean checkIsOnlyInvocation(InvocationSequenceData data) {
-				return null == data.getTimerData() && null == data.getSqlStatementData() && CollectionUtils.isEmpty(data.getExceptionSensorDataObjects());
+				return (null == data.getTimerData()) && (null == data.getSqlStatementData()) && CollectionUtils.isEmpty(data.getExceptionSensorDataObjects());
 			}
 		};
 		ViewerFilter exclusiveTimeFilter = new InvocationViewerFilter() {
@@ -592,7 +611,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 						duration = invocationSequenceData.getDuration() - InvocationSequenceDataHelper.computeNestedDuration(invocationSequenceData);
 					}
 
-					if (!Double.isNaN(duration) && duration <= defaultExclusiveFilterTime) {
+					if (!Double.isNaN(duration) && (duration <= defaultExclusiveFilterTime)) {
 						return false;
 					}
 				}
@@ -611,7 +630,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 					// filter by the exclusive duration
 					double duration = InvocationSequenceDataHelper.calculateDuration(invocationSequenceData);
-					if (duration != -1.0d && duration <= defaultTotalFilterTime) {
+					if ((duration != -1.0d) && (duration <= defaultTotalFilterTime)) {
 						return false;
 					}
 				}
@@ -626,15 +645,15 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	 * the original one: Instead of filtering out a specific element _and_ all its sub-elements, it
 	 * only filters out the specific elements and pushes up the elements which are child-elements of
 	 * that one.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private abstract class InvocationViewerFilter extends ViewerFilter {
 		/**
 		 * The filtering method which tries to push up the child elements if a parent element has to
 		 * be filtered out.
-		 * 
+		 *
 		 * @param viewer
 		 *            The viewer
 		 * @param parent
@@ -645,7 +664,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		 */
 		@Override
 		public Object[] filter(Viewer viewer, Object parent, Object[] elements) {
-			List<Object> out = new ArrayList<Object>();
+			List<Object> out = new ArrayList<>();
 			for (Object element : elements) {
 				if (select(viewer, parent, element)) {
 					out.add(element);
@@ -669,6 +688,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getReadableString(Object object) {
 		if (object instanceof InvocationSequenceData) {
 			InvocationSequenceData data = (InvocationSequenceData) object;
@@ -691,7 +711,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		if (object instanceof InvocationSequenceData) {
 			InvocationSequenceData data = (InvocationSequenceData) object;
 			MethodIdent methodIdent = cachedDataService.getMethodIdentForId(data.getMethodIdent());
-			List<String> values = new ArrayList<String>();
+			List<String> values = new ArrayList<>();
 			for (Column column : Column.values()) {
 				values.add(getStyledTextForColumn(data, methodIdent, column).toString());
 			}
@@ -709,7 +729,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 		List<InvocationSequenceData> invocationSequenceDataList = (List<InvocationSequenceData>) treeInput;
 		if (!invocationSequenceDataList.isEmpty()) {
 			InvocationSequenceData invocation = invocationSequenceDataList.get(0);
-			List<InvocationSequenceData> allObjects = new ArrayList<InvocationSequenceData>((int) invocation.getChildCount());
+			List<InvocationSequenceData> allObjects = new ArrayList<>((int) invocation.getChildCount());
 			extractAllChildren(allObjects, invocation);
 			return allObjects.toArray();
 		}
@@ -719,7 +739,7 @@ public class InvocDetailInputController extends AbstractTreeInputController {
 
 	/**
 	 * Extracts all invocations inside the invocation in one list via reflection.
-	 * 
+	 *
 	 * @param resultList
 	 *            List to contain all the extracted data.
 	 * @param invocation

@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,7 @@ import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 
 /**
  * Storage for the meta information of JDBC connection classes.
- * 
+ *
  * @author Stefan Siegl
  */
 @Component
@@ -32,25 +33,25 @@ public class ConnectionMetaDataStorage {
 	 * This cache keeps track of the meta information for connection objects. The key is the <code>
 	 * Connection </code> object. As connections are re-used it makes sense to keep the meta
 	 * information cached, as to not request this information over and over again.
-	 * 
+	 *
 	 * Also we use weak keys as to allow the garbage collector to remove the entries as soon as
 	 * nobody else holds references to the connection (if this happens, the connection itself is
 	 * garbage collected and thus we need not hold meta information anymore).
-	 * 
+	 *
 	 * Also note that having weakKeys tells the Cache to use identity comparison (==) instead of
 	 * equals() comparison. This is just the thing we want as we can ensure that connections
 	 * identity stays that same. On top of that == is faster than equals.
-	 * 
+	 *
 	 * <b> Note that this data structure provides atomic access like a <code>ConcurrentMap</code>.
 	 * </b>.
-	 * 
+	 *
 	 * Package access for easier testing.
 	 */
 	Cache<Object, ConnectionMetaData> storage = CacheBuilder.newBuilder().weakKeys().softValues().build();
 
 	/**
 	 * Extractor to read data from the connection instance.
-	 * 
+	 *
 	 * Package access for easier testing.
 	 */
 	ConnectionMetaDataExtractor dataExtractor = new ConnectionMetaDataExtractor();
@@ -58,7 +59,7 @@ public class ConnectionMetaDataStorage {
 	/**
 	 * Populates the given SQL Statement data with the meta information from the storage if this
 	 * data exist.
-	 * 
+	 *
 	 * @param sqlData
 	 *            the data object to populate.
 	 * @param connection
@@ -66,7 +67,7 @@ public class ConnectionMetaDataStorage {
 	 */
 	public void populate(SqlStatementData sqlData, Object connection) {
 		ConnectionMetaData connectionMetaData = get(connection);
-		if (null != connectionMetaData && EMPTY != connectionMetaData) { // NOPMD == on purpose
+		if ((null != connectionMetaData) && (EMPTY != connectionMetaData)) { // NOPMD == on purpose
 			sqlData.setDatabaseProductName(connectionMetaData.product);
 			sqlData.setDatabaseProductVersion(connectionMetaData.version);
 			sqlData.setDatabaseUrl(connectionMetaData.url);
@@ -75,7 +76,7 @@ public class ConnectionMetaDataStorage {
 
 	/**
 	 * Retrieves the <code>ConnectionMetaData</code> stored with this connection.
-	 * 
+	 *
 	 * @param connection
 	 *            the connection instance
 	 * @return the <code>ConnectionMetaData</code> stored with this connection.
@@ -86,6 +87,7 @@ public class ConnectionMetaDataStorage {
 		}
 		try {
 			return storage.get(connection, new Callable<ConnectionMetaData>() {
+				@Override
 				public ConnectionMetaData call() throws Exception {
 					ConnectionMetaData data = dataExtractor.parse(connection);
 					return data != null ? data : EMPTY;
@@ -99,7 +101,7 @@ public class ConnectionMetaDataStorage {
 
 	/**
 	 * Value holder for meta information of connection instances.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	public static class ConnectionMetaData {
@@ -115,11 +117,15 @@ public class ConnectionMetaDataStorage {
 	 * Extractor to retrieve connection meta data information. This class uses reflection to get the
 	 * information from the connection. To ensure high performance it caches the reflection
 	 * <code>Method</code> objects using the {@link ReflectionCache}.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	static class ConnectionMetaDataExtractor {
 
+		/** FQN of the java.sql.DatabaseMetaData. */
+		private static final String JAVA_SQL_DATABASE_META_DATA_FQN = "java.sql.DatabaseMetaData";
+		/** FQN of the java.sql.Connection. */
+		private static final String JAVA_SQL_CONNECTION_FQN = "java.sql.Connection";
 		/** Method names. */
 		private static final String GET_META_DATA = "getMetaData";
 		/** Method names. */
@@ -144,7 +150,7 @@ public class ConnectionMetaDataStorage {
 		/**
 		 * Parses a given <code>Connection</code> and retrieves the monitoring-related meta
 		 * information.
-		 * 
+		 *
 		 * @param connection
 		 *            the <code>Connection</code> object.
 		 * @return meta information about the connection for monitoring. returns <code>null</code>
@@ -182,7 +188,7 @@ public class ConnectionMetaDataStorage {
 
 		/**
 		 * Checks if the connection is closed.
-		 * 
+		 *
 		 * @param connectionClass
 		 *            the connection class.
 		 * @param connection
@@ -191,12 +197,12 @@ public class ConnectionMetaDataStorage {
 		 *         exception occurs during method invocation
 		 */
 		private boolean isClosed(Class<?> connectionClass, Object connection) {
-			return (Boolean) cache.invokeMethod(connectionClass, IS_CLOSED, null, connection, null, true);
+			return (Boolean) cache.invokeMethod(connectionClass, IS_CLOSED, null, connection, null, true, JAVA_SQL_CONNECTION_FQN);
 		}
 
 		/**
 		 * Retrieves the meta information object from the connection.
-		 * 
+		 *
 		 * @param connectionClass
 		 *            the connection class.
 		 * @param connection
@@ -205,12 +211,12 @@ public class ConnectionMetaDataStorage {
 		 *         problems.
 		 */
 		private Object getMetaData(Class<?> connectionClass, Object connection) {
-			return cache.invokeMethod(connectionClass, GET_META_DATA, null, connection, null, null);
+			return cache.invokeMethod(connectionClass, GET_META_DATA, null, connection, null, null, JAVA_SQL_CONNECTION_FQN);
 		}
 
 		/**
 		 * Retrieves the target/url from the jdbc connection string.
-		 * 
+		 *
 		 * @param databaseMetaDataClass
 		 *            the meta information class.
 		 * @param databaseMetaData
@@ -218,13 +224,13 @@ public class ConnectionMetaDataStorage {
 		 * @return the target/url from the jdbc connection string.
 		 */
 		private String parseTarget(Class<?> databaseMetaDataClass, Object databaseMetaData) {
-			String url = (String) cache.invokeMethod(databaseMetaDataClass, GET_URL, null, databaseMetaData, null, null);
+			String url = (String) cache.invokeMethod(databaseMetaDataClass, GET_URL, null, databaseMetaData, null, null, JAVA_SQL_DATABASE_META_DATA_FQN);
 			return urlExtractor.extractURLfromJDBCURL(url);
 		}
 
 		/**
 		 * Retrieves the version of the database.
-		 * 
+		 *
 		 * @param databaseMetaDataClass
 		 *            the meta information class.
 		 * @param databaseMetaData
@@ -232,12 +238,12 @@ public class ConnectionMetaDataStorage {
 		 * @return the version of the database.
 		 */
 		private String parseVersion(Class<?> databaseMetaDataClass, Object databaseMetaData) {
-			return (String) cache.invokeMethod(databaseMetaDataClass, GET_DATABASE_PRODUCT_VERSION, null, databaseMetaData, null, null);
+			return (String) cache.invokeMethod(databaseMetaDataClass, GET_DATABASE_PRODUCT_VERSION, null, databaseMetaData, null, null, JAVA_SQL_DATABASE_META_DATA_FQN);
 		}
 
 		/**
 		 * Retrieves the product name of the database.
-		 * 
+		 *
 		 * @param databaseMetaDataClass
 		 *            the meta information class.
 		 * @param databaseMetaData
@@ -245,13 +251,13 @@ public class ConnectionMetaDataStorage {
 		 * @return the product name of the database.
 		 */
 		private String parseProduct(Class<?> databaseMetaDataClass, Object databaseMetaData) {
-			return (String) cache.invokeMethod(databaseMetaDataClass, GET_DATABASE_PRODUCT_NAME, null, databaseMetaData, null, null);
+			return (String) cache.invokeMethod(databaseMetaDataClass, GET_DATABASE_PRODUCT_NAME, null, databaseMetaData, null, null, JAVA_SQL_DATABASE_META_DATA_FQN);
 		}
 	}
 
 	/**
 	 * Extractor to retrieve the concrete URL from the JDBC connection string.
-	 * 
+	 *
 	 * @author Stefan Siegl
 	 */
 	static class JDBCUrlExtractor {
@@ -261,11 +267,11 @@ public class ConnectionMetaDataStorage {
 		 * ][:portNumber]][;property=value[;property=value]]
 		 * jdbc:db2://<HOST>:<PORT>/<DATABASE_NAME> --> remove the //
 		 * jdbc:h2:../../database/database/dvdstore22
-		 * 
+		 *
 		 * Oracle is once again different: http://www.orafaq.com/wiki/JDBC
 		 * "jdbc:oracle:thin:@//myhost:1521/orcl"; "jdbc:oracle:thin:@myhost:1521:orcl";
 		 * "jdbc:oracle:oci:@myhost:1521:orcl";
-		 * 
+		 *
 		 * use: http://www.regexr.com/ to play around with regex. See
 		 * http://www.regular-expressions.info/named.html as great reference.
 		 */
@@ -273,12 +279,15 @@ public class ConnectionMetaDataStorage {
 
 		/**
 		 * Extracts the url from the connection string.
-		 * 
+		 *
 		 * @param url
 		 *            the connection string
 		 * @return the url.
 		 */
 		public String extractURLfromJDBCURL(String url) {
+			if (StringUtils.isEmpty(url)) {
+				return "";
+			}
 			try {
 				final Matcher matcher = urlPattern.matcher(url);
 				matcher.find();

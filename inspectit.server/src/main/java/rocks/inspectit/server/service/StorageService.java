@@ -22,8 +22,8 @@ import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.exception.BusinessException;
 import rocks.inspectit.shared.all.exception.TechnicalException;
 import rocks.inspectit.shared.all.exception.enumeration.StorageErrorCodeEnum;
+import rocks.inspectit.shared.all.serializer.SerializationException;
 import rocks.inspectit.shared.all.spring.logger.Log;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
 import rocks.inspectit.shared.cs.cmr.service.IStorageService;
 import rocks.inspectit.shared.cs.communication.data.cmr.RecordingData;
 import rocks.inspectit.shared.cs.storage.IStorageData;
@@ -38,11 +38,12 @@ import rocks.inspectit.shared.cs.storage.recording.RecordingState;
 
 /**
  * Storage service implementation.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Service
+@Transactional
 public class StorageService implements IStorageService {
 
 	/** The logger of this class. */
@@ -63,7 +64,7 @@ public class StorageService implements IStorageService {
 
 	/**
 	 * Creates the new storage on the CMR with information given in {@link StorageData} object.
-	 * 
+	 *
 	 * @param storageData
 	 *            Information about new storage.
 	 * @throws BusinessException
@@ -82,7 +83,7 @@ public class StorageService implements IStorageService {
 
 	/**
 	 * Opens an already existing storage in means that it prepares it for write.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to open.
 	 * @throws BusinessException
@@ -106,6 +107,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public StorageData createAndOpenStorage(StorageData storageData) throws BusinessException {
 		this.createStorage(storageData);
@@ -115,9 +117,10 @@ public class StorageService implements IStorageService {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @throws BusinessException
 	 */
+	@Override
 	@MethodLog
 	public void closeStorage(StorageData storageData) throws BusinessException {
 		try {
@@ -132,6 +135,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void deleteStorage(StorageData storageData) throws BusinessException {
 		try {
@@ -144,6 +148,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public boolean isStorageOpen(StorageData storageData) {
 		return storageManager.isStorageOpen(storageData);
@@ -152,6 +157,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<StorageData> getOpenedStorages() {
 		return storageManager.getOpenedStorages();
@@ -160,6 +166,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<StorageData> getExistingStorages() {
 		return storageManager.getExistingStorages();
@@ -168,6 +175,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<StorageData> getReadableStorages() {
 		return storageManager.getReadableStorages();
@@ -176,6 +184,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public RecordingState getRecordingState() {
 		return storageManager.getRecordingState();
@@ -184,11 +193,13 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public StorageData startOrScheduleRecording(StorageData storageData, RecordingProperties recordingProperties) throws BusinessException {
-		if ((storageManager.getRecordingState() == RecordingState.ON || storageManager.getRecordingState() == RecordingState.SCHEDULED) && !storageData.equals(storageManager.getRecordingStorage())) {
+		if (((storageManager.getRecordingState() == RecordingState.ON) || (storageManager.getRecordingState() == RecordingState.SCHEDULED))
+				&& !storageData.equals(storageManager.getRecordingStorage())) {
 			throw new BusinessException("Start or schedule recording on the storage " + storageData + ".", StorageErrorCodeEnum.CAN_NOT_START_RECORDING);
-		} else if (storageManager.getRecordingState() == RecordingState.ON || storageManager.getRecordingState() == RecordingState.SCHEDULED) {
+		} else if ((storageManager.getRecordingState() == RecordingState.ON) || (storageManager.getRecordingState() == RecordingState.SCHEDULED)) {
 			throw new BusinessException("Start or schedule recording on the storage " + storageData + ".", StorageErrorCodeEnum.CAN_NOT_START_RECORDING);
 		} else {
 			try {
@@ -205,6 +216,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void stopRecording() throws BusinessException {
 		try {
@@ -222,7 +234,7 @@ public class StorageService implements IStorageService {
 	@MethodLog
 	@Override
 	public RecordingData getRecordingData() {
-		if (storageManager.getRecordingState() == RecordingState.ON || storageManager.getRecordingState() == RecordingState.SCHEDULED) {
+		if ((storageManager.getRecordingState() == RecordingState.ON) || (storageManager.getRecordingState() == RecordingState.SCHEDULED)) {
 			RecordingData recordingData = new RecordingData();
 			RecordingProperties recordingProperties = storageManager.getRecordingProperties();
 			if (null != recordingProperties) {
@@ -240,6 +252,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void writeToStorage(StorageData storageData, Collection<DefaultData> defaultDataCollection, Collection<AbstractDataProcessor> dataProcessors, boolean synchronously)
 			throws BusinessException {
@@ -258,6 +271,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public StorageData copyBufferToStorage(StorageData storageData, List<Long> platformIdents, Collection<AbstractDataProcessor> dataProcessors, boolean autoFinalize) throws BusinessException {
 		try {
@@ -286,6 +300,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public Map<String, Long> getIndexFilesLocations(StorageData storageData) throws BusinessException {
 		if (!storageManager.isStorageExisting(storageData)) {
@@ -301,6 +316,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public Map<String, Long> getDataFilesLocations(StorageData storageData) throws BusinessException {
 		if (!storageManager.isStorageExisting(storageData)) {
@@ -316,6 +332,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public Map<String, Long> getCachedDataFilesLocations(StorageData storageData) throws BusinessException {
 		if (!storageManager.isStorageExisting(storageData)) {
@@ -331,6 +348,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public Map<String, Long> getAgentFilesLocations(StorageData storageData) throws BusinessException {
 		if (!storageManager.isStorageExisting(storageData)) {
@@ -346,7 +364,23 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
+	@MethodLog
+	public Map<String, Long> getBusinessContextFilesLocation(StorageData storageData) throws BusinessException {
+		if (!storageManager.isStorageExisting(storageData)) {
+			throw new BusinessException("Load business context files locations for the storage " + storageData + ".", StorageErrorCodeEnum.STORAGE_DOES_NOT_EXIST);
+		}
+		try {
+			return storageManager.getFilesHttpLocation(storageData, StorageFileType.BUSINESS_CONTEXT_FILE.getExtension());
+		} catch (IOException e) {
+			throw new TechnicalException("Load business context files locations for the storage " + storageData + ".", StorageErrorCodeEnum.INPUT_OUTPUT_OPERATION_FAILED, e);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	@MethodLog
 	public StorageData addLabelToStorage(StorageData storageData, AbstractStorageLabel<?> storageLabel, boolean doOverwrite) throws BusinessException {
 		try {
@@ -363,6 +397,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public StorageData addLabelsToStorage(StorageData storageData, Collection<AbstractStorageLabel<?>> storageLabels, boolean doOverwrite) throws BusinessException {
@@ -382,6 +417,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public StorageData removeLabelFromStorage(StorageData storageData, AbstractStorageLabel<?> storageLabel) throws BusinessException {
@@ -398,6 +434,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public StorageData removeLabelsFromStorage(StorageData storageData, List<AbstractStorageLabel<?>> storageLabelList) throws BusinessException {
@@ -416,6 +453,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void executeLabelManagementActions(Collection<AbstractLabelManagementAction> managementActions) throws BusinessException {
@@ -427,9 +465,10 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public Collection<AbstractStorageLabel<?>> getAllLabelsInStorages() {
-		Set<AbstractStorageLabel<?>> labels = new HashSet<AbstractStorageLabel<?>>();
+		Set<AbstractStorageLabel<?>> labels = new HashSet<>();
 		for (StorageData storageData : getExistingStorages()) {
 			labels.addAll(storageData.getLabelList());
 		}
@@ -439,6 +478,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<AbstractStorageLabel<?>> getAllLabels() {
 		return storageLabelDataDao.getAllLabels();
@@ -447,6 +487,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public <E> List<AbstractStorageLabel<E>> getLabelSuggestions(AbstractStorageLabelType<E> labeltype) {
 		List<AbstractStorageLabel<E>> results = storageLabelDataDao.getAllLabelsForType(labeltype);
@@ -456,6 +497,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void saveLabelToCmr(AbstractStorageLabel<?> storageLabel) {
@@ -465,6 +507,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void saveLabelsToCmr(Collection<AbstractStorageLabel<?>> storageLabels) {
@@ -475,8 +518,9 @@ public class StorageService implements IStorageService {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void removeLabelFromCmr(AbstractStorageLabel<?> storageLabel, boolean removeFromStoragesAlso) throws BusinessException {
@@ -490,15 +534,16 @@ public class StorageService implements IStorageService {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void removeLabelsFromCmr(Collection<AbstractStorageLabel<?>> storageLabels, boolean removeFromStoragesAlso) throws BusinessException {
 		storageLabelDataDao.removeLabels(storageLabels);
 		if (removeFromStoragesAlso) {
 			for (StorageData storageData : getExistingStorages()) {
-				removeLabelsFromStorage(storageData, new ArrayList<AbstractStorageLabel<?>>(storageLabels));
+				removeLabelsFromStorage(storageData, new ArrayList<>(storageLabels));
 			}
 		}
 	}
@@ -506,6 +551,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void saveLabelType(AbstractStorageLabelType<?> labelType) {
@@ -515,6 +561,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@Transactional
 	@MethodLog
 	public void removeLabelType(AbstractStorageLabelType<?> labelType) throws BusinessException {
@@ -524,6 +571,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public <E extends AbstractStorageLabelType<?>> List<E> getLabelTypes(Class<E> labelTypeClass) {
 		return storageLabelDataDao.getLabelTypes(labelTypeClass);
@@ -532,6 +580,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<AbstractStorageLabelType<?>> getAllLabelTypes() {
 		return storageLabelDataDao.getAllLabelTypes();
@@ -540,6 +589,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void updateStorageData(StorageData storageData) throws BusinessException {
 		try {
@@ -554,6 +604,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public long getStorageQueuedWriteTaskCount(StorageData storageData) {
 		return storageManager.getStorageQueuedWriteTaskCount(storageData);
@@ -562,6 +613,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void unpackUploadedStorage(IStorageData storageData) throws BusinessException {
 		try {
@@ -574,6 +626,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void createStorageFromUploadedDir(final IStorageData localStorageData) throws BusinessException {
 		try {
@@ -588,6 +641,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void cacheStorageData(StorageData storageData, Collection<? extends DefaultData> data, int hash) throws BusinessException {
 		if (!storageManager.isStorageExisting(storageData)) {
@@ -609,6 +663,7 @@ public class StorageService implements IStorageService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public String getCachedStorageDataFileLocation(StorageData storageData, int hash) throws BusinessException {
 		if (!storageManager.isStorageExisting(storageData)) {
@@ -619,7 +674,7 @@ public class StorageService implements IStorageService {
 
 	/**
 	 * Is executed after dependency injection is done to perform any initialization.
-	 * 
+	 *
 	 * @throws Exception
 	 *             if an error occurs during {@link PostConstruct}
 	 */

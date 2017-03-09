@@ -20,15 +20,15 @@ import rocks.inspectit.shared.all.kryonet.IExtendedSerialization;
 import rocks.inspectit.shared.all.kryonet.Listener;
 import rocks.inspectit.shared.all.kryonet.Server;
 import rocks.inspectit.shared.all.kryonet.rmi.ObjectSpace;
+import rocks.inspectit.shared.all.serializer.provider.SerializationManagerProvider;
 import rocks.inspectit.shared.all.spring.logger.Log;
 import rocks.inspectit.shared.all.storage.nio.stream.StreamProvider;
-import rocks.inspectit.shared.all.storage.serializer.provider.SerializationManagerProvider;
 
 /**
  * COnfiguration of the {@link Server} that will be used for communication with the agent.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Configuration
 public class KryoNetServerCreator {
@@ -67,7 +67,7 @@ public class KryoNetServerCreator {
 
 	/**
 	 * Start the kryonet server and binds it to the specified port.
-	 * 
+	 *
 	 * @return Start the kryonet server and binds it to the specified port.
 	 */
 	@Bean(name = "kryonet-server", destroyMethod = "stop")
@@ -81,7 +81,7 @@ public class KryoNetServerCreator {
 			server.bind(port);
 			log.info("|-Kryonet server successfully started and running on port " + port);
 		} catch (IOException e) {
-			throw new BeanInitializationException("Could not bind the kryonet server to the specified ports.", e);
+			throw new BeanInitializationException("Could not bind the kryonet server to the specified port (" + port + ").", e);
 		}
 
 		return server;
@@ -89,7 +89,7 @@ public class KryoNetServerCreator {
 
 	/**
 	 * Creates the {@link ObjectSpace}, registers kryo classes and connect the space to the server.
-	 * 
+	 *
 	 * @param server
 	 *            KryoNet {@link Server}.
 	 * @return Created {@link ObjectSpace}.

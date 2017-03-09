@@ -23,9 +23,9 @@ import rocks.inspectit.shared.all.storage.nio.ByteBufferProvider;
  * buffer to the {@link #byteBuffers} list. This way an object with unknown size can be serialized,
  * not depending on the size of the buffers, simply when one buffer is full, a new one will be
  * borrowed, till the object is serialized.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -69,7 +69,7 @@ public class ExtendedByteBufferOutputStream extends ByteBufferOutputStream {
 	 * Flushes the stream by taking the current {@link ByteBuffer} using for writing. Buffer is flip
 	 * and put to the list of cached buffers. If the takeNewBuffer is <code>true</code> then a new
 	 * buffer will be placed and ready for write.
-	 * 
+	 *
 	 * @param takeNewBuffer
 	 *            If the new buffers should be placed the super {@link OutputStream}.
 	 * @exception IOException
@@ -92,12 +92,12 @@ public class ExtendedByteBufferOutputStream extends ByteBufferOutputStream {
 	/**
 	 * Prepares for the write. This method will get a {@link ByteBuffer} from the
 	 * {@link ByteBufferProvider} and set it as the current output.
-	 * 
+	 *
 	 * @throws IOException
 	 *             if preparation fails due to inability to obtain a byte buffers
 	 */
 	public void prepare() throws IOException {
-		byteBuffers.clear();
+		releaseAllBuffers();
 		totalWriteSize = 0L;
 		ByteBuffer byteBuffer = byteBufferProvider.acquireByteBuffer();
 		byteBuffer.clear();
@@ -129,22 +129,13 @@ public class ExtendedByteBufferOutputStream extends ByteBufferOutputStream {
 		if (closed) {
 			return;
 		}
-		for (ByteBuffer byteBuffer : byteBuffers) {
-			byteBufferProvider.releaseByteBuffer(byteBuffer);
-		}
-		byteBuffers.clear();
-
-		ByteBuffer currentBuffer = super.getByteBuffer();
-		if (null != currentBuffer) {
-			byteBufferProvider.releaseByteBuffer(currentBuffer);
-			super.setByteBuffer(null);
-		}
+		releaseAllBuffers();
 		closed = true;
 	}
 
 	/**
 	 * Gets all the buffers where the write was done.
-	 * 
+	 *
 	 * @return Gets all the buffers where the write was done.
 	 */
 	public List<ByteBuffer> getAllByteBuffers() {
@@ -154,7 +145,7 @@ public class ExtendedByteBufferOutputStream extends ByteBufferOutputStream {
 	/**
 	 * Returns the total writing size including the size that is currently available in the
 	 * ByteBuffer that is currently used for write.
-	 * 
+	 *
 	 * @return Returns the total writing size including the size that is currently available in the
 	 *         ByteBuffer that is currently used for write.
 	 */
@@ -170,7 +161,7 @@ public class ExtendedByteBufferOutputStream extends ByteBufferOutputStream {
 	/**
 	 * Returns the total number of {@link ByteBuffer}s used including the one that might be used for
 	 * writing at the moment.
-	 * 
+	 *
 	 * @return Returns the total number of {@link ByteBuffer}s used including the one that might be
 	 *         used for writing at the moment.
 	 */
@@ -192,5 +183,21 @@ public class ExtendedByteBufferOutputStream extends ByteBufferOutputStream {
 	protected void finalize() throws Throwable {
 		this.close();
 		super.finalize();
+	}
+
+	/**
+	 * Releases all buffers in the stream.
+	 */
+	private void releaseAllBuffers() {
+		for (ByteBuffer byteBuffer : byteBuffers) {
+			byteBufferProvider.releaseByteBuffer(byteBuffer);
+		}
+		byteBuffers.clear();
+
+		ByteBuffer currentBuffer = super.getByteBuffer();
+		if (null != currentBuffer) {
+			byteBufferProvider.releaseByteBuffer(currentBuffer);
+			super.setByteBuffer(null);
+		}
 	}
 }

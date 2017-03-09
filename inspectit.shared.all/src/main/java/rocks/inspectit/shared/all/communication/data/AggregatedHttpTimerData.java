@@ -9,9 +9,9 @@ import rocks.inspectit.shared.all.communication.IIdsAwareAggregatedData;
 
 /**
  * Aggregated {@link TimerData} object.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareAggregatedData<HttpTimerData> {
 
@@ -31,6 +31,7 @@ public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareA
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void aggregate(HttpTimerData data) {
 		this.aggregateHttpTimerData(data);
 		if (data instanceof AggregatedHttpTimerData) {
@@ -46,9 +47,10 @@ public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareA
 	}
 
 	/**
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Collection<Long> getAggregatedIds() {
 		return aggregatedIds.keySet();
 	}
@@ -56,6 +58,7 @@ public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareA
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void clearAggregatedIds() {
 		aggregatedIds.clear();
 
@@ -64,13 +67,14 @@ public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareA
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public HttpTimerData getData() {
 		return this;
 	}
 
 	/**
 	 * Aggregates the {@link HttpTimerData}.
-	 * 
+	 *
 	 * @param data
 	 *            {@link HttpTimerData}
 	 */
@@ -81,6 +85,7 @@ public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareA
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = super.getObjectSize(objectSizes, doAlign);
 		size += objectSizes.getPrimitiveTypesSize(1, 0, 0, 0, 0, 0);
@@ -102,7 +107,7 @@ public class AggregatedHttpTimerData extends HttpTimerData implements IIdsAwareA
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((aggregatedIds == null) ? 0 : aggregatedIds.hashCode());
+		result = (prime * result) + ((aggregatedIds == null) ? 0 : aggregatedIds.hashCode());
 		return result;
 	}
 

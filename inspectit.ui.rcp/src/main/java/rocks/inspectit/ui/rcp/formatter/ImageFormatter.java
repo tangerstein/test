@@ -12,20 +12,30 @@ import org.eclipse.jface.resource.ResourceManager;
 import org.eclipse.jface.viewers.DecorationOverlayIcon;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.widgets.Composite;
 
 import rocks.inspectit.shared.all.communication.data.cmr.AgentStatusData;
+import rocks.inspectit.shared.cs.ci.AlertingDefinition;
 import rocks.inspectit.shared.cs.ci.Environment;
 import rocks.inspectit.shared.cs.ci.Profile;
 import rocks.inspectit.shared.cs.ci.assignment.AbstractClassSensorAssignment;
+import rocks.inspectit.shared.cs.ci.assignment.impl.ChartingMethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.TimerMethodSensorAssignment;
+import rocks.inspectit.shared.cs.ci.business.impl.ApplicationDefinition;
+import rocks.inspectit.shared.cs.ci.business.impl.BusinessTransactionDefinition;
 import rocks.inspectit.shared.cs.ci.context.AbstractContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.FieldContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.ParameterContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.ReturnContextCapture;
+import rocks.inspectit.shared.cs.ci.profile.data.AbstractProfileData;
+import rocks.inspectit.shared.cs.ci.profile.data.ExcludeRulesProfileData;
+import rocks.inspectit.shared.cs.ci.profile.data.JmxDefinitionProfileData;
+import rocks.inspectit.shared.cs.ci.profile.data.SensorAssignmentProfileData;
 import rocks.inspectit.shared.cs.ci.sensor.ISensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.exception.impl.ExceptionSensorConfig;
-import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionMetaDataSensorConfig;
+import rocks.inspectit.shared.cs.ci.sensor.jmx.JmxSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.HttpSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.InvocationSequenceSensorConfig;
@@ -41,6 +51,7 @@ import rocks.inspectit.shared.cs.ci.sensor.platform.impl.MemorySensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.platform.impl.RuntimeSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.platform.impl.SystemSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.platform.impl.ThreadSensorConfig;
+import rocks.inspectit.shared.cs.communication.data.cmr.Alert;
 import rocks.inspectit.shared.cs.communication.data.cmr.WritingStatus;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
 import rocks.inspectit.shared.cs.storage.StorageData;
@@ -271,6 +282,37 @@ public final class ImageFormatter {
 	}
 
 	/**
+	 * Returns an overlayed icon of the passed main image using the passed images as overlays.
+	 *
+	 * @param main
+	 *            main image to be overlayed
+	 * @param resourceManager
+	 *            Resource manager that image will be created with. It is responsibility of a caller
+	 *            to provide {@link ResourceManager} for correct image disposing.
+	 * @param scaleFactor
+	 *            scale factor to be used to scale the overlay images. 1.0 means exactly the
+	 *            original size, 0.5 half size, 2.0 double size.
+	 * @param overlays
+	 *            1 to 4 overlay images. 1: top-left, 2: top-right, 3: bottom-left, 4: button-right.
+	 *            Any of the overlay positions can be null to not draw an overlay at that position.
+	 * @return an overlayed image
+	 */
+	public static Image getOverlayedImage(Image main, ResourceManager resourceManager, double scaleFactor, Image... overlays) {
+		ImageDescriptor[] descriptors = new ImageDescriptor[overlays.length];
+		for (int i = 0; i < overlays.length; i++) {
+			if (null != overlays[i]) {
+				ImageData imageData = overlays[i].getImageData();
+				imageData = imageData.scaledTo((int) (scaleFactor * imageData.width), (int) (scaleFactor * imageData.height));
+				descriptors[i] = ImageDescriptor.createFromImageData(imageData);
+			}
+		}
+
+		DecorationOverlayIcon icon = new DecorationOverlayIcon(main, descriptors);
+		Image img = resourceManager.createImage(icon);
+		return img;
+	}
+
+	/**
 	 * Returns the combined image for given array of descriptors. Orientation can be vertical or
 	 * horizontal.
 	 *
@@ -364,8 +406,6 @@ public final class ImageFormatter {
 	public static Image getSensorConfigImage(Class<? extends ISensorConfig> sensorClass) {
 		if (ObjectUtils.equals(sensorClass, ExceptionSensorConfig.class)) {
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_EXCEPTION_SENSOR);
-		} else if (ObjectUtils.equals(sensorClass, ConnectionMetaDataSensorConfig.class)) {
-			return InspectIT.getDefault().getImage(InspectITImages.IMG_DATABASE);
 		} else if (ObjectUtils.equals(sensorClass, ConnectionSensorConfig.class)) {
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_DATABASE);
 		} else if (ObjectUtils.equals(sensorClass, HttpSensorConfig.class)) {
@@ -396,6 +436,8 @@ public final class ImageFormatter {
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_SYSTEM_OVERVIEW);
 		} else if (ObjectUtils.equals(sensorClass, ThreadSensorConfig.class)) {
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_THREADS_OVERVIEW);
+		} else if (ObjectUtils.equals(sensorClass, JmxSensorConfig.class)) {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_BEAN);
 		}
 		return null;
 	}
@@ -414,25 +456,25 @@ public final class ImageFormatter {
 		if (methodSensorAssignment.isPublicModifier()) {
 			descriptors[0] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PUBLIC);
 		} else {
-			descriptors[0] = ImageDescriptor.createWithFlags(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PUBLIC), SWT.IMAGE_DISABLE);
+			descriptors[0] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PUBLIC_DISABLED);
 		}
 
 		if (methodSensorAssignment.isProtectedModifier()) {
 			descriptors[1] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PROTECTED);
 		} else {
-			descriptors[1] = ImageDescriptor.createWithFlags(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PROTECTED), SWT.IMAGE_DISABLE);
+			descriptors[1] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PROTECTED_DISABLED);
 		}
 
 		if (methodSensorAssignment.isDefaultModifier()) {
 			descriptors[2] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_DEFAULT);
 		} else {
-			descriptors[2] = ImageDescriptor.createWithFlags(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_DEFAULT), SWT.IMAGE_DISABLE);
+			descriptors[2] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_DEFAULT_DISABLED);
 		}
 
 		if (methodSensorAssignment.isPrivateModifier()) {
 			descriptors[3] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PRIVATE);
 		} else {
-			descriptors[3] = ImageDescriptor.createWithFlags(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PRIVATE), SWT.IMAGE_DISABLE);
+			descriptors[3] = InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_METHOD_PRIVATE_DISABLED);
 		}
 
 		return getCombinedImage(resourceManager, SWT.HORIZONTAL, descriptors);
@@ -454,15 +496,19 @@ public final class ImageFormatter {
 			descs.add(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_ANNOTATION));
 		}
 
+		if (assignment instanceof ChartingMethodSensorAssignment) {
+			ChartingMethodSensorAssignment chartingAssignment = (ChartingMethodSensorAssignment) assignment;
+
+			if (chartingAssignment.isCharting()) {
+				descs.add(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_CHART_PIE));
+			}
+		}
+
 		if (assignment instanceof TimerMethodSensorAssignment) {
 			TimerMethodSensorAssignment timerAssignment = (TimerMethodSensorAssignment) assignment;
 
 			if (timerAssignment.isStartsInvocation()) {
 				descs.add(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_INVOCATION));
-			}
-
-			if (timerAssignment.isCharting()) {
-				descs.add(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_CHART_PIE));
 			}
 
 			boolean paramsCapture = false, returnCapture = false, fieldsCapture = false;
@@ -518,5 +564,102 @@ public final class ImageFormatter {
 		} else {
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_ADDRESSBOOK);
 		}
+	}
+
+	/**
+	 * Returns application definition image.
+	 *
+	 * @param appDefinition
+	 *            {@link ApplicationDefinition} to get image for.
+	 * @return Returns image for application definition.
+	 */
+	public static Image getApplicationDefinitionImage(ApplicationDefinition appDefinition) {
+		if (appDefinition.getId() == ApplicationDefinition.DEFAULT_ID) {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_APPLICATION_GREY);
+		} else {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_APPLICATION);
+		}
+	}
+
+	/**
+	 * Returns business transaction definition image.
+	 *
+	 * @param businessTxDefinition
+	 *            {@link BusinessTransactionDefinition} to get image for.
+	 * @return Returns image for business transaction definition.
+	 */
+	public static Image getBusinessTransactionDefinitionImage(BusinessTransactionDefinition businessTxDefinition) {
+		if (businessTxDefinition.getId() == BusinessTransactionDefinition.DEFAULT_ID) {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_BUSINESS_TRANSACTION_GREY);
+		} else {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_BUSINESS_TRANSACTION);
+		}
+	}
+
+	/**
+	 * Returns profile data image.
+	 *
+	 * @param profileData
+	 *            Profile data to get image for.
+	 * @return Returns profile data image.
+	 */
+	public static Image getProfileDataImage(AbstractProfileData<?> profileData) {
+		if (profileData.isOfType(SensorAssignmentProfileData.class)) {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_TIMER);
+		} else if (profileData.isOfType(ExcludeRulesProfileData.class)) {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_CLASS_EXCLUDE);
+		} else if (profileData.isOfType(JmxDefinitionProfileData.class)) {
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_BEAN);
+		}
+		return null;
+	}
+
+	/**
+	 * Returns alert image.
+	 *
+	 * @param alertingDefinition
+	 *            The alerting definition to show the image for.
+	 *
+	 * @return Returns alert image.
+	 */
+	public static Image getAlertingDefinitionImage(AlertingDefinition alertingDefinition) {
+		return InspectIT.getDefault().getImage(InspectITImages.IMG_ALARM);
+	}
+
+	/**
+	 * Returns alert image.
+	 *
+	 * @param alert
+	 *            The alert to show the image for.
+	 * @return Returns alert image.
+	 */
+	public static Image getAlertImage(Alert alert) {
+		return InspectIT.getDefault().getImage(InspectITImages.IMG_ALARM);
+	}
+
+	/**
+	 * Returns a corresponding image for a HTTP response code.
+	 *
+	 * @param responseCode
+	 *            The HTTP response code.
+	 * @return Response code image if response code is valid. Returns <code>null</code> if response
+	 *         code is not valid.
+	 */
+	public static Image getResponseStatusImage(int responseCode) {
+		String imageKey;
+		if ((responseCode >= 100) && (responseCode < 200)) {
+			imageKey = InspectITImages.IMG_INFO_CIRCLE_FRAME;
+		} else if ((responseCode >= 200) && (responseCode < 300)) {
+			imageKey = InspectITImages.IMG_OK_CIRCLE_FRAME;
+		} else if ((responseCode >= 300) && (responseCode < 400)) {
+			imageKey = InspectITImages.IMG_NAVIGATION_CIRCLE_FRAME;
+		} else if ((responseCode >= 400) && (responseCode < 500)) {
+			imageKey = InspectITImages.IMG_WARN_CIRCLE_FRAME;
+		} else if ((responseCode >= 500) && (responseCode < 600)) {
+			imageKey = InspectITImages.IMG_ERROR_CIRCLE_FRAME;
+		} else {
+			imageKey = InspectITImages.IMG_QUESTION_CIRCLE_FRAME;
+		}
+		return InspectIT.getDefault().getImage(imageKey);
 	}
 }

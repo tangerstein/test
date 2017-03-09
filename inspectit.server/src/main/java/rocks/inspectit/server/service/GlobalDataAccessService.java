@@ -12,11 +12,13 @@ import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import rocks.inspectit.server.dao.DefaultDataDao;
 import rocks.inspectit.server.dao.PlatformIdentDao;
+import rocks.inspectit.server.event.AgentDeletedEvent;
 import rocks.inspectit.server.spring.aop.MethodLog;
 import rocks.inspectit.server.util.AgentStatusDataProvider;
 import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
@@ -30,7 +32,7 @@ import rocks.inspectit.shared.cs.cmr.service.IGlobalDataAccessService;
 
 /**
  * @author Patrice Bouillet
- * 
+ *
  */
 @Service
 @Transactional
@@ -59,16 +61,27 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	AgentStatusDataProvider agentStatusProvider;
 
 	/**
+	 * Event publisher.
+	 */
+	@Autowired
+	ApplicationEventPublisher eventPublisher;
+
+	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public Map<PlatformIdent, AgentStatusData> getAgentsOverview() {
 		List<PlatformIdent> agents = platformIdentDao.findAll();
 		Map<Long, AgentStatusData> agentStatusMap = agentStatusProvider.getAgentStatusDataMap();
 
-		Map<PlatformIdent, AgentStatusData> resultMap = new HashMap<PlatformIdent, AgentStatusData>();
+		Map<PlatformIdent, AgentStatusData> resultMap = new HashMap<>();
 		for (PlatformIdent platformIdent : agents) {
-			resultMap.put(platformIdent, agentStatusMap.get(platformIdent.getId()));
+			AgentStatusData status = agentStatusMap.get(platformIdent.getId());
+			if (null == status) {
+				status = new AgentStatusData(AgentConnection.NEVER_CONNECTED);
+			}
+			resultMap.put(platformIdent, status);
 		}
 		return resultMap;
 	}
@@ -76,6 +89,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public PlatformIdent getCompleteAgent(long id) throws BusinessException {
 		PlatformIdent platformIdent = platformIdentDao.findInitialized(id);
@@ -87,9 +101,10 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	}
 
 	/**
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void deleteAgent(long platformId) throws BusinessException {
 		PlatformIdent platformIdent = platformIdentDao.load(platformId);
@@ -97,13 +112,15 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 			AgentStatusData agentStatusData = agentStatusProvider.getAgentStatusDataMap().get(platformIdent.getId());
 
 			// delete is allowed only if agent is disconnected or was never connected
-			if (null != agentStatusData && agentStatusData.getAgentConnection() == AgentConnection.CONNECTED) {
+			if ((null != agentStatusData) && (agentStatusData.getAgentConnection() == AgentConnection.CONNECTED)) {
 				throw new BusinessException("Delete the agent '" + platformIdent.getAgentName() + "'.", AgentManagementErrorCodeEnum.AGENT_CAN_NOT_BE_DELETED);
 			}
 
 			platformIdentDao.delete(platformIdent);
 			defaultDataDao.deleteAll(platformIdent.getId());
-			agentStatusProvider.registerDeleted(platformId);
+
+			AgentDeletedEvent event = new AgentDeletedEvent(this, platformIdent.getId());
+			eventPublisher.publishEvent(event);
 
 			log.info("The Agent '" + platformIdent.getAgentName() + "' with the ID " + platformIdent.getId() + " was successfully deleted from the CMR.");
 		} else {
@@ -114,6 +131,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<DefaultData> getLastDataObjects(DefaultData template, long timeInterval) {
 		List<DefaultData> result = defaultDataDao.findByExampleWithLastInterval(template, timeInterval);
@@ -123,6 +141,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public DefaultData getLastDataObject(DefaultData template) {
 		DefaultData result = defaultDataDao.findByExampleLastData(template);
@@ -132,6 +151,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<? extends DefaultData> getDataObjectsFromToDate(DefaultData template, Date fromDate, Date toDate) {
 		if (fromDate.after(toDate)) {
@@ -145,6 +165,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<? extends DefaultData> getTemplatesDataObjectsFromToDate(Collection<DefaultData> templates, Date fromDate, Date toDate) {
 		if (fromDate.after(toDate)) {
@@ -162,6 +183,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<DefaultData> getDataObjectsSinceId(DefaultData template) {
 		List<DefaultData> result = defaultDataDao.findByExampleSinceId(template);
@@ -171,6 +193,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public List<DefaultData> getDataObjectsSinceIdIgnoreMethodId(DefaultData template) {
 		List<DefaultData> result = defaultDataDao.findByExampleSinceIdIgnoreMethodId(template);
@@ -179,7 +202,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 
 	/**
 	 * Is executed after dependency injection is done to perform any initialization.
-	 * 
+	 *
 	 * @throws Exception
 	 *             if an error occurs during {@link PostConstruct}
 	 */

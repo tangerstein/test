@@ -2,6 +2,9 @@ package rocks.inspectit.ui.rcp.form;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -26,6 +29,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.ManagedForm;
 import org.eclipse.ui.forms.events.HyperlinkAdapter;
 import org.eclipse.ui.forms.events.HyperlinkEvent;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
@@ -36,7 +40,10 @@ import org.eclipse.ui.progress.UIJob;
 
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.cmr.CmrStatusData;
+import rocks.inspectit.shared.all.externalservice.ExternalServiceStatus;
+import rocks.inspectit.shared.all.externalservice.ExternalServiceType;
 import rocks.inspectit.shared.all.util.ObjectUtils;
+import rocks.inspectit.shared.all.util.Pair;
 import rocks.inspectit.shared.cs.communication.data.cmr.RecordingData;
 import rocks.inspectit.shared.cs.storage.StorageData;
 import rocks.inspectit.shared.cs.storage.recording.RecordingState;
@@ -53,9 +60,9 @@ import rocks.inspectit.ui.rcp.util.SafeExecutor;
 
 /**
  * Class having a form for displaying the properties of a {@link CmrRepositoryDefinition}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 
@@ -107,8 +114,13 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 	private Label databaseSizeLabel; // NOCHK
 
 	/**
+	 * Map containing the labels of the external services.
+	 */
+	private Map<ExternalServiceType, Pair<Label, Label>> externalServiceLabelMap = new HashMap<>();
+
+	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param parent
 	 *            Parent composite.
 	 */
@@ -118,7 +130,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 
 	/**
 	 * Secondary constructor. Set the displayed {@link CmrRepositoryDefinition}.
-	 * 
+	 *
 	 * @param parent
 	 *            Parent composite.
 	 * @param cmrRepositoryDefinition
@@ -144,7 +156,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 		mainComposite.setLayoutData(new TableWrapData(TableWrapData.FILL_GRAB));
 
 		// START - General section
-		Section generalSection = toolkit.createSection(mainComposite, Section.TITLE_BAR);
+		Section generalSection = toolkit.createSection(mainComposite, ExpandableComposite.TITLE_BAR);
 		generalSection.setText("General information");
 
 		Composite generalComposite = toolkit.createComposite(generalSection, SWT.NONE);
@@ -185,8 +197,39 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 		generalSection.setLayoutData(new TableWrapData(TableWrapData.FILL_GRAB));
 		// END - General section
 
+		// START - External Service section
+		Section externalServicesSection = toolkit.createSection(mainComposite, ExpandableComposite.TITLE_BAR);
+		externalServicesSection.setText("External services");
+
+		Composite externalServicesSectionComposite = toolkit.createComposite(externalServicesSection, SWT.NONE);
+		tableWrapLayout = new TableWrapLayout();
+		tableWrapLayout.numColumns = 2;
+		externalServicesSectionComposite.setLayout(tableWrapLayout);
+		externalServicesSectionComposite.setLayoutData(new TableWrapData(TableWrapData.FILL));
+
+		for (ExternalServiceType service : ExternalServiceType.values()) {
+			toolkit.createLabel(externalServicesSectionComposite, service.getName() + ":");
+			Composite statusComposite = toolkit.createComposite(externalServicesSectionComposite);
+			GridLayout statusLayout = new GridLayout(2, false);
+			statusLayout.marginHeight = 0;
+			statusLayout.marginWidth = 0;
+			statusComposite.setLayout(statusLayout);
+
+			Label iconLabel = toolkit.createLabel(statusComposite, null, SWT.WRAP);
+			Label textLabel = toolkit.createLabel(statusComposite, null, SWT.WRAP);
+			iconLabel.setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_RECORD_GRAY));
+			textLabel.setText("");
+
+			externalServiceLabelMap.put(service, new Pair<>(iconLabel, textLabel));
+		}
+
+		externalServicesSection.setClient(externalServicesSectionComposite);
+		externalServicesSection.setLayout(new TableWrapLayout());
+		externalServicesSection.setLayoutData(new TableWrapData(TableWrapData.FILL_GRAB));
+		// END - External Service section
+
 		// START - Buffer section
-		Section bufferSection = toolkit.createSection(mainComposite, Section.TITLE_BAR);
+		Section bufferSection = toolkit.createSection(mainComposite, ExpandableComposite.TITLE_BAR);
 		bufferSection.setText("Buffer status");
 
 		Composite bufferSectionComposite = toolkit.createComposite(bufferSection, SWT.NONE);
@@ -214,7 +257,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 		// END - Buffer section
 
 		// START - Storage section
-		Section storageSection = toolkit.createSection(mainComposite, Section.TITLE_BAR);
+		Section storageSection = toolkit.createSection(mainComposite, ExpandableComposite.TITLE_BAR);
 		storageSection.setText("Storage status");
 
 		Composite storageSectionComposite = toolkit.createComposite(storageSection, SWT.NONE);
@@ -275,7 +318,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 
 	/**
 	 * Sets layout data for the form.
-	 * 
+	 *
 	 * @param layoutData
 	 *            LayoutData.
 	 */
@@ -296,7 +339,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 	@Override
 	public void selectionChanged(SelectionChangedEvent event) {
 		ISelection selection = event.getSelection();
-		if (!selection.isEmpty() && selection instanceof StructuredSelection) {
+		if (!selection.isEmpty() && (selection instanceof StructuredSelection)) {
 			StructuredSelection structuredSelection = (StructuredSelection) selection;
 			Object firstElement = structuredSelection.getFirstElement();
 			if (!(firstElement instanceof Component)) {
@@ -375,7 +418,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 
 	/**
 	 * Updates buffer data.
-	 * 
+	 *
 	 * @param cmrStatusData
 	 *            Status data.
 	 */
@@ -388,7 +431,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 			double bufferCurrentOccupancy = (double) cmrStatusData.getCurrentBufferSize() / (1024 * 1024);
 			bufferBar.setMaximum((int) Math.round(bufferMaxOccupancy));
 			bufferBar.setSelection((int) Math.round(bufferCurrentOccupancy));
-			int occupancy = (int) (100 * Math.round(bufferCurrentOccupancy) / Math.round(bufferMaxOccupancy));
+			int occupancy = (int) ((100 * Math.round(bufferCurrentOccupancy)) / Math.round(bufferMaxOccupancy));
 
 			String occMb = NumberFormatter.humanReadableByteCount(cmrStatusData.getCurrentBufferSize());
 			String maxMb = NumberFormatter.humanReadableByteCount(cmrStatusData.getMaxBufferSize());
@@ -403,7 +446,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 			}
 
 			// hard drive space data
-			int spaceOccupancy = (int) (100 * (double) cmrStatusData.getStorageDataSpaceLeft() / cmrStatusData.getStorageMaxDataSpace());
+			int spaceOccupancy = (int) ((100 * (double) cmrStatusData.getStorageDataSpaceLeft()) / cmrStatusData.getStorageMaxDataSpace());
 			StringBuilder spaceLeftStringBuilder = new StringBuilder(String.valueOf(spaceOccupancy));
 			spaceLeftStringBuilder.append("% (");
 			spaceLeftStringBuilder.append(NumberFormatter.humanReadableByteCount(cmrStatusData.getStorageDataSpaceLeft()));
@@ -440,6 +483,24 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 			} else {
 				databaseSizeLabel.setText("n/a");
 			}
+
+			// external services
+			for (Entry<ExternalServiceType, Pair<Label, Label>> serviceEntry : externalServiceLabelMap.entrySet()) {
+				ExternalServiceStatus serviceStatus = cmrStatusData.getExternalServiceStatusMap().get(serviceEntry.getKey());
+				if (serviceStatus == ExternalServiceStatus.CONNECTED) {
+					serviceEntry.getValue().getFirst().setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_RECORD_GREEN));
+					serviceEntry.getValue().getSecond().setText("Connected");
+				} else if (serviceStatus == ExternalServiceStatus.DISCONNECTED) {
+					serviceEntry.getValue().getFirst().setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_RECORD));
+					serviceEntry.getValue().getSecond().setText("Disconnected");
+				} else if (serviceStatus == ExternalServiceStatus.DISABLED) {
+					serviceEntry.getValue().getFirst().setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_RECORD_GRAY));
+					serviceEntry.getValue().getSecond().setText("Disabled");
+				} else if (serviceStatus == ExternalServiceStatus.UNKNOWN) {
+					serviceEntry.getValue().getFirst().setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_RECORD_YELLOW));
+					serviceEntry.getValue().getSecond().setText("Unknown status");
+				}
+			}
 		}
 
 		if (!dataLoaded) {
@@ -453,12 +514,17 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 			spaceLeftLabel.setText("");
 			uptimeLabel.setText("");
 			databaseSizeLabel.setText("");
+
+			for (Entry<ExternalServiceType, Pair<Label, Label>> serviceEntry : externalServiceLabelMap.entrySet()) {
+				serviceEntry.getValue().getFirst().setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_RECORD_GRAY));
+				serviceEntry.getValue().getSecond().setText("");
+			}
 		}
 	}
 
 	/**
 	 * Updates recording data.
-	 * 
+	 *
 	 * @param recordingData
 	 *            Recording information.
 	 */
@@ -518,7 +584,7 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return Returns if the form is disposed.
 	 */
 	public boolean isDisposed() {
@@ -536,16 +602,16 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 	/**
 	 * Job for updating the information about the CMR. Job will perform all UI related work in UI
 	 * thread asynchronously.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class UpdateCmrPropertiesJob extends Job {
 
 		/**
 		 * Default constructor.
 		 */
-		public UpdateCmrPropertiesJob() {
+		UpdateCmrPropertiesJob() {
 			super("Updating CMR Properties..");
 		}
 
@@ -622,16 +688,16 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 
 	/**
 	 * Class for updating the recording count down.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class RecordCountdownJob extends UIJob {
 
 		/**
 		 * Default constructor.
 		 */
-		public RecordCountdownJob() {
+		RecordCountdownJob() {
 			super("Update Recording Countdown");
 			setUser(false);
 		}
@@ -641,10 +707,10 @@ public class CmrRepositoryPropertyForm implements ISelectionChangedListener {
 		 */
 		@Override
 		public IStatus runInUIThread(IProgressMonitor monitor) {
-			if (null != recordingData && !form.isDisposed()) {
+			if ((null != recordingData) && !form.isDisposed()) {
 				Date endDate = recordingData.getRecordEndDate();
 				Date startDate = recordingData.getRecordStartDate();
-				if (null != endDate && null != startDate && startDate.before(new Date())) {
+				if ((null != endDate) && (null != startDate) && startDate.before(new Date())) {
 					Date now = new Date();
 					long millisMore = endDate.getTime() - now.getTime();
 					if (millisMore > 0) {

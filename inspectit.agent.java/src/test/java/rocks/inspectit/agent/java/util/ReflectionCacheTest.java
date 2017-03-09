@@ -3,12 +3,10 @@ package rocks.inspectit.agent.java.util;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-
 import org.mockito.InjectMocks;
 import org.testng.annotations.Test;
 
 import rocks.inspectit.agent.java.AbstractLogSupport;
-import rocks.inspectit.agent.java.util.ReflectionCache;
 
 /**
  * Tests for the {@link ReflectionCache} class.
@@ -108,6 +106,43 @@ public class ReflectionCacheTest extends AbstractLogSupport {
 			String result = (String) cache.invokeMethod(String.class, "toString", null, null, null, errorvalue);
 
 			assertThat(result, is(errorvalue));
+		}
+
+		@Test
+		public void throughInterface() {
+			Object object = "string";
+
+			Integer result = (Integer) cache.invokeMethod(String.class, "compareTo", new Class<?>[] { Object.class }, object, new Object[] { object }, -1, Comparable.class.getName());
+
+			assertThat(result, is(0));
+		}
+
+		@Test
+		public void throughInterfaceNotExisting() {
+			Object object = "string";
+
+			Integer result = (Integer) cache.invokeMethod(String.class, "compareTo", new Class<?>[] { Object.class }, object, new Object[] { object }, -1, "my.ComparableClass");
+
+			assertThat(result, is(0));
+		}
+
+		@Test
+		public void throughInterfaceMethodNotExisting() {
+			String object = "string";
+
+			String result = (String) cache.invokeMethod(String.class, "toString", null, object, null, "errorValue", Comparable.class.getName());
+
+			assertThat(result, is(object));
+		}
+
+		@Test
+		public void throughInterfaceMethodNotExistingAtAll() {
+			String object = "string";
+			String errorValue = "errorValue";
+
+			String result = (String) cache.invokeMethod(String.class, "someMethod", null, object, null, errorValue, Comparable.class.getName());
+
+			assertThat(result, is(errorValue));
 		}
 
 	}

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -16,9 +15,12 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -50,9 +52,9 @@ import rocks.inspectit.ui.rcp.util.SafeExecutor;
 
 /**
  * Part for agent mapping.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class AgentMappingPart extends AbstractFormPart implements IEnvironmentChangeListener, IPropertyListener {
 
@@ -107,7 +109,7 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 	private Button editButton;
 
 	/**
-	 * 
+	 *
 	 * @param formPage
 	 *            {@link FormPage} creating the part.
 	 * @param parent
@@ -135,7 +137,7 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 
 	/**
 	 * Creates part.
-	 * 
+	 *
 	 * @param parent
 	 *            Parent composite.
 	 * @param toolkit
@@ -199,9 +201,8 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				AgentMappingDialog agentMappingDialog = new AgentMappingDialog(getManagedForm().getForm().getShell(), environments);
-				if (Dialog.OK == agentMappingDialog.open()) {
+				if (Window.OK == agentMappingDialog.open()) {
 					AgentMapping mapping = agentMappingDialog.getAgentMapping();
-					mapping.setEnvironmentId(environments.iterator().next().getId());
 					inputList.add(mapping);
 
 					updateInternal(true);
@@ -254,6 +255,12 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 				}
 			}
 		});
+		tableViewer.getTable().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDoubleClick(MouseEvent e) {
+				fireEdit();
+			}
+		});
 	}
 
 	/**
@@ -293,7 +300,7 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 		Object selected = selection.getFirstElement();
 		if (selected instanceof AgentMapping) {
 			AgentMappingDialog agentMappingDialog = new AgentMappingDialog(getManagedForm().getForm().getShell(), (AgentMapping) selected, environments);
-			if (Dialog.OK == agentMappingDialog.open()) {
+			if (Window.OK == agentMappingDialog.open()) {
 				updateInternal(true);
 			}
 		}
@@ -308,7 +315,7 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 	 * <li>updating buttons state
 	 * <li>marking as dirty if specified
 	 * </ul>
-	 * 
+	 *
 	 * @param markDirty
 	 *            If part should be marked as dirty.
 	 */
@@ -342,8 +349,8 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 		ipColumn.getColumn().setResizable(true);
 		ipColumn.getColumn().setWidth(150);
 		ipColumn.getColumn().setText("IP Address");
-		ipColumn.getColumn().setToolTipText(
-				"IP address of the agent. Use wild-card '*' for matching several IPs with one mapping. For example, 192.168.* will match all IP addresses in starting with 192.168.");
+		ipColumn.getColumn()
+				.setToolTipText("IP address of the agent. Use wild-card '*' for matching several IPs with one mapping. For example, 192.168.* will match all IP addresses in starting with 192.168.");
 		ipColumn.getColumn().setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_INFORMATION));
 
 		TableViewerColumn environmentColumn = new TableViewerColumn(tableViewer, SWT.NONE);
@@ -388,9 +395,9 @@ public class AgentMappingPart extends AbstractFormPart implements IEnvironmentCh
 
 	/**
 	 * Label provider for the table.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class AgentMappingLabelProvider extends StyledCellIndexLabelProvider {
 

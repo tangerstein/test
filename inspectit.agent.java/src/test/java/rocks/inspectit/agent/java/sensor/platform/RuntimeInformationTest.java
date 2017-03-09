@@ -1,174 +1,111 @@
 package rocks.inspectit.agent.java.sensor.platform;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
+import java.sql.Timestamp;
 
-import java.lang.reflect.Field;
-import java.util.logging.Level;
-
-import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import rocks.inspectit.agent.java.AbstractLogSupport;
-import rocks.inspectit.agent.java.core.ICoreService;
-import rocks.inspectit.agent.java.core.IIdManager;
-import rocks.inspectit.agent.java.core.IdNotAvailableException;
-import rocks.inspectit.agent.java.sensor.platform.RuntimeInformation;
 import rocks.inspectit.agent.java.sensor.platform.provider.RuntimeInfoProvider;
-import rocks.inspectit.shared.all.communication.SystemSensorData;
 import rocks.inspectit.shared.all.communication.data.RuntimeInformationData;
+import rocks.inspectit.shared.all.testbase.TestBase;
 
-@SuppressWarnings("PMD")
-public class RuntimeInformationTest extends AbstractLogSupport {
+/**
+ * Test class for {@link RuntimeInformation}.
+ *
+ * @author Max Wassiljew (NovaTec Consulting GmbH)
+ */
+public class RuntimeInformationTest extends TestBase {
 
-	private RuntimeInformation runtimeInfo;
+	/** Class under test. */
+	@InjectMocks
+	RuntimeInformation cut;
 
+	/** The mocked {@link RuntimeInfoProvider}. */
 	@Mock
-	private RuntimeInfoProvider runtimeBean;
+	RuntimeInfoProvider runtimeBean;
 
-	@Mock
-	private IIdManager idManager;
+	/**
+	 * Tests the {@link RuntimeInformation#gather()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Gather extends RuntimeInformationTest {
 
-	@Mock
-	private ICoreService coreService;
+		@Test
+		void lastUptimeIsSet() {
+			when(this.runtimeBean.getUptime()).thenReturn(10L).thenReturn(9L);
 
-	@BeforeMethod
-	public void initTestClass() throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-		runtimeInfo = new RuntimeInformation(idManager);
-		runtimeInfo.log = LoggerFactory.getLogger(RuntimeInformation.class);
+			this.cut.gather();
+			this.cut.gather();
 
-		// we have to replace the real runtimeBean by the mocked one, so that we don't retrieve the
-		// info from the underlying JVM
-		Field field = runtimeInfo.getClass().getDeclaredField("runtimeBean");
-		field.setAccessible(true);
-		field.set(runtimeInfo, runtimeBean);
+			RuntimeInformationData collector = (RuntimeInformationData) this.cut.get();
+
+			assertThat(collector.getUptime(), is(9L));
+		}
 	}
 
-	@Test
-	public void oneDataSet() throws IdNotAvailableException {
-		long uptime = 12345L;
-		long sensorTypeIdent = 13L;
-		long platformIdent = 11L;
+	/**
+	 * Tests the {@link RuntimeInformationTest#get()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Get extends RuntimeInformationTest {
 
-		when(runtimeBean.getUptime()).thenReturn(uptime);
+		@Test
+		void getNewRuntimeInformationData() throws Exception {
+			RuntimeInformationData collector = (RuntimeInformationData) this.cut.getSystemSensorData();
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenReturn(sensorTypeIdent);
+			collector.setPlatformIdent(1L);
+			collector.setSensorTypeIdent(2L);
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		runtimeInfo.update(coreService, sensorTypeIdent);
+			collector.setUptime(4L);
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			collector.setTimeStamp(new Timestamp(5L));
 
-		SystemSensorData sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(RuntimeInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			RuntimeInformationData runtimeInformationData = (RuntimeInformationData) this.cut.get();
 
-		RuntimeInformationData runtimeData = (RuntimeInformationData) sensorData;
-		assertThat(runtimeData.getCount(), is(equalTo(1)));
+			assertThat(runtimeInformationData.getPlatformIdent(), is(1L));
+			assertThat(runtimeInformationData.getSensorTypeIdent(), is(2L));
 
-		// as there was only one data object min/max/total the values must be the
-		// same
-		assertThat(runtimeData.getMinUptime(), is(equalTo(uptime)));
-		assertThat(runtimeData.getMaxUptime(), is(equalTo(uptime)));
-		assertThat(runtimeData.getTotalUptime(), is(equalTo(uptime)));
+			assertThat(runtimeInformationData.getUptime(), is(4L));
+
+			assertThat(runtimeInformationData.getTimeStamp().getTime(), is(5L));
+		}
 	}
 
-	@Test
-	public void twoDataSets() throws IdNotAvailableException {
-		long uptime = 12345L;
-		long uptime2 = 123559L;
-		long sensorTypeIdent = 13L;
-		long platformIdent = 11L;
+	/**
+	 * Tests the {@link RuntimeInformationTest#reset()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Reset extends RuntimeInformationTest {
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenReturn(sensorTypeIdent);
+		@Test
+		void collectorClassIsResetted() throws Exception {
+			RuntimeInformationData collector = (RuntimeInformationData) this.cut.getSystemSensorData();
 
-		// ------------------------
-		// FIRST UPDATE CALL
-		// ------------------------
-		when(runtimeBean.getUptime()).thenReturn(uptime);
+			collector.setPlatformIdent(1L);
+			collector.setSensorTypeIdent(2L);
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		runtimeInfo.update(coreService, sensorTypeIdent);
+			collector.setUptime(4L);
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			collector.setTimeStamp(new Timestamp(5L));
 
-		SystemSensorData sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(RuntimeInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			this.cut.reset();
+			RuntimeInformationData runtimeInformationData = (RuntimeInformationData) this.cut.get();
 
-		RuntimeInformationData runtimeData = (RuntimeInformationData) sensorData;
-		assertThat(runtimeData.getCount(), is(equalTo(1)));
+			assertThat(runtimeInformationData.getPlatformIdent(), is(1L));
+			assertThat(runtimeInformationData.getSensorTypeIdent(), is(2L));
 
-		// as there was only one data object min/max/total the values must be the
-		// same
-		assertThat(runtimeData.getMinUptime(), is(equalTo(uptime)));
-		assertThat(runtimeData.getMaxUptime(), is(equalTo(uptime)));
-		assertThat(runtimeData.getTotalUptime(), is(equalTo(uptime)));
+			assertThat(runtimeInformationData.getUptime(), is(0L));
 
-		// ------------------------
-		// SECOND UPDATE CALL
-		// ------------------------
-		when(runtimeBean.getUptime()).thenReturn(uptime2);
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(runtimeData);
-
-		runtimeInfo.update(coreService, sensorTypeIdent);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
-
-		sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(RuntimeInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
-
-		runtimeData = (RuntimeInformationData) sensorData;
-		assertThat(runtimeData.getCount(), is(equalTo(2)));
-
-		assertThat(runtimeData.getMinUptime(), is(equalTo(uptime)));
-		assertThat(runtimeData.getMaxUptime(), is(equalTo(uptime2)));
-		assertThat(runtimeData.getTotalUptime(), is(equalTo(uptime + uptime2)));
+			assertThat(runtimeInformationData.getTimeStamp().getTime(), is(not(5L)));
+		}
 	}
-
-	@Test
-	public void idNotAvailableTest() throws IdNotAvailableException {
-		long uptime = 12345L;
-		long sensorTypeIdent = 13L;
-
-		when(runtimeBean.getUptime()).thenReturn(uptime);
-
-		when(idManager.getPlatformId()).thenThrow(new IdNotAvailableException("expected"));
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenThrow(new IdNotAvailableException("expected"));
-
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		runtimeInfo.update(coreService, sensorTypeIdent);
-
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(0)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
-	}
-
-	protected Level getLogLevel() {
-		return Level.FINEST;
-	}
-
 }

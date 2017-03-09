@@ -10,7 +10,7 @@ import rocks.inspectit.shared.all.communication.Sizeable;
  * <code>FIELD</code> refers to a field being accessed. <code>PARAM</code> refers to a parameter
  * being read from a method call. <code>RETURN</code> refers to capturing the return value of the
  * method invocation.
- * 
+ *
  * @author Stefan Siegl
  */
 public enum ParameterContentType implements Serializable, Sizeable {
@@ -32,6 +32,7 @@ public enum ParameterContentType implements Serializable, Sizeable {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes) {
 		return getObjectSize(objectSizes, true);
 	}
@@ -39,6 +40,7 @@ public enum ParameterContentType implements Serializable, Sizeable {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = objectSizes.getSizeOfObjectHeader();
 		size += objectSizes.getPrimitiveTypesSize(1, 0, 1, 0, 0, 0);

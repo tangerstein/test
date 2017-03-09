@@ -8,9 +8,9 @@ import rocks.inspectit.shared.all.util.ObjectUtils;
 
 /**
  * Comparators for {@link ExceptionSensorData}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public enum ExceptionSensorDataComparatorEnum implements IDataComparator<ExceptionSensorData>, Comparator<ExceptionSensorData> {
 
@@ -27,6 +27,7 @@ public enum ExceptionSensorDataComparatorEnum implements IDataComparator<Excepti
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int compare(ExceptionSensorData o1, ExceptionSensorData o2, ICachedDataService cachedDataService) {
 		return compare(o1, o2);
 	}
@@ -34,6 +35,7 @@ public enum ExceptionSensorDataComparatorEnum implements IDataComparator<Excepti
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int compare(ExceptionSensorData o1, ExceptionSensorData o2) {
 		switch (this) {
 		case FQN:

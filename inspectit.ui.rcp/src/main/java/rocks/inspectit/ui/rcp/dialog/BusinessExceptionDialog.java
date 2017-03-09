@@ -24,9 +24,9 @@ import rocks.inspectit.ui.rcp.InspectITImages;
 
 /**
  * Dialog for displaying {@link BusinessException}s.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class BusinessExceptionDialog extends TitleAreaDialog {
 
@@ -42,7 +42,7 @@ public class BusinessExceptionDialog extends TitleAreaDialog {
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param parentShell
 	 *            Parent shell.
 	 * @param exception
@@ -150,10 +150,7 @@ public class BusinessExceptionDialog extends TitleAreaDialog {
 
 		// description part
 		FormText descriptionFormText = toolkit.createFormText(content, false);
-		StringBuilder descriptionMessage = new StringBuilder("<form><p>");
-
-		// description
-		descriptionMessage.append("<span color=\"headingColor\" font=\"headingFont\">Description</span><br/>");
+		StringBuilder descriptionMessage = new StringBuilder("<form><p><span color=\"headingColor\" font=\"headingFont\">Description</span><br/>");
 		if (null != errorCode.getDescription()) {
 			descriptionMessage.append(errorCode.getDescription());
 			descriptionMessage.append("<br/><br/>");

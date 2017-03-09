@@ -6,9 +6,9 @@ import rocks.inspectit.shared.all.exception.IErrorCode;
 
 /**
  * Error code enumeration for the storage component.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public enum AgentManagementErrorCodeEnum implements IErrorCode {
 
@@ -49,7 +49,7 @@ public enum AgentManagementErrorCodeEnum implements IErrorCode {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param description
 	 *            Description of the error code.
 	 * @param possibleCause
@@ -69,6 +69,7 @@ public enum AgentManagementErrorCodeEnum implements IErrorCode {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getComponent() {
 		return COMPONENT_NAME;
 	}
@@ -76,33 +77,37 @@ public enum AgentManagementErrorCodeEnum implements IErrorCode {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getName() {
 		return WordUtils.capitalizeFully(this.toString().replace("_", " ").toLowerCase());
 	}
 
 	/**
 	 * Gets {@link #description}.
-	 * 
+	 *
 	 * @return {@link #description}
 	 */
+	@Override
 	public String getDescription() {
 		return description;
 	}
 
 	/**
 	 * Gets {@link #possibleCause}.
-	 * 
+	 *
 	 * @return {@link #possibleCause}
 	 */
+	@Override
 	public String getPossibleCause() {
 		return possibleCause;
 	}
 
 	/**
 	 * Gets {@link #possibleSolution}.
-	 * 
+	 *
 	 * @return {@link #possibleSolution}
 	 */
+	@Override
 	public String getPossibleSolution() {
 		return possibleSolution;
 	}

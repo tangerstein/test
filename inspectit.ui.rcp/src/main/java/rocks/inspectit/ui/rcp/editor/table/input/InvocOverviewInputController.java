@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.springframework.http.HttpStatus;
 
 import rocks.inspectit.shared.all.cmr.model.MethodIdent;
 import rocks.inspectit.shared.all.cmr.service.ICachedDataService;
@@ -38,15 +39,18 @@ import rocks.inspectit.shared.all.communication.comparator.InvocationSequenceDat
 import rocks.inspectit.shared.all.communication.comparator.MethodSensorDataComparatorEnum;
 import rocks.inspectit.shared.all.communication.comparator.ResultComparator;
 import rocks.inspectit.shared.all.communication.data.HttpTimerData;
+import rocks.inspectit.shared.all.communication.data.HttpTimerDataHelper;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceDataHelper;
+import rocks.inspectit.shared.all.communication.data.cmr.ApplicationData;
+import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition.IdDefinition;
-import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
+import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId.LiveMode;
 import rocks.inspectit.ui.rcp.editor.root.IRootEditor;
 import rocks.inspectit.ui.rcp.editor.table.RemoteTableViewerComparator;
@@ -61,9 +65,9 @@ import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 
 /**
  * This input controller displays an overview of {@link InvocationSequenceData} objects.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class InvocOverviewInputController extends AbstractTableInputController {
 
@@ -76,38 +80,44 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	 * The private inner enumeration used to define the used IDs which are mapped into the columns.
 	 * The order in this enumeration represents the order of the columns. If it is reordered,
 	 * nothing else has to be changed.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	protected static enum Column {
 		/** The time column. */
 		NESTED_DATA("Nested Data", 40, null, InvocationSequenceDataComparatorEnum.NESTED_DATA),
 		/** The time column. */
 		TIME("Start Time", 150, InspectITImages.IMG_TIMESTAMP, DefaultDataComparatorEnum.TIMESTAMP),
+		/** Response status. */
+		RESPONSE_STATUS("Status", 50, null, InvocationSequenceDataComparatorEnum.RESPONSE_CODE),
 		/** The method column. */
 		METHOD("Method", 550, InspectITImages.IMG_METHOD, MethodSensorDataComparatorEnum.METHOD),
 		/** The duration column. */
 		DURATION("Duration (ms)", 100, InspectITImages.IMG_TIME, InvocationSequenceDataComparatorEnum.DURATION),
 		/** The count column. */
 		COUNT("Child Count", 100, null, InvocationSequenceDataComparatorEnum.CHILD_COUNT),
-		/** The URI column. */
-		URI("URI", 150, null, InvocationSequenceDataComparatorEnum.URI),
+		/** The URL column. */
+		URL("URL", 150, null, InvocationSequenceDataComparatorEnum.URL),
+		/** The application column. */
+		APPLICATION("Application", 150, null, InvocationSequenceDataComparatorEnum.APPLICATION),
+		/** The business transaction column. */
+		BUSINESS_TRANSACTION("Business Transaction", 150, null, InvocationSequenceDataComparatorEnum.BUSINESS_TRANSACTION),
 		/** The Use case column. */
 		USE_CASE("Use case", 100, null, InvocationSequenceDataComparatorEnum.USE_CASE);
 
 		/** The name. */
-		private String name;
+		private final String name;
 		/** The width of the column. */
-		private int width;
+		private final int width;
 		/** The image descriptor. Can be <code>null</code> */
-		private Image image;
+		private final Image image;
 		/** Comparator for the column. */
 		protected IDataComparator<? super InvocationSequenceData> dataComparator;
 
 		/**
 		 * Default constructor which creates a column enumeration object.
-		 * 
+		 *
 		 * @param name
 		 *            The name of the column.
 		 * @param width
@@ -126,13 +136,13 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 		/**
 		 * Converts an ordinal into a column.
-		 * 
+		 *
 		 * @param i
 		 *            The ordinal.
 		 * @return The appropriate column.
 		 */
 		public static Column fromOrd(int i) {
-			if (i < 0 || i >= Column.values().length) {
+			if ((i < 0) || (i >= Column.values().length)) {
 				throw new IndexOutOfBoundsException("Invalid ordinal");
 			}
 			return Column.values()[i];
@@ -153,7 +163,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * The list of invocation sequence data objects which is displayed.
 	 */
-	private List<InvocationSequenceData> invocationSequenceData = new ArrayList<InvocationSequenceData>();
+	private List<InvocationSequenceData> invocationSequenceData = new ArrayList<>();
 
 	/**
 	 * The limit of the result set.
@@ -193,7 +203,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * The resource manager is used for the images etc.
 	 */
-	private LocalResourceManager resourceManager = new LocalResourceManager(JFaceResources.getResources());
+	private final LocalResourceManager resourceManager = new LocalResourceManager(JFaceResources.getResources());
 
 	/**
 	 * Result comparator to be used on the server.
@@ -201,7 +211,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	private ResultComparator<InvocationSequenceData> resultComparator = defaultComparator;
 
 	/**
-	 * 
+	 *
 	 * @return Returns list of invocation sequence data that represents a table input.
 	 */
 	protected List<InvocationSequenceData> getInvocationSequenceData() {
@@ -210,7 +220,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * Returns data access service for retrieving the data from the server.
-	 * 
+	 *
 	 * @return Returns data access service.
 	 */
 	protected IInvocationDataAccessService getDataAccessService() {
@@ -219,7 +229,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * Gets {@link #cachedDataService}.
-	 * 
+	 *
 	 * @return {@link #cachedDataService}
 	 */
 	protected ICachedDataService getCachedDataService() {
@@ -228,7 +238,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * Returns current view item count limit defined for the view.
-	 * 
+	 *
 	 * @return Returns current view item count limit.
 	 */
 	protected int getLimit() {
@@ -254,6 +264,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void createColumns(TableViewer tableViewer) {
 		for (Column column : Column.values()) {
 			TableViewerColumn viewerColumn = new TableViewerColumn(tableViewer, SWT.NONE);
@@ -280,6 +291,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public IContentProvider getContentProvider() {
 		return new InvocOverviewContentProvider();
 	}
@@ -287,6 +299,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public IBaseLabelProvider getLabelProvider() {
 		return new InvocOverviewLabelProvider();
 	}
@@ -294,6 +307,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public ViewerComparator getComparator() {
 		RemoteTableViewerComparator<InvocationSequenceData> invocOverviewViewerComparator = new RemoteTableViewerComparator<InvocationSequenceData>() {
 			@Override
@@ -308,7 +322,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 		};
 		for (Column column : Column.values()) {
 			// since it is remote sorting we do not provide local cached data service
-			ResultComparator<InvocationSequenceData> resultComparator = new ResultComparator<InvocationSequenceData>(column.dataComparator);
+			ResultComparator<InvocationSequenceData> resultComparator = new ResultComparator<>(column.dataComparator);
 			invocOverviewViewerComparator.addColumn(getMappedTableViewerColumn(column).getColumn(), resultComparator);
 		}
 
@@ -427,13 +441,15 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 		if (!selection.isEmpty()) {
 			try {
 				PlatformUI.getWorkbench().getProgressService().busyCursorWhile(new IRunnableWithProgress() {
+					@Override
 					public void run(final IProgressMonitor monitor) {
 						monitor.beginTask("Retrieving Invocation detail data", IProgressMonitor.UNKNOWN);
 						InvocationSequenceData invocationSequenceData = (InvocationSequenceData) selection.getFirstElement();
-						InvocationSequenceData data = (InvocationSequenceData) dataAccessService.getInvocationSequenceDetail(invocationSequenceData);
-						final List<InvocationSequenceData> invocationSequenceDataList = new ArrayList<InvocationSequenceData>();
+						InvocationSequenceData data = dataAccessService.getInvocationSequenceDetail(invocationSequenceData);
+						final List<InvocationSequenceData> invocationSequenceDataList = new ArrayList<>();
 						invocationSequenceDataList.add(data);
 						Display.getDefault().asyncExec(new Runnable() {
+							@Override
 							public void run() {
 								IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 								IWorkbenchPage page = window.getActivePage();
@@ -454,9 +470,9 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * The label provider for this view.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private final class InvocOverviewLabelProvider extends StyledCellIndexLabelProvider implements IColumnToolTipProvider {
 
@@ -473,7 +489,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 		}
 
 		/**
-		 * 
+		 *
 		 * {@inheritDoc}
 		 */
 		@Override
@@ -484,8 +500,8 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 			switch (enumId) {
 			case NESTED_DATA:
 				if (InvocationSequenceDataHelper.hasNestedSqlStatements(data) && InvocationSequenceDataHelper.hasNestedExceptions(data)) {
-					return ImageFormatter.getCombinedImage(resourceManager, SWT.HORIZONTAL, InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_DATABASE), InspectIT.getDefault()
-							.getImageDescriptor(InspectITImages.IMG_EXCEPTION_SENSOR));
+					return ImageFormatter.getCombinedImage(resourceManager, SWT.HORIZONTAL, InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_DATABASE),
+							InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_EXCEPTION_SENSOR));
 				} else if (InvocationSequenceDataHelper.hasNestedSqlStatements(data)) {
 					return InspectIT.getDefault().getImage(InspectITImages.IMG_DATABASE);
 				} else if (InvocationSequenceDataHelper.hasNestedExceptions(data)) {
@@ -493,10 +509,15 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 				} else {
 					return super.getColumnImage(element, index);
 				}
+			case RESPONSE_STATUS:
+				if (InvocationSequenceDataHelper.hasHttpTimerData(data)) {
+					return ImageFormatter.getResponseStatusImage(((HttpTimerData) data.getTimerData()).getHttpResponseStatus());
+				} else {
+					return super.getColumnImage(element, index);
+				}
 			default:
 				return super.getColumnImage(element, index);
 			}
-
 		}
 
 		/**
@@ -520,6 +541,22 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 				} else {
 					return super.getToolTipText(element, index);
 				}
+			case RESPONSE_STATUS:
+				if (InvocationSequenceDataHelper.hasHttpTimerData(data)) {
+					if (HttpTimerDataHelper.hasResponseCode((HttpTimerData) data.getTimerData())) {
+						try {
+							HttpStatus httpStatus = HttpStatus.valueOf(((HttpTimerData) data.getTimerData()).getHttpResponseStatus());
+							return httpStatus.getReasonPhrase();
+						} catch (IllegalArgumentException e) {
+							// non standard response code
+							return "Non-standard Response Code";
+						}
+					} else {
+						return "Response Status Unavailable";
+					}
+				} else {
+					return null;
+				}
 			default:
 				return null;
 			}
@@ -528,15 +565,16 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * The content provider for this view.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private static final class InvocOverviewContentProvider implements IStructuredContentProvider {
 
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		@SuppressWarnings("unchecked")
 		public Object[] getElements(Object inputElement) {
 			List<InvocationSequenceData> invocationSequenceData = (List<InvocationSequenceData>) inputElement;
@@ -546,12 +584,14 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		public void dispose() {
 		}
 
@@ -559,7 +599,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * Returns the styled text for a specific column.
-	 * 
+	 *
 	 * @param data
 	 *            The data object to extract the information from.
 	 * @param methodIdent
@@ -572,6 +612,17 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 		switch (enumId) {
 		case NESTED_DATA:
 			return emptyStyledString;
+		case RESPONSE_STATUS:
+			if (InvocationSequenceDataHelper.hasHttpTimerData(data)) {
+				if (HttpTimerDataHelper.hasResponseCode((HttpTimerData) data.getTimerData())) {
+					return new StyledString(String.valueOf(((HttpTimerData) data.getTimerData()).getHttpResponseStatus()));
+				} else {
+					return new StyledString("N/A");
+				}
+
+			} else {
+				return emptyStyledString;
+			}
 		case TIME:
 			return new StyledString(NumberFormatter.formatTimeWithMillis(data.getTimeStamp()));
 		case METHOD:
@@ -587,14 +638,28 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 			}
 		case COUNT:
 			return new StyledString(NumberFormatter.formatLong(data.getChildCount()));
-		case URI:
+		case URL:
 			if (InvocationSequenceDataHelper.hasHttpTimerData(data)) {
-				String uri = ((HttpTimerData) data.getTimerData()).getHttpInfo().getUri();
-				if (null != uri) {
-					return new StyledString(uri);
+				String url = ((HttpTimerData) data.getTimerData()).getHttpInfo().getUrl();
+				if (null != url) {
+					return new StyledString(url);
 				} else {
 					return emptyStyledString;
 				}
+			} else {
+				return emptyStyledString;
+			}
+		case APPLICATION:
+			ApplicationData appData = cachedDataService.getApplicationForId(data.getApplicationId());
+			if (null != appData) {
+				return new StyledString(appData.getName());
+			} else {
+				return emptyStyledString;
+			}
+		case BUSINESS_TRANSACTION:
+			BusinessTransactionData btData = cachedDataService.getBusinessTransactionForId(data.getApplicationId(), data.getBusinessTransactionId());
+			if (null != btData) {
+				return new StyledString(btData.getName());
 			} else {
 				return emptyStyledString;
 			}
@@ -617,6 +682,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getReadableString(Object object) {
 		if (object instanceof InvocationSequenceData) {
 			InvocationSequenceData data = (InvocationSequenceData) object;
@@ -639,7 +705,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 		if (object instanceof InvocationSequenceData) {
 			InvocationSequenceData data = (InvocationSequenceData) object;
 			MethodIdent methodIdent = cachedDataService.getMethodIdentForId(data.getMethodIdent());
-			List<String> values = new ArrayList<String>();
+			List<String> values = new ArrayList<>();
 			for (Column column : Column.values()) {
 				values.add(getStyledTextForColumn(data, methodIdent, column).toString());
 			}
@@ -650,7 +716,7 @@ public class InvocOverviewInputController extends AbstractTableInputController {
 
 	/**
 	 * Gets {@link #resultComparator}.
-	 * 
+	 *
 	 * @return {@link #resultComparator}
 	 */
 	public ResultComparator<InvocationSequenceData> getResultComparator() {

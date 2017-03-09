@@ -29,9 +29,9 @@ import rocks.inspectit.ui.rcp.util.SafeExecutor;
 /**
  * A composite to be the head client of the form that
  * {@link rocks.inspectit.ui.rcp.editor.root.FormRootEditor} is made of.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class BreadcrumbTitleComposite extends Composite implements CmrRepositoryChangeListener, StorageChangeListener {
 
@@ -77,7 +77,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param parent
 	 *            Parent composite.
 	 * @param style
@@ -130,7 +130,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Gets {@link #toolBarManager}.
-	 * 
+	 *
 	 * @return {@link #toolBarManager}
 	 */
 	public ToolBarManager getToolBarManager() {
@@ -139,13 +139,13 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Sets {@link #repositoryDefinition}.
-	 * 
+	 *
 	 * @param repositoryDefinition
 	 *            New value for {@link #repositoryDefinition}
 	 */
 	public void setRepositoryDefinition(RepositoryDefinition repositoryDefinition) {
 		this.repositoryDefinition = repositoryDefinition;
-		repositoryLabel.setText(TextFormatter.crop(repositoryDefinition.getName(), MAX_TEXT_LENGTH));
+		repositoryLabel.setText(TextFormatter.clearLineBreaks(TextFormatter.crop(repositoryDefinition.getName(), MAX_TEXT_LENGTH)));
 		if (repositoryDefinition instanceof CmrRepositoryDefinition) {
 			repositoryLabel.setImage(ImageFormatter.getCmrRepositoryImage((CmrRepositoryDefinition) repositoryDefinition, true));
 			InspectIT.getDefault().getCmrRepositoryManager().addCmrRepositoryChangeListener(this);
@@ -157,7 +157,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Sets the agent name.
-	 * 
+	 *
 	 * @param agentName
 	 *            Agent name.
 	 * @param agentImg
@@ -165,7 +165,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 	 *            the current image will be done.
 	 */
 	public void setAgent(String agentName, Image agentImg) {
-		agentLabel.setText(TextFormatter.crop(agentName, MAX_TEXT_LENGTH));
+		agentLabel.setText(TextFormatter.clearLineBreaks(TextFormatter.crop(agentName, MAX_TEXT_LENGTH)));
 		agentLabel.setToolTipText(agentName);
 		if (null != agentImg) {
 			agentLabel.setImage(agentImg);
@@ -174,7 +174,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Sets the title text and image.
-	 * 
+	 *
 	 * @param group
 	 *            Group description.
 	 * @param groupdImg
@@ -182,7 +182,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 	 *            current image will be done.
 	 */
 	public void setGroup(String group, Image groupdImg) {
-		groupLabel.setText(TextFormatter.crop(group, MAX_TEXT_LENGTH));
+		groupLabel.setText(TextFormatter.clearLineBreaks(TextFormatter.crop(group, MAX_TEXT_LENGTH)));
 		groupLabel.setToolTipText(group);
 		if (null != groupdImg) {
 			groupLabel.setImage(groupdImg);
@@ -192,7 +192,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Sets the description.
-	 * 
+	 *
 	 * @param view
 	 *            View description.
 	 * @param viewImg
@@ -200,7 +200,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 	 *            changed to the current image will be done.
 	 */
 	public void setView(String view, Image viewImg) {
-		viewLabel.setText(view);
+		viewLabel.setText(TextFormatter.clearLineBreaks(view));
 		viewLabel.setToolTipText(view);
 		if (null != viewImg) {
 			viewLabel.setImage(viewImg);
@@ -213,7 +213,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 	 */
 	@Override
 	public void repositoryOnlineStatusUpdated(CmrRepositoryDefinition cmrRepositoryDefinition, OnlineStatus oldStatus, OnlineStatus newStatus) {
-		if (newStatus != OnlineStatus.CHECKING && Objects.equals(repositoryDefinition, cmrRepositoryDefinition)) {
+		if ((newStatus != OnlineStatus.CHECKING) && Objects.equals(repositoryDefinition, cmrRepositoryDefinition)) {
 			SafeExecutor.asyncExec(new Runnable() {
 				@Override
 				public void run() {
@@ -233,7 +233,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 			SafeExecutor.asyncExec(new Runnable() {
 				@Override
 				public void run() {
-					repositoryLabel.setText(repositoryDefinition.getName());
+					repositoryLabel.setText(TextFormatter.clearLineBreaks(repositoryDefinition.getName()));
 					layoutInternal();
 				}
 			}, getDisplay(), repositoryLabel);
@@ -295,7 +295,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Updates storage name and icon if given storageData is displayed currently on the breadcrumb.
-	 * 
+	 *
 	 * @param storageData
 	 *            {@link IStorageData}
 	 */
@@ -306,7 +306,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 				SafeExecutor.asyncExec(new Runnable() {
 					@Override
 					public void run() {
-						repositoryLabel.setText(repositoryDefinition.getName());
+						repositoryLabel.setText(TextFormatter.clearLineBreaks(repositoryDefinition.getName()));
 						repositoryLabel.setImage(ImageFormatter.getStorageRepositoryImage(storageRepositoryDefinition));
 						layoutInternal();
 					}
@@ -317,7 +317,7 @@ public class BreadcrumbTitleComposite extends Composite implements CmrRepository
 
 	/**
 	 * Returns textual representation of the displayed data for the copy purposes.
-	 * 
+	 *
 	 * @return Returns textual representation of the displayed data for the copy purposes.
 	 */
 	public String getCopyString() {

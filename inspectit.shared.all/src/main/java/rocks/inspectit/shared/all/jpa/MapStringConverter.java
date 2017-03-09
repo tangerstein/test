@@ -12,9 +12,9 @@ import org.apache.commons.lang.StringUtils;
 /**
  * {@link AttributeConverter} that can convert Map to a String value so it can be saved in a single
  * column in DB.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class MapStringConverter implements AttributeConverter<Map<?, ?>, String> {
 
@@ -28,6 +28,7 @@ public class MapStringConverter implements AttributeConverter<Map<?, ?>, String>
 	 * <p>
 	 * Transforms map to a string.
 	 */
+	@Override
 	public String convertToDatabaseColumn(Map<?, ?> map) {
 		StringBuilder stringBuilder = new StringBuilder();
 		if (MapUtils.isNotEmpty(map)) {
@@ -46,6 +47,7 @@ public class MapStringConverter implements AttributeConverter<Map<?, ?>, String>
 	 * <p>
 	 * Creates map out of the string.
 	 */
+	@Override
 	public Map<?, ?> convertToEntityAttribute(String dbValue) {
 		if (StringUtils.isNotEmpty(dbValue)) {
 			Map<Object, Object> map = new HashMap<Object, Object>();
@@ -54,7 +56,7 @@ public class MapStringConverter implements AttributeConverter<Map<?, ?>, String>
 			// in order to support empty strings we add delimiter after each object (line 36/38)
 			// as of splitPerserve will add additional object at the end that we don't want
 			// thus iterate until i < length - 1
-			for (int i = 0; i < split.length - 1; i += 2) {
+			for (int i = 0; i < (split.length - 1); i += 2) {
 				map.put(split[i], split[i + 1]);
 			}
 

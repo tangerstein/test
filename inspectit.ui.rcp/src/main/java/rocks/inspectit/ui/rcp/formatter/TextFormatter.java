@@ -3,10 +3,13 @@ package rocks.inspectit.ui.rcp.formatter;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.preference.JFacePreferences;
@@ -27,10 +30,11 @@ import rocks.inspectit.shared.all.communication.data.InvocationAwareData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
 import rocks.inspectit.shared.all.communication.data.cmr.AgentStatusData;
+import rocks.inspectit.shared.cs.ci.assignment.ISensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.sensor.ISensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.exception.impl.ExceptionSensorConfig;
-import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionMetaDataSensorConfig;
+import rocks.inspectit.shared.cs.ci.sensor.jmx.JmxSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.HttpSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.InvocationSequenceSensorConfig;
@@ -46,6 +50,7 @@ import rocks.inspectit.shared.cs.ci.sensor.platform.impl.MemorySensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.platform.impl.RuntimeSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.platform.impl.SystemSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.platform.impl.ThreadSensorConfig;
+import rocks.inspectit.shared.cs.communication.data.cmr.Alert;
 import rocks.inspectit.shared.cs.communication.data.cmr.WritingStatus;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
 import rocks.inspectit.shared.cs.storage.StorageData;
@@ -67,6 +72,8 @@ import rocks.inspectit.ui.rcp.model.AgentLeaf;
 import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 import rocks.inspectit.ui.rcp.repository.RepositoryDefinition;
 import rocks.inspectit.ui.rcp.util.data.RegExAggregatedHttpTimerData;
+import rocks.inspectit.ui.rcp.validation.ValidationControlDecoration;
+import rocks.inspectit.ui.rcp.validation.ValidationState;
 
 /**
  * This class provides some static methods to create some common {@link String} and
@@ -119,7 +126,7 @@ public final class TextFormatter {
 
 		styledString.append(getMethodWithParameters(methodIdent));
 		String decoration;
-		if (methodIdent.getPackageName() != null && !methodIdent.getPackageName().equals("")) {
+		if ((methodIdent.getPackageName() != null) && !methodIdent.getPackageName().equals("")) {
 			decoration = MessageFormat.format("- {0}.{1}", new Object[] { methodIdent.getPackageName(), methodIdent.getClassName() });
 		} else {
 			decoration = MessageFormat.format("- {0}", new Object[] { methodIdent.getClassName() });
@@ -141,7 +148,7 @@ public final class TextFormatter {
 		StringBuilder builder = new StringBuilder();
 		String parameterText = "";
 		if (null != methodIdent.getParameters()) {
-			List<String> parameterList = new ArrayList<String>();
+			List<String> parameterList = new ArrayList<>();
 			for (String parameter : methodIdent.getParameters()) {
 				String[] split = parameter.split("\\.");
 				parameterList.add(split[split.length - 1]);
@@ -168,7 +175,7 @@ public final class TextFormatter {
 	 */
 	public static String getMethodWithParameters(MethodSensorAssignment methodSensorAssignment) {
 		// can not create if we don't have name
-		if (null == methodSensorAssignment.getMethodName() && !methodSensorAssignment.isConstructor()) {
+		if ((null == methodSensorAssignment.getMethodName()) && !methodSensorAssignment.isConstructor()) {
 			return "";
 		}
 
@@ -583,7 +590,7 @@ public final class TextFormatter {
 	 * @return Formated string in form [param1, param2,.., paramN].
 	 */
 	public static String getSqlParametersText(List<String> parameterValues) {
-		if (null == parameterValues || parameterValues.isEmpty()) {
+		if ((null == parameterValues) || parameterValues.isEmpty()) {
 			return "[]";
 		} else {
 			Iterator<String> it = parameterValues.iterator();
@@ -622,7 +629,7 @@ public final class TextFormatter {
 
 		for (int i = 0; i < originalText.length(); i++) {
 			char c = originalText.charAt(i);
-			if (c == '\r' || c == '\n') {
+			if ((c == '\r') || (c == '\n')) {
 				if (!lastCharWhitespace) {
 					stringBuilder.append(' ');
 					lastCharWhitespace = true;
@@ -665,24 +672,7 @@ public final class TextFormatter {
 	 *         <code>null</code>.
 	 */
 	public static StyledString emptyStyledStringIfNull(String text) {
-		return new StyledString(emptyStringIfNull(text));
-	}
-
-	/**
-	 * Returns a String that contains the given text or "" if the given text was in fact
-	 * <code>null</code>.
-	 *
-	 * @param text
-	 *            the text to display, may be null.
-	 * @return a new StyledString that contains the given text or "" if the given text was in fact
-	 *         <code>null</code>.
-	 */
-	public static String emptyStringIfNull(String text) {
-		if (!StringUtils.isEmpty(text)) {
-			return text;
-		} else {
-			return "";
-		}
+		return new StyledString(StringUtils.defaultString(text));
 	}
 
 	/**
@@ -706,8 +696,6 @@ public final class TextFormatter {
 	public static String getSensorConfigName(Class<? extends ISensorConfig> sensorClass) {
 		if (ObjectUtils.equals(sensorClass, ExceptionSensorConfig.class)) {
 			return "Exception Sensor";
-		} else if (ObjectUtils.equals(sensorClass, ConnectionMetaDataSensorConfig.class)) {
-			return "JDBC Connection Meta-Data Sensor";
 		} else if (ObjectUtils.equals(sensorClass, ConnectionSensorConfig.class)) {
 			return "JDBC Connection Sensor";
 		} else if (ObjectUtils.equals(sensorClass, HttpSensorConfig.class)) {
@@ -738,8 +726,114 @@ public final class TextFormatter {
 			return "System Information";
 		} else if (ObjectUtils.equals(sensorClass, ThreadSensorConfig.class)) {
 			return "Thread Information";
+		} else if (ObjectUtils.equals(sensorClass, JmxSensorConfig.class)) {
+			return "JMX Sensor";
 		}
 		return null;
 	}
 
+	/**
+	 * Returns short (1 line) error message for the assignment based on the validation states.
+	 *
+	 * @param sensorAssignment
+	 *            assignment
+	 * @param states
+	 *            {@link ValidationControlDecoration}
+	 * @return short error message
+	 */
+	public static String getErroMessageShort(ISensorAssignment<?> sensorAssignment, Collection<ValidationState> states) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(TextFormatter.getSensorConfigName(sensorAssignment.getSensorConfigClass()));
+		builder.append(" Assignment (");
+		String singleStateMessage = StringUtils.EMPTY;
+		int count = 0;
+		for (ValidationState state : states) {
+			if (!state.isValid()) {
+				count++;
+				singleStateMessage = state.getMessage();
+			}
+		}
+		if (count > 1) {
+			builder.append(count);
+			builder.append(" fields contain validation errors)");
+		} else {
+			builder.append(singleStateMessage);
+			builder.append(')');
+		}
+
+		return builder.toString();
+	}
+
+	/**
+	 * Returns full error message for the assignment based on the validation states. In this message
+	 * each line will contain error reported by any invalid {@link ValidationState}
+	 *
+	 * @param sensorAssignment
+	 *            assignment
+	 * @param states
+	 *            {@link ValidationState}s
+	 * @return fill error message
+	 */
+	public static String getErroMessageFull(ISensorAssignment<?> sensorAssignment, Collection<ValidationState> states) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(TextFormatter.getSensorConfigName(sensorAssignment.getSensorConfigClass()));
+		builder.append(" Assignment:");
+		builder.append(getValidationConcatenatedMessage(states));
+		return builder.toString();
+	}
+
+	/**
+	 * Returns a validation errors count text for the given set of {@link ValidationState}s.
+	 *
+	 * @param states
+	 *            set of {@link ValidationState}s
+	 * @param element
+	 *            name of the element (e.g. filed, part, etc.)
+	 * @return the validation message, or null if the given set is empty.
+	 */
+	public static String getValidationErrorsCountText(Set<ValidationState> states, String element) {
+		if (CollectionUtils.isNotEmpty(states)) {
+			if (states.size() == 1) {
+				return states.iterator().next().getMessage();
+			} else if (states.size() > 1) {
+				return states.size() + " " + element + "s contain validation errors";
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns a concatenated validation message for the given set of {@link ValidationState}s.
+	 *
+	 * @param states
+	 *            set of {@link ValidationState}s
+	 * @return a concatenated validation message, or an empty string if the given set is empty.
+	 */
+	public static String getValidationConcatenatedMessage(Collection<ValidationState> states) {
+		StringBuilder builder = new StringBuilder();
+		boolean first = true;
+		for (ValidationState state : states) {
+			if (!state.isValid()) {
+				if (!first) {
+					builder.append('\n');
+				}
+				builder.append(state.getMessage());
+				first = false;
+			}
+		}
+		return builder.toString();
+	}
+
+	/**
+	 * Returns string representation of an alert.
+	 *
+	 * @param alert
+	 *            {@link Alert} instance to create string for.
+	 * @return Returns string representation of an alert.
+	 */
+	public static String getAlertDescription(Alert alert) {
+		String closing = alert.isOpen() ? "Open" : DateFormat.getDateTimeInstance().format(new Date(alert.getStopTimestamp()));
+		return alert.getAlertingDefinition().getName() + " (" + DateFormat.getDateTimeInstance().format(new Date(alert.getStartTimestamp())) + " - " + closing + ")";
+	}
 }

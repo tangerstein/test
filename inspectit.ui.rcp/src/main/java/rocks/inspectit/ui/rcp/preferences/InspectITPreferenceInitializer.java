@@ -14,14 +14,15 @@ import rocks.inspectit.shared.all.communication.data.HttpTimerData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
+import rocks.inspectit.ui.rcp.ci.dialog.InstrumentationUpdateDialog.OnSaveBehavior;
 import rocks.inspectit.ui.rcp.editor.graph.plot.datasolver.PlotDataSolver;
 import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 
 /**
  * Initializes the default preferences.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class InspectITPreferenceInitializer extends AbstractPreferenceInitializer {
 
@@ -31,7 +32,7 @@ public class InspectITPreferenceInitializer extends AbstractPreferenceInitialize
 	@Override
 	public void initializeDefaultPreferences() {
 		// CMR list
-		List<CmrRepositoryDefinition> defaultCmrList = new ArrayList<CmrRepositoryDefinition>(1);
+		List<CmrRepositoryDefinition> defaultCmrList = new ArrayList<>(1);
 		CmrRepositoryDefinition defaultCmr = new CmrRepositoryDefinition(CmrRepositoryDefinition.DEFAULT_IP, CmrRepositoryDefinition.DEFAULT_PORT, CmrRepositoryDefinition.DEFAULT_NAME);
 		defaultCmr.setDescription(CmrRepositoryDefinition.DEFAULT_DESCRIPTION);
 		defaultCmrList.add(defaultCmr);
@@ -54,6 +55,8 @@ public class InspectITPreferenceInitializer extends AbstractPreferenceInitialize
 
 		// auto check new version
 		PreferencesUtils.saveBooleanValue(PreferencesConstants.AUTO_CHECK_NEW_VERSION, true, true);
+
+		PreferencesUtils.saveObject(PreferencesConstants.INSTRUMENTATION_UPDATED_AUTO_ACTION, OnSaveBehavior.SHOW_DIALOG, true);
 
 		Map<String, PlotDataSolver> dataSolverBeanAssignmentMap = new HashMap<>();
 

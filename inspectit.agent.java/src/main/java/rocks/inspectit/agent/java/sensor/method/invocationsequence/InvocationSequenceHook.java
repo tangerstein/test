@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -13,18 +12,17 @@ import org.slf4j.LoggerFactory;
 
 import rocks.inspectit.agent.java.buffer.IBufferStrategy;
 import rocks.inspectit.agent.java.config.IPropertyAccessor;
-import rocks.inspectit.agent.java.config.impl.MethodSensorTypeConfig;
-import rocks.inspectit.agent.java.config.impl.PlatformSensorTypeConfig;
 import rocks.inspectit.agent.java.config.impl.RegisteredSensorConfig;
 import rocks.inspectit.agent.java.core.ICoreService;
-import rocks.inspectit.agent.java.core.IIdManager;
 import rocks.inspectit.agent.java.core.IObjectStorage;
+import rocks.inspectit.agent.java.core.IPlatformManager;
 import rocks.inspectit.agent.java.core.IdNotAvailableException;
 import rocks.inspectit.agent.java.core.ListListener;
 import rocks.inspectit.agent.java.hooking.IConstructorHook;
 import rocks.inspectit.agent.java.hooking.IMethodHook;
 import rocks.inspectit.agent.java.sending.ISendingStrategy;
 import rocks.inspectit.agent.java.sensor.exception.ExceptionSensor;
+import rocks.inspectit.agent.java.sensor.method.IMethodSensor;
 import rocks.inspectit.agent.java.sensor.method.jdbc.ConnectionSensor;
 import rocks.inspectit.agent.java.sensor.method.jdbc.PreparedStatementParameterSensor;
 import rocks.inspectit.agent.java.sensor.method.jdbc.PreparedStatementSensor;
@@ -44,6 +42,8 @@ import rocks.inspectit.shared.all.communication.data.LoggingData;
 import rocks.inspectit.shared.all.communication.data.ParameterContentData;
 import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
+import rocks.inspectit.shared.all.instrumentation.config.impl.MethodSensorTypeConfig;
+import rocks.inspectit.shared.all.instrumentation.config.impl.PlatformSensorTypeConfig;
 
 /**
  * The invocation sequence hook stores the record of the invocation sequences in a
@@ -65,9 +65,9 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	private static final Logger LOG = LoggerFactory.getLogger(InvocationSequenceHook.class);
 
 	/**
-	 * The ID manager.
+	 * The Platform manager.
 	 */
-	private final IIdManager idManager;
+	private final IPlatformManager platformManager;
 
 	/**
 	 * The property accessor.
@@ -123,8 +123,8 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 *
 	 * @param timer
 	 *            The timer.
-	 * @param idManager
-	 *            The ID manager.
+	 * @param platformManager
+	 *            The Platform manager.
 	 * @param propertyAccessor
 	 *            The property accessor.
 	 * @param param
@@ -132,9 +132,9 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * @param enhancedExceptionSensor
 	 *            If enhanced exception sensor is ON.
 	 */
-	public InvocationSequenceHook(Timer timer, IIdManager idManager, IPropertyAccessor propertyAccessor, Map<String, Object> param, boolean enhancedExceptionSensor) {
+	public InvocationSequenceHook(Timer timer, IPlatformManager platformManager, IPropertyAccessor propertyAccessor, Map<String, Object> param, boolean enhancedExceptionSensor) {
 		this.timer = timer;
-		this.idManager = idManager;
+		this.platformManager = platformManager;
 		this.propertyAccessor = propertyAccessor;
 		this.strConstraint = new StringConstraint(param);
 		this.enhancedExceptionSensor = enhancedExceptionSensor;
@@ -143,26 +143,25 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void beforeBody(long methodId, long sensorTypeId, Object object, Object[] parameters, RegisteredSensorConfig rsc) {
 		if (skip(rsc)) {
 			return;
 		}
 
 		try {
-			long platformId = idManager.getPlatformId();
+			long platformId = platformManager.getPlatformId();
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			long registeredMethodId = idManager.getRegisteredMethodId(methodId);
 
 			if (null == threadLocalInvocationData.get()) {
 				// the sensor type is only available in the beginning of the
 				// sequence trace
-				long registeredSensorTypeId = idManager.getRegisteredSensorTypeId(sensorTypeId);
 
 				// save the start time
 				timeStack.push(new Double(timer.getCurrentTime()));
 
 				// no invocation tracer is currently started, so we do that now.
-				InvocationSequenceData invocationSequenceData = new InvocationSequenceData(timestamp, platformId, registeredSensorTypeId, registeredMethodId);
+				InvocationSequenceData invocationSequenceData = new InvocationSequenceData(timestamp, platformId, sensorTypeId, methodId);
 				threadLocalInvocationData.set(invocationSequenceData);
 
 				invocationStartId.set(Long.valueOf(methodId));
@@ -177,7 +176,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 				InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
 				invocationSequenceData.setChildCount(invocationSequenceData.getChildCount() + 1L);
 
-				InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, platformId, invocationSequenceData.getSensorTypeIdent(), registeredMethodId);
+				InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, platformId, invocationSequenceData.getSensorTypeIdent(), methodId);
 				nestedInvocationSequenceData.setStart(timer.getCurrentTime());
 				nestedInvocationSequenceData.setParentSequence(invocationSequenceData);
 
@@ -195,6 +194,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void firstAfterBody(long methodId, long sensorTypeId, Object object, Object[] parameters, Object result, RegisteredSensorConfig rsc) {
 		if (skip(rsc)) {
 			return;
@@ -207,7 +207,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 				long count = invocationStartIdCount.get().longValue();
 				invocationStartIdCount.set(Long.valueOf(count - 1));
 
-				if (0 == count - 1) {
+				if (0 == (count - 1)) {
 					timeStack.push(new Double(timer.getCurrentTime()));
 				}
 			}
@@ -217,6 +217,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void secondAfterBody(ICoreService coreService, long methodId, long sensorTypeId, Object object, Object[] parameters, Object result, RegisteredSensorConfig rsc) {
 		if (skip(rsc)) {
 			return;
@@ -235,7 +236,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 				}
 			}
 
-			if (methodId == invocationStartId.get().longValue() && 0 == invocationStartIdCount.get().longValue()) {
+			if ((methodId == invocationStartId.get().longValue()) && (0 == invocationStartIdCount.get().longValue())) {
 				double endTime = timeStack.pop().doubleValue();
 				double startTime = timeStack.pop().doubleValue();
 				double duration = endTime - startTime;
@@ -249,7 +250,8 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 				} else {
 					// maybe not saved yet in the map
 					if (rsc.getSettings().containsKey("minduration")) {
-						minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
+						Long minDuration = (Long) rsc.getSettings().get("minduration");
+						minDurationMap.put(invocationStartId.get(), minDuration.doubleValue());
 						checkForSavingOrNot(coreService, methodId, sensorTypeId, rsc, invocationSequenceData, startTime, endTime, duration);
 					} else {
 						invocationSequenceData.setDuration(duration);
@@ -261,17 +263,9 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 
 				threadLocalInvocationData.set(null);
 			} else {
-				// check for the correct id due to the IdNotAvailableException we must be sure that
+				// check for the correct id we must be sure that
 				// we are closing the right sequence
-				try {
-					long registeredId = idManager.getRegisteredMethodId(methodId);
-					if (registeredId != invocationSequenceData.getMethodIdent()) {
-						return;
-					}
-				} catch (IdNotAvailableException e) {
-					if (LOG.isDebugEnabled()) {
-						LOG.debug("Skipping end of invocation sequence because of a (currently) not mapped ID");
-					}
+				if (methodId != invocationSequenceData.getMethodIdent()) {
 					return;
 				}
 
@@ -312,10 +306,11 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * @return True if the invocation should be removed.
 	 */
 	private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size()) {
-			MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);
+		List<IMethodSensor> sensors = rsc.getMethodSensors();
+		if (1 == sensors.size()) {
+			MethodSensorTypeConfig methodSensorTypeConfig = sensors.get(0).getSensorTypeConfig();
 
-			if (ExceptionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+			if (ExceptionSensor.class.getName().equals(methodSensorTypeConfig.getClassName())) {
 				return CollectionUtils.isEmpty(invocationSequenceData.getExceptionSensorDataObjects());
 			}
 		}
@@ -334,11 +329,12 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * @return True if the invocation should be removed.
 	 */
 	private boolean removeDueToWrappedSqls(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
-			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
-
-				if (PreparedStatementSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
-					if (null == invocationSequenceData.getSqlStatementData() || 0 == invocationSequenceData.getSqlStatementData().getCount()) {
+		List<IMethodSensor> sensors = rsc.getMethodSensors();
+		if ((1 == sensors.size()) || ((2 == sensors.size()) && enhancedExceptionSensor)) {
+			for (IMethodSensor methodSensor : sensors) {
+				MethodSensorTypeConfig methodSensorTypeConfig = methodSensor.getSensorTypeConfig();
+				if (PreparedStatementSensor.class.getName().equals(methodSensorTypeConfig.getClassName())) {
+					if ((null == invocationSequenceData.getSqlStatementData()) || (0 == invocationSequenceData.getSqlStatementData().getCount())) {
 						return true;
 					}
 				}
@@ -360,9 +356,11 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * @return True if the invocation should be removed.
 	 */
 	private boolean removeDueToNotCapturedLogging(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
-			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
-				if (Log4JLoggingSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+		List<IMethodSensor> sensors = rsc.getMethodSensors();
+		if ((1 == sensors.size()) || ((2 == sensors.size()) && enhancedExceptionSensor)) {
+			for (IMethodSensor methodSensor : sensors) {
+				MethodSensorTypeConfig methodSensorTypeConfig = methodSensor.getSensorTypeConfig();
+				if (Log4JLoggingSensor.class.getName().equals(methodSensorTypeConfig.getClassName())) {
 					return !InvocationSequenceDataHelper.hasLoggingData(invocationSequenceData);
 				}
 			}
@@ -389,14 +387,15 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 *         otherwise.
 	 */
 	private boolean skip(RegisteredSensorConfig rsc) {
-		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
-
-			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
-				if (PreparedStatementParameterSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+		List<IMethodSensor> sensors = rsc.getMethodSensors();
+		if ((1 == sensors.size()) || ((2 == sensors.size()) && enhancedExceptionSensor)) {
+			for (IMethodSensor methodSensor : sensors) {
+				MethodSensorTypeConfig methodSensorTypeConfig = methodSensor.getSensorTypeConfig();
+				if (PreparedStatementParameterSensor.class.getName().equals(methodSensorTypeConfig.getClassName())) {
 					return true;
 				}
 
-				if (ConnectionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+				if (ConnectionSensor.class.getName().equals(methodSensorTypeConfig.getClassName())) {
 					return true;
 				}
 			}
@@ -447,6 +446,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void beforeConstructor(long methodId, long sensorTypeId, Object[] parameters, RegisteredSensorConfig rsc) {
 		beforeBody(methodId, sensorTypeId, null, parameters, rsc);
 	}
@@ -454,6 +454,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void afterConstructor(ICoreService coreService, long methodId, long sensorTypeId, Object object, Object[] parameters, RegisteredSensorConfig rsc) {
 		firstAfterBody(methodId, sensorTypeId, object, parameters, null, rsc);
 		secondAfterBody(coreService, methodId, sensorTypeId, object, parameters, null, rsc);
@@ -478,7 +479,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 
 		if (dataObject.getClass().equals(HttpTimerData.class)) {
 			// don't overwrite ourself but overwrite timers
-			if (null == invocationSequenceData.getTimerData() || invocationSequenceData.getTimerData().getClass().equals(TimerData.class)) {
+			if ((null == invocationSequenceData.getTimerData()) || invocationSequenceData.getTimerData().getClass().equals(TimerData.class)) {
 				invocationSequenceData.setTimerData((HttpTimerData) dataObject);
 			}
 		}
@@ -509,6 +510,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void addMethodSensorData(long sensorTypeId, long methodId, String prefix, MethodSensorData methodSensorData) {
 		if (null == threadLocalInvocationData.get()) {
 			LOG.error("thread data NULL!!!!");
@@ -520,6 +522,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void addObjectStorage(long sensorTypeId, long methodId, String prefix, IObjectStorage objectStorage) {
 		if (null == threadLocalInvocationData.get()) {
 			LOG.error("thread data NULL!!!!");
@@ -532,6 +535,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
 		saveDataObject(systemSensorData.finalizeData());
 	}
@@ -539,6 +543,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void addExceptionSensorData(long sensorTypeIdent, long throwableIdentityHashCode, ExceptionSensorData exceptionSensorData) {
 		if (null == threadLocalInvocationData.get()) {
 			LOG.info("thread data NULL!!!!");
@@ -554,6 +559,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public ExceptionSensorData getExceptionSensorData(long sensorTypeIdent, long throwableIdentityHashCode) {
 		return null;
 	}
@@ -561,6 +567,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public MethodSensorData getMethodSensorData(long sensorTypeIdent, long methodIdent, String prefix) {
 		return null;
 	}
@@ -568,6 +575,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public IObjectStorage getObjectStorage(long sensorTypeIdent, long methodIdent, String prefix) {
 		return null;
 	}
@@ -586,6 +594,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void addListListener(ListListener<?> listener) {
 		throw new UnsupportedMethodException();
 	}
@@ -607,6 +616,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void removeListListener(ListListener<?> listener) {
 		throw new UnsupportedMethodException();
 	}
@@ -614,6 +624,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void sendData() {
 		throw new UnsupportedMethodException();
 	}
@@ -642,6 +653,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void start() {
 		throw new UnsupportedMethodException();
 	}
@@ -649,6 +661,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void stop() {
 		throw new UnsupportedMethodException();
 	}
@@ -656,13 +669,7 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	/**
 	 * {@inheritDoc}
 	 */
-	public ScheduledExecutorService getScheduledExecutorService() {
-		throw new UnsupportedMethodException();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
+	@Override
 	public void addJmxSensorValueData(long sensorTypeIdent, String objectName, String attributeName, JmxSensorValueData jmxSensorValueData) {
 		throw new UnsupportedMethodException();
 	}

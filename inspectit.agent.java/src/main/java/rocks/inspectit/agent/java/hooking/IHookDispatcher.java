@@ -3,16 +3,16 @@ package rocks.inspectit.agent.java.hooking;
 /**
  * The hook dispatcher interface defines methods to add method and constructor mappings and methods
  * to dispatch the calls from the instrumented methods in the target application.
- * 
+ *
  * @author Patrice Bouillet
  * @author Eduard Tudenhoefner
- * 
+ *
  */
 public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the 'before' method statement.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param object
@@ -24,7 +24,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the first 'after' method statement.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param object
@@ -38,7 +38,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the second 'after' method statement.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param object
@@ -52,7 +52,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the 'addCatch' statement of a method.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param object
@@ -66,7 +66,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the handler of a {@link Throwable}.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method where the {@link Throwable} is handled.
 	 * @param exceptionObject
@@ -76,7 +76,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the 'addCatch' statement of a constructor.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param object
@@ -90,7 +90,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the handler of a {@link Throwable}.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the constructor where the {@link Throwable} is handled.
 	 * @param exceptionObject
@@ -100,7 +100,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the 'before' constructor statement.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param parameters
@@ -110,7 +110,7 @@ public interface IHookDispatcher {
 
 	/**
 	 * Dispatches the 'after' constructor statement.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the method.
 	 * @param object
@@ -119,5 +119,36 @@ public interface IHookDispatcher {
 	 *            The parameters of the method.
 	 */
 	void dispatchConstructorAfterBody(long id, Object object, Object[] parameters);
+
+	/**
+	 * Dispatches the 'before' on the special method.
+	 *
+	 * @param id
+	 *            The id of the method.
+	 * @param object
+	 *            The instance of the class or the class itself.
+	 * @param parameters
+	 *            The parameters of the method.
+	 * @return Result of the dispatch. Can be <code>null</code>.
+	 */
+	Object dispatchSpecialMethodBeforeBody(long id, Object object, Object[] parameters);
+
+	/**
+	 * Dispatches the 'after' on the special method.
+	 * <p>
+	 * If the original method did throw an exception, then the returnValue will be the instance of
+	 * thrown exception.
+	 *
+	 * @param id
+	 *            The id of the method.
+	 * @param object
+	 *            The instance of the class or the class itself.
+	 * @param parameters
+	 *            The parameters of the method.
+	 * @param returnValue
+	 *            The return value of the method or exception being thrown.
+	 * @return Result of the dispatch. Can be <code>null</code>.
+	 */
+	Object dispatchSpecialMethodAfterBody(long id, Object object, Object[] parameters, Object returnValue);
 
 }

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
@@ -15,10 +16,10 @@ import org.testng.annotations.BeforeMethod;
 
 /**
  * Base class for all testing purposes in inspectIT.
- * 
+ *
  * Automatically ensures that each testee (annotated with @InjectMock) is reset between each test
  * method invocation.
- * 
+ *
  * @author Stefan Siegl
  */
 public abstract class TestBase {
@@ -95,7 +96,7 @@ public abstract class TestBase {
 
 	/**
 	 * Use reflection to change value of any instance field.
-	 * 
+	 *
 	 * @param objectToChange
 	 *            An Object instance.
 	 * @param fieldName
@@ -111,10 +112,10 @@ public abstract class TestBase {
 			// Get the private field
 			Field field;
 			if (objectToChange instanceof Class<?>) {
-				targetClass = ((Class<?>) objectToChange).getCanonicalName();
+				targetClass = ((Class<?>) objectToChange).getName();
 				field = findField((Class<?>) objectToChange, fieldName);
 			} else {
-				targetClass = objectToChange.getClass().getCanonicalName();
+				targetClass = objectToChange.getClass().getName();
 				field = findField(objectToChange.getClass(), fieldName);
 			}
 			// Allow modification on the field

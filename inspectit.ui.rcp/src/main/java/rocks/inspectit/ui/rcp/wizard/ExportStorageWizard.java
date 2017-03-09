@@ -17,7 +17,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressConstants;
 
 import rocks.inspectit.shared.all.exception.BusinessException;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
+import rocks.inspectit.shared.all.serializer.SerializationException;
 import rocks.inspectit.shared.cs.storage.IStorageData;
 import rocks.inspectit.shared.cs.storage.LocalStorageData;
 import rocks.inspectit.shared.cs.storage.StorageData;
@@ -33,9 +33,9 @@ import rocks.inspectit.ui.rcp.wizard.page.StorageCompressionWizardPage;
 
 /**
  * Wizard for exporting the storage.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class ExportStorageWizard extends Wizard implements INewWizard {
 
@@ -64,12 +64,12 @@ public class ExportStorageWizard extends Wizard implements INewWizard {
 	 */
 	protected ExportStorageWizard() {
 		this.setWindowTitle("Export Storage");
-		this.setDefaultPageImageDescriptor(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_WIZBAN_IMPORT));
+		this.setDefaultPageImageDescriptor(InspectIT.getDefault().getImageDescriptor(InspectITImages.IMG_WIZBAN_EXPORT));
 	}
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param localStorageData
 	 *            Storage to export.
 	 */
@@ -80,7 +80,7 @@ public class ExportStorageWizard extends Wizard implements INewWizard {
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to export.
 	 * @param cmrRepositoryDefinition
@@ -131,7 +131,7 @@ public class ExportStorageWizard extends Wizard implements INewWizard {
 			localStorageData = storageManager.getLocalDataForStorage((StorageData) storageData);
 		}
 
-		if (null != localStorageData && localStorageData.isFullyDownloaded()) {
+		if ((null != localStorageData) && localStorageData.isFullyDownloaded()) {
 			final LocalStorageData finalLocalStorageData = localStorageData;
 			Job exportStorageJob = new Job("Export Storage") {
 				@Override
@@ -150,7 +150,7 @@ public class ExportStorageWizard extends Wizard implements INewWizard {
 							}
 						});
 					} catch (Exception e) {
-						return new Status(Status.ERROR, InspectIT.ID, "Exception occurred trying to export storage.", e);
+						return new Status(IStatus.ERROR, InspectIT.ID, "Exception occurred trying to export storage.", e);
 					}
 					monitor.done();
 					return Status.OK_STATUS;
@@ -176,7 +176,7 @@ public class ExportStorageWizard extends Wizard implements INewWizard {
 								}
 							});
 						} catch (BusinessException | SerializationException | IOException e) {
-							return new Status(Status.ERROR, InspectIT.ID, "Exception occurred trying to export storage.", e);
+							return new Status(IStatus.ERROR, InspectIT.ID, "Exception occurred trying to export storage.", e);
 						}
 						monitor.done();
 						return Status.OK_STATUS;

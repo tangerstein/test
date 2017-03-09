@@ -5,19 +5,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+
 import rocks.inspectit.shared.all.cmr.cache.IObjectSizes;
 import rocks.inspectit.shared.all.communication.MethodSensorData;
 
 /**
  * The invocation sequence data object which is used to store the path of method invocations from
  * instrumented methods.
- * 
+ *
  * Notice that the <code>InvocationSequenceDataHelper</code> class provides utility methods to query
  * <code>InvocationSequenceData</code> instances.
- * 
+ *
  * @author Patrice Bouillet
  * @see InvocationSequenceDataHelper
  */
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
 public class InvocationSequenceData extends MethodSensorData {
 
 	/**
@@ -28,36 +34,43 @@ public class InvocationSequenceData extends MethodSensorData {
 	/**
 	 * The nested invocation traces are stored in this list.
 	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_EMPTY)
 	private List<InvocationSequenceData> nestedSequences = new ArrayList<InvocationSequenceData>(0);
 
 	/**
 	 * The parent sequence of this sequence if there is any.
 	 */
+	@JsonIgnore
 	private InvocationSequenceData parentSequence;
 
 	/**
 	 * The associated timer data object. Can be <code>null</code>.
 	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	private TimerData timerData;
 
 	/**
 	 * The associated sql statement data object. Can be <code>null</code>.
 	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	private SqlStatementData sqlStatementData;
 
 	/**
 	 * The associated exception sensor data object. Can be <code>null</code>.
 	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_EMPTY)
 	private List<ExceptionSensorData> exceptionSensorDataObjects;
 
 	/**
 	 * The associated logging data. Can be <code>null</code>.
 	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	private LoggingData loggingData;
 
 	/**
 	 * The position if parent sequence is not <code>null</code>.
 	 */
+	@JsonIgnore
 	private long position;
 
 	/**
@@ -68,11 +81,13 @@ public class InvocationSequenceData extends MethodSensorData {
 	/**
 	 * The start time of this invocation sequence.
 	 */
+	@JsonIgnore
 	private double start;
 
 	/**
 	 * The end time of this invocation sequence.
 	 */
+	@JsonIgnore
 	private double end;
 
 	/**
@@ -83,12 +98,26 @@ public class InvocationSequenceData extends MethodSensorData {
 	/**
 	 * If the {@link SqlStatementData} is available in this or one of the nested invocations.
 	 */
+	@JsonIgnore
 	private Boolean nestedSqlStatements;
 
 	/**
 	 * If the {@link ExceptionSensorData} is available in this or one of the nested invocations.
 	 */
+	@JsonIgnore
 	private Boolean nestedExceptions;
+
+	/**
+	 * Identifier of the application this invocation sequence belongs to.
+	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_DEFAULT)
+	private int applicationId = 0;
+
+	/**
+	 * Identifier of the business transaction this invocation sequence belongs to.
+	 */
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_DEFAULT)
+	private int businessTransactionId = 0;
 
 	/**
 	 * Default no-args constructor.
@@ -98,7 +127,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Creates a new instance.
-	 * 
+	 *
 	 * @param timeStamp
 	 *            the timestamp.
 	 * @param platformIdent
@@ -114,7 +143,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #nestedSequences}.
-	 * 
+	 *
 	 * @return {@link #nestedSequences}
 	 */
 	public List<InvocationSequenceData> getNestedSequences() {
@@ -123,7 +152,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #nestedSequences}.
-	 * 
+	 *
 	 * @param nestedSequences
 	 *            New value for {@link #nestedSequences}
 	 */
@@ -133,7 +162,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #parentSequence}.
-	 * 
+	 *
 	 * @return {@link #parentSequence}
 	 */
 	public InvocationSequenceData getParentSequence() {
@@ -142,7 +171,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #parentSequence}.
-	 * 
+	 *
 	 * @param parentSequence
 	 *            New value for {@link #parentSequence}
 	 */
@@ -152,7 +181,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #timerData}.
-	 * 
+	 *
 	 * @return {@link #timerData}
 	 */
 	public TimerData getTimerData() {
@@ -161,7 +190,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #timerData}.
-	 * 
+	 *
 	 * @param timerData
 	 *            New value for {@link #timerData}
 	 */
@@ -171,7 +200,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #sqlStatementData}.
-	 * 
+	 *
 	 * @return {@link #sqlStatementData}
 	 */
 	public SqlStatementData getSqlStatementData() {
@@ -180,7 +209,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #sqlStatementData}.
-	 * 
+	 *
 	 * @param sqlStatementData
 	 *            New value for {@link #sqlStatementData}
 	 */
@@ -190,7 +219,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #loggingData}.
-	 * 
+	 *
 	 * @return {@link #loggingData}
 	 */
 	public LoggingData getLoggingData() {
@@ -199,7 +228,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #loggingData}.
-	 * 
+	 *
 	 * @param loggingData
 	 *            New value for {@link #loggingData}
 	 */
@@ -245,7 +274,7 @@ public class InvocationSequenceData extends MethodSensorData {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param start
 	 *            the start time of the invocation sequence
 	 */
@@ -254,7 +283,7 @@ public class InvocationSequenceData extends MethodSensorData {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return the end time of the invocation sequence
 	 */
 	public double getEnd() {
@@ -263,7 +292,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #exceptionSensorDataObjects}.
-	 * 
+	 *
 	 * @return {@link #exceptionSensorDataObjects}
 	 */
 	public List<ExceptionSensorData> getExceptionSensorDataObjects() {
@@ -272,7 +301,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #exceptionSensorDataObjects}.
-	 * 
+	 *
 	 * @param exceptionSensorDataObjects
 	 *            New value for {@link #exceptionSensorDataObjects}
 	 */
@@ -282,7 +311,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Adds the given exception data to this invocation sequence.
-	 * 
+	 *
 	 * @param data
 	 *            the exception data to add.
 	 */
@@ -294,7 +323,7 @@ public class InvocationSequenceData extends MethodSensorData {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param end
 	 *            the end time of the invocation sequence
 	 */
@@ -319,7 +348,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #nestedSqlStatements}.
-	 * 
+	 *
 	 * @return {@link #nestedSqlStatements}
 	 */
 	public Boolean isNestedSqlStatements() {
@@ -328,7 +357,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #nestedSqlStatements}.
-	 * 
+	 *
 	 * @param nestedSqlStatements
 	 *            New value for {@link #nestedSqlStatements}
 	 */
@@ -338,7 +367,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Gets {@link #nestedExceptions}.
-	 * 
+	 *
 	 * @return {@link #nestedExceptions}
 	 */
 	public Boolean isNestedExceptions() {
@@ -347,7 +376,7 @@ public class InvocationSequenceData extends MethodSensorData {
 
 	/**
 	 * Sets {@link #nestedExceptions}.
-	 * 
+	 *
 	 * @param nestedExceptions
 	 *            New value for {@link #nestedExceptions}
 	 */
@@ -356,21 +385,63 @@ public class InvocationSequenceData extends MethodSensorData {
 	}
 
 	/**
+	 * Gets {@link #applicationId}.
+	 *
+	 * @return {@link #applicationId}
+	 */
+	public int getApplicationId() {
+		return applicationId;
+	}
+
+	/**
+	 * Sets {@link #applicationId}.
+	 *
+	 * @param applicationId
+	 *            New value for {@link #applicationId}
+	 */
+	public void setApplicationId(int applicationId) {
+		this.applicationId = applicationId;
+	}
+
+	/**
+	 * Gets {@link #businessTransactionId}.
+	 *
+	 * @return {@link #businessTransactionId}
+	 */
+	public int getBusinessTransactionId() {
+		return businessTransactionId;
+	}
+
+	/**
+	 * Sets {@link #businessTransactionId}.
+	 *
+	 * @param businessTransactionId
+	 *            New value for {@link #businessTransactionId}
+	 */
+	public void setBusinessTransactionId(int businessTransactionId) {
+		this.businessTransactionId = businessTransactionId;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((exceptionSensorDataObjects == null) ? 0 : exceptionSensorDataObjects.hashCode());
-		result = prime * result + ((sqlStatementData == null) ? 0 : sqlStatementData.hashCode());
-		result = prime * result + ((timerData == null) ? 0 : timerData.hashCode());
-		result = prime * result + ((loggingData == null) ? 0 : loggingData.hashCode());
+		result = (prime * result) + ((exceptionSensorDataObjects == null) ? 0 : exceptionSensorDataObjects.hashCode());
+		result = (prime * result) + ((sqlStatementData == null) ? 0 : sqlStatementData.hashCode());
+		result = (prime * result) + ((timerData == null) ? 0 : timerData.hashCode());
+		result = (prime * result) + ((loggingData == null) ? 0 : loggingData.hashCode());
+		result = (prime * result) + applicationId;
+		result = (prime * result) + businessTransactionId;
 		return result;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
@@ -410,15 +481,22 @@ public class InvocationSequenceData extends MethodSensorData {
 		} else if (!loggingData.equals(other.loggingData)) {
 			return false;
 		}
+		if (applicationId != other.applicationId) {
+			return false;
+		}
+		if (businessTransactionId != other.businessTransactionId) {
+			return false;
+		}
 		return true;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = super.getObjectSize(objectSizes, doAlign);
-		size += objectSizes.getPrimitiveTypesSize(8, 0, 0, 0, 2, 3);
+		size += objectSizes.getPrimitiveTypesSize(8, 0, 2, 0, 2, 3);
 		size += objectSizes.getSizeOf(timerData);
 		size += objectSizes.getSizeOf(loggingData);
 		size += objectSizes.getSizeOf(sqlStatementData);
@@ -450,7 +528,7 @@ public class InvocationSequenceData extends MethodSensorData {
 	/**
 	 * Clones invocation sequence. This method returns new object exactly same as the original
 	 * object, but with out nested sequences set.
-	 * 
+	 *
 	 * @return Cloned invocation sequence.
 	 */
 	public InvocationSequenceData getClonedInvocationSequence() {
@@ -470,6 +548,8 @@ public class InvocationSequenceData extends MethodSensorData {
 		clone.setNestedSqlStatements(this.isNestedSqlStatements());
 		clone.setNestedExceptions(this.isNestedExceptions());
 		clone.setLoggingData(this.getLoggingData());
+		clone.setApplicationId(this.getApplicationId());
+		clone.setBusinessTransactionId(this.getBusinessTransactionId());
 		return clone;
 	}
 

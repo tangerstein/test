@@ -1,216 +1,214 @@
 package rocks.inspectit.agent.java.sensor.platform;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
+import java.sql.Timestamp;
 
-import java.lang.reflect.Field;
-import java.util.logging.Level;
-
-import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import rocks.inspectit.agent.java.AbstractLogSupport;
-import rocks.inspectit.agent.java.core.ICoreService;
-import rocks.inspectit.agent.java.core.IIdManager;
-import rocks.inspectit.agent.java.core.IdNotAvailableException;
-import rocks.inspectit.agent.java.sensor.platform.ClassLoadingInformation;
+import rocks.inspectit.agent.java.config.IConfigurationStorage;
+import rocks.inspectit.agent.java.core.IPlatformManager;
 import rocks.inspectit.agent.java.sensor.platform.provider.RuntimeInfoProvider;
-import rocks.inspectit.shared.all.communication.SystemSensorData;
 import rocks.inspectit.shared.all.communication.data.ClassLoadingInformationData;
+import rocks.inspectit.shared.all.instrumentation.config.impl.PlatformSensorTypeConfig;
+import rocks.inspectit.shared.all.testbase.TestBase;
 
-@SuppressWarnings("PMD")
-public class ClassLoadingInformationTest extends AbstractLogSupport {
+/**
+ * Test class for {@link ClassLoadingInformation}.
+ *
+ * @author Max Wassiljew (NovaTec Consulting GmbH)
+ */
+public class ClassLoadingInformationTest extends TestBase {
 
-	private ClassLoadingInformation classLoadingInfo;
+	/** Class under test. */
+	@InjectMocks
+	ClassLoadingInformation cut;
 
+	/** The mocked {@link RuntimeInfoProvider}. */
 	@Mock
 	RuntimeInfoProvider runtimeBean;
 
 	@Mock
-	private IIdManager idManager;
+	IConfigurationStorage configurationStorage;
 
 	@Mock
-	private ICoreService coreService;
+	PlatformSensorTypeConfig sensorTypeConfig;
 
-	@BeforeMethod
-	public void initTestClass() throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-		classLoadingInfo = new ClassLoadingInformation(idManager);
-		classLoadingInfo.log = LoggerFactory.getLogger(ClassLoadingInformation.class);
+	@Mock
+	IPlatformManager platformManager;
 
-		// we have to replace the real runtimeBean by the mocked one, so that we don't retrieve the
-		// info from the underlying JVM
-		Field field = classLoadingInfo.getClass().getDeclaredField("runtimeBean");
-		field.setAccessible(true);
-		field.set(classLoadingInfo, runtimeBean);
+	/**
+	 * Tests the {@link ClassLoadingSensor#gather()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Gather extends ClassLoadingInformationTest {
+
+		@Test
+		void loadedClassCountIsCalculated() {
+			when(this.runtimeBean.getLoadedClassCount()).thenReturn(10).thenReturn(9).thenReturn(11).thenReturn(10);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			ClassLoadingInformationData collector = (ClassLoadingInformationData) this.cut.get();
+
+			assertThat(collector.getMinLoadedClassCount(), is(9));
+			assertThat(collector.getMaxLoadedClassCount(), is(11));
+			assertThat(collector.getTotalLoadedClassCount(), is(40));
+		}
+
+		@Test
+		void totalLoadedClassCountIsCalculated() {
+			when(this.runtimeBean.getTotalLoadedClassCount()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			ClassLoadingInformationData collector = (ClassLoadingInformationData) this.cut.get();
+
+			assertThat(collector.getMinTotalLoadedClassCount(), is(9L));
+			assertThat(collector.getMaxTotalLoadedClassCount(), is(11L));
+			assertThat(collector.getTotalTotalLoadedClassCount(), is(40L));
+		}
+
+		@Test
+		void unloadedClassCountIsCalculated() {
+			when(this.runtimeBean.getUnloadedClassCount()).thenReturn(10L).thenReturn(9L).thenReturn(11L).thenReturn(10L);
+
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+			this.cut.gather();
+
+			ClassLoadingInformationData collector = (ClassLoadingInformationData) this.cut.get();
+
+			assertThat(collector.getMinUnloadedClassCount(), is(9L));
+			assertThat(collector.getMaxUnloadedClassCount(), is(11L));
+			assertThat(collector.getTotalUnloadedClassCount(), is(40L));
+		}
+
+		@Test
+		void countIsIncremented() {
+			this.cut.gather();
+			this.cut.gather();
+
+			ClassLoadingInformationData collector = (ClassLoadingInformationData) this.cut.get();
+
+			assertThat(collector.getCount(), is(2));
+		}
 	}
 
-	@Test
-	public void oneDataSet() throws IdNotAvailableException {
-		int loadedClassCount = 3;
-		long totalLoadedClassCount = 10L;
-		long unloadedClassCount = 2L;
-		long sensorTypeIdent = 13L;
-		long platformIdent = 11L;
+	/**
+	 * Tests the {@link ClassLoadingInformation#get()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Get extends ClassLoadingInformationTest {
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenReturn(sensorTypeIdent);
+		@Test
+		void getNewClassLoadingInformationData() throws Exception {
+			ClassLoadingInformationData collector = (ClassLoadingInformationData) this.cut.getSystemSensorData();
 
-		when(runtimeBean.getLoadedClassCount()).thenReturn(loadedClassCount);
-		when(runtimeBean.getTotalLoadedClassCount()).thenReturn(totalLoadedClassCount);
-		when(runtimeBean.getUnloadedClassCount()).thenReturn(unloadedClassCount);
+			collector.setPlatformIdent(1L);
+			collector.setSensorTypeIdent(2L);
+			collector.setCount(3);
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
+			collector.setTotalLoadedClassCount(4);
+			collector.setMinLoadedClassCount(5);
+			collector.setMaxLoadedClassCount(6);
 
-		classLoadingInfo.update(coreService, sensorTypeIdent);
+			collector.setTotalTotalLoadedClassCount(7L);
+			collector.setMinTotalLoadedClassCount(8L);
+			collector.setMaxTotalLoadedClassCount(9L);
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			collector.setTotalUnloadedClassCount(10L);
+			collector.setMinUnloadedClassCount(11L);
+			collector.setMaxUnloadedClassCount(12L);
 
-		SystemSensorData sensorData = sensorDataCaptor.getValue();
-		assertThat(sensorData, is(instanceOf(ClassLoadingInformationData.class)));
-		assertThat(sensorData.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(sensorData.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			collector.setTimeStamp(new Timestamp(13L));
 
-		ClassLoadingInformationData classLoadingData = (ClassLoadingInformationData) sensorData;
-		assertThat(classLoadingData.getCount(), is(equalTo(1)));
+			ClassLoadingInformationData classLoadingInformationData = (ClassLoadingInformationData) this.cut.get();
 
-		// as there was only one data object min/max/total the values must be the
-		// same
-		assertThat(classLoadingData.getMinLoadedClassCount(), is(equalTo(loadedClassCount)));
-		assertThat(classLoadingData.getMaxLoadedClassCount(), is(equalTo(loadedClassCount)));
-		assertThat(classLoadingData.getTotalLoadedClassCount(), is(equalTo(loadedClassCount)));
+			assertThat(classLoadingInformationData.getPlatformIdent(), is(1L));
+			assertThat(classLoadingInformationData.getSensorTypeIdent(), is(2L));
+			assertThat(classLoadingInformationData.getCount(), is(3));
 
-		assertThat(classLoadingData.getMinTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
-		assertThat(classLoadingData.getMaxTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
-		assertThat(classLoadingData.getTotalTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
+			assertThat(classLoadingInformationData.getTotalLoadedClassCount(), is(4));
+			assertThat(classLoadingInformationData.getMinLoadedClassCount(), is(5));
+			assertThat(classLoadingInformationData.getMaxLoadedClassCount(), is(6));
 
-		assertThat(classLoadingData.getMinUnloadedClassCount(), is(equalTo(unloadedClassCount)));
-		assertThat(classLoadingData.getMaxUnloadedClassCount(), is(equalTo(unloadedClassCount)));
-		assertThat(classLoadingData.getTotalUnloadedClassCount(), is(equalTo(unloadedClassCount)));
+			assertThat(classLoadingInformationData.getTotalTotalLoadedClassCount(), is(7L));
+			assertThat(classLoadingInformationData.getMinTotalLoadedClassCount(), is(8L));
+			assertThat(classLoadingInformationData.getMaxTotalLoadedClassCount(), is(9L));
+
+			assertThat(classLoadingInformationData.getTotalUnloadedClassCount(), is(10L));
+			assertThat(classLoadingInformationData.getMinUnloadedClassCount(), is(11L));
+			assertThat(classLoadingInformationData.getMaxUnloadedClassCount(), is(12L));
+
+			assertThat(classLoadingInformationData.getTimeStamp().getTime(), is(13L));
+		}
 	}
 
-	@Test
-	public void twoDataSets() throws IdNotAvailableException {
-		int loadedClassCount = 3;
-		int loadedClassCount2 = 5;
-		long totalLoadedClassCount = 10L;
-		long totalLoadedClassCount2 = 12L;
-		long unloadedClassCount = 2L;
-		long sensorTypeIdent = 13L;
-		long platformIdent = 11L;
+	/**
+	 * Tests the {@link ClassLoadingInformation#reset()}.
+	 *
+	 * @author Max Wassiljew (NovaTec Consulting GmbH)
+	 */
+	public static class Reset extends ClassLoadingInformationTest {
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenReturn(sensorTypeIdent);
+		@Test
+		void collectorClassIsResetted() throws Exception {
+			ClassLoadingInformationData collector = (ClassLoadingInformationData) this.cut.getSystemSensorData();
 
-		// ------------------------
-		// FIRST UPDATE CALL
-		// ------------------------
-		when(runtimeBean.getLoadedClassCount()).thenReturn(loadedClassCount);
-		when(runtimeBean.getTotalLoadedClassCount()).thenReturn(totalLoadedClassCount);
-		when(runtimeBean.getUnloadedClassCount()).thenReturn(unloadedClassCount);
+			collector.setPlatformIdent(1L);
+			collector.setSensorTypeIdent(2L);
+			collector.setCount(3);
 
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-		classLoadingInfo.update(coreService, sensorTypeIdent);
+			collector.setTotalLoadedClassCount(4);
+			collector.setMinLoadedClassCount(5);
+			collector.setMaxLoadedClassCount(6);
 
-		// -> The service must create a new one and add it to the storage
-		// We use an argument capturer to further inspect the given argument.
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
+			collector.setTotalTotalLoadedClassCount(7L);
+			collector.setMinTotalLoadedClassCount(8L);
+			collector.setMaxTotalLoadedClassCount(9L);
 
-		SystemSensorData parameter = sensorDataCaptor.getValue();
-		assertThat(parameter, is(instanceOf(ClassLoadingInformationData.class)));
-		assertThat(parameter.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(parameter.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
+			collector.setTotalUnloadedClassCount(10L);
+			collector.setMinUnloadedClassCount(11L);
+			collector.setMaxUnloadedClassCount(12L);
 
-		ClassLoadingInformationData classLoadingData = (ClassLoadingInformationData) parameter;
-		assertThat(classLoadingData.getCount(), is(equalTo(1)));
+			collector.setTimeStamp(new Timestamp(13L));
 
-		// as there was only one data object min/max/total the values must be the
-		// same
-		assertThat(classLoadingData.getMinLoadedClassCount(), is(equalTo(loadedClassCount)));
-		assertThat(classLoadingData.getMaxLoadedClassCount(), is(equalTo(loadedClassCount)));
-		assertThat(classLoadingData.getTotalLoadedClassCount(), is(equalTo(loadedClassCount)));
+			this.cut.reset();
+			ClassLoadingInformationData classLoadingInformationData = (ClassLoadingInformationData) this.cut.get();
 
-		assertThat(classLoadingData.getMinTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
-		assertThat(classLoadingData.getMaxTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
-		assertThat(classLoadingData.getTotalTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
+			assertThat(classLoadingInformationData.getPlatformIdent(), is(1L));
+			assertThat(classLoadingInformationData.getSensorTypeIdent(), is(2L));
+			assertThat(classLoadingInformationData.getCount(), is(0));
 
-		assertThat(classLoadingData.getMinUnloadedClassCount(), is(equalTo(unloadedClassCount)));
-		assertThat(classLoadingData.getMaxUnloadedClassCount(), is(equalTo(unloadedClassCount)));
-		assertThat(classLoadingData.getTotalUnloadedClassCount(), is(equalTo(unloadedClassCount)));
+			assertThat(classLoadingInformationData.getTotalLoadedClassCount(), is(0));
+			assertThat(classLoadingInformationData.getMinLoadedClassCount(), is(Integer.MAX_VALUE));
+			assertThat(classLoadingInformationData.getMaxLoadedClassCount(), is(0));
 
-		// ------------------------
-		// SECOND UPDATE CALL
-		// ------------------------
-		when(runtimeBean.getLoadedClassCount()).thenReturn(loadedClassCount2);
-		when(runtimeBean.getTotalLoadedClassCount()).thenReturn(totalLoadedClassCount2);
+			assertThat(classLoadingInformationData.getTotalTotalLoadedClassCount(), is(0L));
+			assertThat(classLoadingInformationData.getMinTotalLoadedClassCount(), is(Long.MAX_VALUE));
+			assertThat(classLoadingInformationData.getMaxTotalLoadedClassCount(), is(0L));
 
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(classLoadingData);
-		classLoadingInfo.update(coreService, sensorTypeIdent);
+			assertThat(classLoadingInformationData.getTotalUnloadedClassCount(), is(0L));
+			assertThat(classLoadingInformationData.getMinUnloadedClassCount(), is(Long.MAX_VALUE));
+			assertThat(classLoadingInformationData.getMaxUnloadedClassCount(), is(0L));
 
-		// -> The service adds the data object only once
-		// We use an argument capturer to further inspect the given argument.
-		verify(coreService, times(1)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
-
-		parameter = sensorDataCaptor.getValue();
-		assertThat(parameter, is(instanceOf(ClassLoadingInformationData.class)));
-		assertThat(parameter.getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(parameter.getSensorTypeIdent(), is(equalTo(sensorTypeIdent)));
-
-		classLoadingData = (ClassLoadingInformationData) parameter;
-		assertThat(classLoadingData.getCount(), is(equalTo(2)));
-
-		assertThat(classLoadingData.getMinLoadedClassCount(), is(equalTo(loadedClassCount)));
-		assertThat(classLoadingData.getMaxLoadedClassCount(), is(equalTo(loadedClassCount2)));
-		assertThat(classLoadingData.getTotalLoadedClassCount(), is(equalTo(loadedClassCount + loadedClassCount2)));
-
-		assertThat(classLoadingData.getMinTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount)));
-		assertThat(classLoadingData.getMaxTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount2)));
-		assertThat(classLoadingData.getTotalTotalLoadedClassCount(), is(equalTo(totalLoadedClassCount + totalLoadedClassCount2)));
-
-		assertThat(classLoadingData.getMinUnloadedClassCount(), is(equalTo(unloadedClassCount)));
-		assertThat(classLoadingData.getMaxUnloadedClassCount(), is(equalTo(unloadedClassCount)));
-		assertThat(classLoadingData.getTotalUnloadedClassCount(), is(equalTo(unloadedClassCount + unloadedClassCount)));
+			assertThat(classLoadingInformationData.getTimeStamp().getTime(), is(not(13L)));
+		}
 	}
 
-	@Test
-	public void idNotAvailableTest() throws IdNotAvailableException {
-		int loadedClassCount = 3;
-		long totalLoadedClassCount = 10L;
-		long unloadedClassCount = 2L;
-		long sensorTypeIdent = 13L;
-
-		when(runtimeBean.getLoadedClassCount()).thenReturn(loadedClassCount);
-		when(runtimeBean.getTotalLoadedClassCount()).thenReturn(totalLoadedClassCount);
-		when(runtimeBean.getUnloadedClassCount()).thenReturn(unloadedClassCount);
-
-		when(idManager.getPlatformId()).thenThrow(new IdNotAvailableException("expected"));
-		when(idManager.getRegisteredSensorTypeId(sensorTypeIdent)).thenThrow(new IdNotAvailableException("expected"));
-
-		// there is no current data object available
-		when(coreService.getPlatformSensorData(sensorTypeIdent)).thenReturn(null);
-
-		classLoadingInfo.update(coreService, sensorTypeIdent);
-
-		ArgumentCaptor<SystemSensorData> sensorDataCaptor = ArgumentCaptor.forClass(SystemSensorData.class);
-		verify(coreService, times(0)).addPlatformSensorData(eq(sensorTypeIdent), sensorDataCaptor.capture());
-	}
-
-	protected Level getLogLevel() {
-		return Level.FINEST;
-	}
 }

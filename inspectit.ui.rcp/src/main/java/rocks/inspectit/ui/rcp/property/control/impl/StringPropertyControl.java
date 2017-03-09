@@ -15,9 +15,9 @@ import rocks.inspectit.ui.rcp.property.control.AbstractPropertyControl;
 
 /**
  * {@link AbstractPropertyControl} for the string property.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class StringPropertyControl extends AbstractPropertyControl<StringProperty, String> {
 
@@ -28,7 +28,7 @@ public class StringPropertyControl extends AbstractPropertyControl<StringPropert
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param property
 	 *            Property.
 	 * @param propertyUpdateListener
@@ -48,21 +48,20 @@ public class StringPropertyControl extends AbstractPropertyControl<StringPropert
 		text.addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent e) {
-				String value = text.getText();
-				if (!value.isEmpty()) {
-					sendPropertyUpdateEvent(value);
-				}
+				sendPropertyUpdateEvent(text.getText());
 			}
 		});
+
 		text.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusLost(FocusEvent e) {
 				String value = text.getText();
-				if (value.isEmpty()) {
+				if (value.isEmpty() && (null == StringPropertyControl.super.propertyUpdate)) {
 					text.setText(getLastCorrectValue());
 				}
 			}
 		});
+
 		return text;
 	}
 

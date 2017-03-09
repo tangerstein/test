@@ -16,9 +16,9 @@ import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 /**
  * Buffer inserter data processor. Inserts only {@link MethodSensorData} data objects that are not
  * part of an invocation.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class BufferInserterCmrProcessor extends AbstractCmrDataProcessor {
 
@@ -34,9 +34,8 @@ public class BufferInserterCmrProcessor extends AbstractCmrDataProcessor {
 	 */
 	@Override
 	protected void processData(DefaultData defaultData, EntityManager entityManager) {
-		//System.out.println(((AtomicBuffer) buffer).name + "-> Indexer: "
+		buffer.put(new BufferElement<>((MethodSensorData) defaultData));
 		// + ((RootBranch) ((AtomicBuffer) buffer).getIndexingTree()).name);
-		buffer.put(new BufferElement<MethodSensorData>((MethodSensorData) defaultData));
 	}
 
 	/**

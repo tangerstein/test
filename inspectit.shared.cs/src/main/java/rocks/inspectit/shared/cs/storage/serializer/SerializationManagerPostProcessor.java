@@ -9,22 +9,52 @@ import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ObjectArray
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 
-import rocks.inspectit.shared.all.storage.serializer.impl.CustomCompatibleFieldSerializer;
-import rocks.inspectit.shared.all.storage.serializer.impl.SerializationManager;
-import rocks.inspectit.shared.all.storage.serializer.schema.ClassSchemaManager;
+import rocks.inspectit.shared.all.serializer.impl.CustomCompatibleFieldSerializer;
+import rocks.inspectit.shared.all.serializer.impl.SerializationManager;
+import rocks.inspectit.shared.all.serializer.schema.ClassSchemaManager;
 import rocks.inspectit.shared.cs.ci.AgentMapping;
 import rocks.inspectit.shared.cs.ci.AgentMappings;
+import rocks.inspectit.shared.cs.ci.AlertingDefinition;
+import rocks.inspectit.shared.cs.ci.BusinessContextDefinition;
 import rocks.inspectit.shared.cs.ci.Environment;
 import rocks.inspectit.shared.cs.ci.Profile;
+import rocks.inspectit.shared.cs.ci.assignment.impl.ChartingMethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.ExceptionSensorAssignment;
+import rocks.inspectit.shared.cs.ci.assignment.impl.JmxBeanSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.TimerMethodSensorAssignment;
+import rocks.inspectit.shared.cs.ci.business.expression.AbstractExpression;
+import rocks.inspectit.shared.cs.ci.business.expression.impl.AndExpression;
+import rocks.inspectit.shared.cs.ci.business.expression.impl.BooleanExpression;
+import rocks.inspectit.shared.cs.ci.business.expression.impl.NameExtractionExpression;
+import rocks.inspectit.shared.cs.ci.business.expression.impl.NotExpression;
+import rocks.inspectit.shared.cs.ci.business.expression.impl.OrExpression;
+import rocks.inspectit.shared.cs.ci.business.expression.impl.StringMatchingExpression;
+import rocks.inspectit.shared.cs.ci.business.impl.ApplicationDefinition;
+import rocks.inspectit.shared.cs.ci.business.impl.BusinessTransactionDefinition;
+import rocks.inspectit.shared.cs.ci.business.valuesource.PatternMatchingType;
+import rocks.inspectit.shared.cs.ci.business.valuesource.StringValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HostValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpParameterValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpServerPortValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpQueryStringValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpRequestMethodValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpSchemeValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpServerNameValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpUriValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.HttpUrlValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.MethodParameterValueSource;
+import rocks.inspectit.shared.cs.ci.business.valuesource.impl.MethodSignatureValueSource;
 import rocks.inspectit.shared.cs.ci.context.impl.FieldContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.ParameterContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.ReturnContextCapture;
 import rocks.inspectit.shared.cs.ci.exclude.ExcludeRule;
+import rocks.inspectit.shared.cs.ci.export.ConfigurationInterfaceImportData;
+import rocks.inspectit.shared.cs.ci.profile.data.ExcludeRulesProfileData;
+import rocks.inspectit.shared.cs.ci.profile.data.JmxDefinitionProfileData;
+import rocks.inspectit.shared.cs.ci.profile.data.SensorAssignmentProfileData;
 import rocks.inspectit.shared.cs.ci.sensor.exception.impl.ExceptionSensorConfig;
-import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionMetaDataSensorConfig;
+import rocks.inspectit.shared.cs.ci.sensor.jmx.JmxSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.HttpSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.InvocationSequenceSensorConfig;
@@ -55,6 +85,8 @@ import rocks.inspectit.shared.cs.cmr.property.configuration.impl.StringProperty;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validation.PropertyValidation;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validation.PropertyValidationException;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validation.ValidationError;
+import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.EMailListValidator;
+import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.EMailValidator;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.FullyQualifiedClassNameValidator;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.GreaterOrEqualValidator;
 import rocks.inspectit.shared.cs.cmr.property.configuration.validator.impl.GreaterValidator;
@@ -72,6 +104,8 @@ import rocks.inspectit.shared.cs.cmr.property.update.impl.PercentagePropertyUpda
 import rocks.inspectit.shared.cs.cmr.property.update.impl.RestoreDefaultPropertyUpdate;
 import rocks.inspectit.shared.cs.cmr.property.update.impl.StringPropertyUpdate;
 import rocks.inspectit.shared.cs.cmr.service.IServerStatusService.ServerStatus;
+import rocks.inspectit.shared.cs.communication.data.cmr.Alert;
+import rocks.inspectit.shared.cs.communication.data.cmr.AlertClosingReason;
 import rocks.inspectit.shared.cs.communication.data.cmr.RecordingData;
 import rocks.inspectit.shared.cs.communication.data.cmr.WritingStatus;
 import rocks.inspectit.shared.cs.indexing.aggregation.impl.ExceptionDataAggregator;
@@ -157,7 +191,7 @@ public class SerializationManagerPostProcessor implements BeanPostProcessor {
 	 * @param serializationManager
 	 *            {@link SerializationManager}.
 	 */
-	private void registerClasses(SerializationManager serializationManager) {
+	private void registerClasses(SerializationManager serializationManager) { // NOCHK
 		/**
 		 * To be able to keep the compatibility, we need to register classes with the same ID. Since
 		 * the {@link SerializationManager} will perform registration of classes in the CommonsCS
@@ -177,7 +211,7 @@ public class SerializationManagerPostProcessor implements BeanPostProcessor {
 		kryo.register(StorageBranchIndexer.class, new CustomCompatibleFieldSerializer<StorageBranchIndexer<?>>(kryo, StorageBranchIndexer.class, schemaManager), nextRegistrationId++);
 		kryo.register(SimpleStorageDescriptor.class, new CustomCompatibleFieldSerializer<SimpleStorageDescriptor>(kryo, SimpleStorageDescriptor.class, schemaManager), nextRegistrationId++);
 		// we must not copy transient fields of leaf serializer (read/write locks)
-		CustomCompatibleFieldSerializer<ArrayBasedStorageLeaf<?>> leafSerializer = new CustomCompatibleFieldSerializer<ArrayBasedStorageLeaf<?>>(kryo, ArrayBasedStorageLeaf.class, schemaManager);
+		CustomCompatibleFieldSerializer<ArrayBasedStorageLeaf<?>> leafSerializer = new CustomCompatibleFieldSerializer<>(kryo, ArrayBasedStorageLeaf.class, schemaManager);
 		leafSerializer.setCopyTransient(false);
 		kryo.register(ArrayBasedStorageLeaf.class, leafSerializer, nextRegistrationId++);
 		kryo.register(LeafWithNoDescriptors.class, new CustomCompatibleFieldSerializer<LeafWithNoDescriptors<?>>(kryo, LeafWithNoDescriptors.class, schemaManager), nextRegistrationId++);
@@ -272,8 +306,36 @@ public class SerializationManagerPostProcessor implements BeanPostProcessor {
 		kryo.register(PercentageValidator.class, new FieldSerializer<PercentageValidator<?>>(kryo, PercentageValidator.class), nextRegistrationId++);
 		kryo.register(PositiveValidator.class, new FieldSerializer<PositiveValidator<?>>(kryo, PositiveValidator.class), nextRegistrationId++);
 
+		// added with INSPECTIT-1804
+		// used for recognition, configuration and visualization of business context information
+		kryo.register(ApplicationDefinition.class, new FieldSerializer<ApplicationDefinition>(kryo, ApplicationDefinition.class), nextRegistrationId++);
+		kryo.register(BusinessContextDefinition.class, new FieldSerializer<BusinessContextDefinition>(kryo, BusinessContextDefinition.class), nextRegistrationId++);
+		kryo.register(BusinessTransactionDefinition.class, new FieldSerializer<BusinessTransactionDefinition>(kryo, BusinessTransactionDefinition.class), nextRegistrationId++);
+		kryo.register(AbstractExpression.class, new FieldSerializer<AbstractExpression>(kryo, AbstractExpression.class), nextRegistrationId++);
+		kryo.register(AndExpression.class, new FieldSerializer<AndExpression>(kryo, AndExpression.class), nextRegistrationId++);
+		kryo.register(NotExpression.class, new FieldSerializer<NotExpression>(kryo, NotExpression.class), nextRegistrationId++);
+		kryo.register(OrExpression.class, new FieldSerializer<OrExpression>(kryo, OrExpression.class), nextRegistrationId++);
+		kryo.register(BooleanExpression.class, new FieldSerializer<BooleanExpression>(kryo, BooleanExpression.class), nextRegistrationId++);
+		kryo.register(StringMatchingExpression.class, new FieldSerializer<StringMatchingExpression>(kryo, StringMatchingExpression.class), nextRegistrationId++);
+		kryo.register(PatternMatchingType.class, new EnumSerializer(PatternMatchingType.class));
+		kryo.register(StringValueSource.class, new FieldSerializer<StringValueSource>(kryo, StringValueSource.class), nextRegistrationId++);
+		kryo.register(HttpUriValueSource.class, new FieldSerializer<HttpUriValueSource>(kryo, HttpUriValueSource.class), nextRegistrationId++);
+		kryo.register(HostValueSource.class, new FieldSerializer<HostValueSource>(kryo, HostValueSource.class), nextRegistrationId++);
+		kryo.register(HttpParameterValueSource.class, new FieldSerializer<HttpParameterValueSource>(kryo, HttpParameterValueSource.class), nextRegistrationId++);
+		kryo.register(MethodSignatureValueSource.class, new FieldSerializer<MethodSignatureValueSource>(kryo, MethodSignatureValueSource.class), nextRegistrationId++);
+		kryo.register(MethodParameterValueSource.class, new FieldSerializer<MethodParameterValueSource>(kryo, MethodParameterValueSource.class), nextRegistrationId++);
+		kryo.register(NameExtractionExpression.class, new FieldSerializer<NameExtractionExpression>(kryo, NameExtractionExpression.class), nextRegistrationId++);
+		kryo.register(HttpRequestMethodValueSource.class, new FieldSerializer<HttpRequestMethodValueSource>(kryo, HttpRequestMethodValueSource.class), nextRegistrationId++);
+		// INSPECTIT-2302
+		kryo.register(HttpUrlValueSource.class, new FieldSerializer<HttpUrlValueSource>(kryo, HttpUrlValueSource.class), nextRegistrationId++);
+		kryo.register(HttpSchemeValueSource.class, new FieldSerializer<HttpSchemeValueSource>(kryo, HttpSchemeValueSource.class), nextRegistrationId++);
+		kryo.register(HttpServerNameValueSource.class, new FieldSerializer<HttpServerNameValueSource>(kryo, HttpServerNameValueSource.class), nextRegistrationId++);
+		kryo.register(HttpServerPortValueSource.class, new FieldSerializer<HttpServerPortValueSource>(kryo, HttpServerPortValueSource.class), nextRegistrationId++);
+		kryo.register(HttpQueryStringValueSource.class, new FieldSerializer<HttpQueryStringValueSource>(kryo, HttpQueryStringValueSource.class), nextRegistrationId++);
+
 		// INSPECTIT-658
-		// this classes can be registered with FieldSerializer since they are not saved to disk
+		// this classes are registered with CompatibleFieldSerializer since they can be
+		// exported/imported
 		kryo.register(AgentMapping.class, new FieldSerializer<AgentMapping>(kryo, AgentMapping.class), nextRegistrationId++);
 		kryo.register(AgentMappings.class, new FieldSerializer<AgentMappings>(kryo, AgentMappings.class), nextRegistrationId++);
 		kryo.register(Environment.class, new FieldSerializer<Environment>(kryo, Environment.class), nextRegistrationId++);
@@ -291,7 +353,6 @@ public class SerializationManagerPostProcessor implements BeanPostProcessor {
 		// exception sensor config
 		kryo.register(ExceptionSensorConfig.class, new FieldSerializer<ExceptionSensorConfig>(kryo, ExceptionSensorConfig.class), nextRegistrationId++);
 		// method sensor configs
-		kryo.register(ConnectionMetaDataSensorConfig.class, new FieldSerializer<ConnectionMetaDataSensorConfig>(kryo, ConnectionMetaDataSensorConfig.class), nextRegistrationId++);
 		kryo.register(ConnectionSensorConfig.class, new FieldSerializer<ConnectionSensorConfig>(kryo, ConnectionSensorConfig.class), nextRegistrationId++);
 		kryo.register(HttpSensorConfig.class, new FieldSerializer<HttpSensorConfig>(kryo, HttpSensorConfig.class), nextRegistrationId++);
 		kryo.register(InvocationSequenceSensorConfig.class, new FieldSerializer<InvocationSequenceSensorConfig>(kryo, InvocationSequenceSensorConfig.class), nextRegistrationId++);
@@ -308,9 +369,6 @@ public class SerializationManagerPostProcessor implements BeanPostProcessor {
 		kryo.register(RuntimeSensorConfig.class, new FieldSerializer<RuntimeSensorConfig>(kryo, RuntimeSensorConfig.class), nextRegistrationId++);
 		kryo.register(SystemSensorConfig.class, new FieldSerializer<SystemSensorConfig>(kryo, SystemSensorConfig.class), nextRegistrationId++);
 		kryo.register(ThreadSensorConfig.class, new FieldSerializer<ThreadSensorConfig>(kryo, ThreadSensorConfig.class), nextRegistrationId++);
-		kryo.register(Profile.class, new FieldSerializer<Profile>(kryo, Profile.class), nextRegistrationId++);
-		kryo.register(Profile.class, new FieldSerializer<Profile>(kryo, Profile.class), nextRegistrationId++);
-		kryo.register(Profile.class, new FieldSerializer<Profile>(kryo, Profile.class), nextRegistrationId++);
 		// strategies
 		kryo.register(TimeSendingStrategyConfig.class, new FieldSerializer<TimeSendingStrategyConfig>(kryo, TimeSendingStrategyConfig.class), nextRegistrationId++);
 		kryo.register(ListSendingStrategyConfig.class, new FieldSerializer<ListSendingStrategyConfig>(kryo, ListSendingStrategyConfig.class), nextRegistrationId++);
@@ -319,6 +377,29 @@ public class SerializationManagerPostProcessor implements BeanPostProcessor {
 
 		// INSPECTIT-2020
 		kryo.register(Log4jLoggingSensorConfig.class, new FieldSerializer<Log4jLoggingSensorConfig>(kryo, Log4jLoggingSensorConfig.class), nextRegistrationId++);
+
+		// INSPECTIT-2021
+		kryo.register(JmxBeanSensorAssignment.class, new FieldSerializer<JmxBeanSensorAssignment>(kryo, JmxBeanSensorAssignment.class), nextRegistrationId++);
+		kryo.register(SensorAssignmentProfileData.class, new FieldSerializer<SensorAssignmentProfileData>(kryo, SensorAssignmentProfileData.class), nextRegistrationId++);
+		kryo.register(ExcludeRulesProfileData.class, new FieldSerializer<ExcludeRulesProfileData>(kryo, ExcludeRulesProfileData.class), nextRegistrationId++);
+		kryo.register(JmxDefinitionProfileData.class, new FieldSerializer<JmxDefinitionProfileData>(kryo, JmxDefinitionProfileData.class), nextRegistrationId++);
+
+		// INSPECTIT-2101
+		kryo.register(ChartingMethodSensorAssignment.class, new FieldSerializer<ChartingMethodSensorAssignment>(kryo, ChartingMethodSensorAssignment.class), nextRegistrationId++);
+
+		// INSPECTIT-2031
+		kryo.register(ConfigurationInterfaceImportData.class, new FieldSerializer<>(kryo, ConfigurationInterfaceImportData.class), nextRegistrationId++);
+
+		// INSPECTIT-2071
+		kryo.register(JmxSensorConfig.class, new FieldSerializer<JmxSensorConfig>(kryo, JmxSensorConfig.class), nextRegistrationId++);
+
+		// INSPECTIT-1953
+		kryo.register(AlertingDefinition.class, new FieldSerializer<AlertingDefinition>(kryo, AlertingDefinition.class), nextRegistrationId++);
+		kryo.register(Alert.class, new FieldSerializer<Alert>(kryo, Alert.class), nextRegistrationId++);
+		kryo.register(EMailValidator.class, new FieldSerializer<EMailValidator>(kryo, EMailValidator.class), nextRegistrationId++);
+		kryo.register(EMailListValidator.class, new FieldSerializer<EMailListValidator>(kryo, EMailListValidator.class), nextRegistrationId++);
+		kryo.register(AlertClosingReason.class, new EnumSerializer(AlertClosingReason.class), nextRegistrationId++);
+
 	}
 
 }

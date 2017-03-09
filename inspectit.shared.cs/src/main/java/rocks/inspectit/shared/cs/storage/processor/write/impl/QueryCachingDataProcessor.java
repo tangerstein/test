@@ -8,7 +8,7 @@ import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationAwareData;
 import rocks.inspectit.shared.all.communication.data.InvocationAwareData.MutableInt;
 import rocks.inspectit.shared.all.indexing.IIndexQuery;
-import rocks.inspectit.shared.all.storage.serializer.util.KryoSerializationPreferences;
+import rocks.inspectit.shared.all.serializer.util.KryoSerializationPreferences;
 import rocks.inspectit.shared.cs.indexing.aggregation.IAggregator;
 import rocks.inspectit.shared.cs.indexing.aggregation.impl.AggregationPerformer;
 import rocks.inspectit.shared.cs.storage.StorageData;
@@ -18,9 +18,9 @@ import rocks.inspectit.shared.cs.storage.processor.write.AbstractWriteDataProces
 
 /**
  * Processor that can create a cached result set for a storage with given query and aggregator.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  * @param <E>
  *            Type of elements processed.
  */
@@ -69,7 +69,7 @@ public class QueryCachingDataProcessor<E extends DefaultData> extends AbstractWr
 		}
 
 		// deal with no saving of the invocation affiliation for cached views as well
-		if (Boolean.FALSE.equals(kryoPreferences.get(KryoSerializationPreferences.WRITE_INVOCATION_AFFILIATION_DATA)) && defaultData instanceof InvocationAwareData) {
+		if (Boolean.FALSE.equals(kryoPreferences.get(KryoSerializationPreferences.WRITE_INVOCATION_AFFILIATION_DATA)) && (defaultData instanceof InvocationAwareData)) {
 			InvocationAwareData invocationAwareData = (InvocationAwareData) defaultData;
 			Map<Long, MutableInt> temp = invocationAwareData.getInvocationsParentsIdMap();
 			invocationAwareData.setInvocationsParentsIdMap(Collections.<Long, MutableInt> emptyMap());

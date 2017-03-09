@@ -10,20 +10,25 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.codehaus.jackson.annotate.JsonBackReference;
+
 /**
  * Class that connects the {@link MethodIdent} and {@link MethodSensorTypeIdent} and provides
  * additional information on the relationship.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Table(indexes = { @Index(name = "method_ident_to_sensor_type_idx", columnList = "methodIdent"), @Index(name = "method_ident_to_sensor_type_idx", columnList = "methodSensorTypeIdent") })
-@NamedQuery(name = MethodIdentToSensorType.FIND_FOR_METHOD_ID_AND_METOHD_SENSOR_TYPE_ID, query = "SELECT m from MethodIdentToSensorType m JOIN m.methodIdent mi JOIN m.methodSensorTypeIdent ms WHERE mi.id=:methodIdentId AND ms.id=:methodSensorTypeIdentId")
+@NamedQueries({
+	@NamedQuery(name = MethodIdentToSensorType.FIND_ID_FOR_METHOD_ID_AND_METOHD_SENSOR_TYPE_ID, query = "SELECT m.id from MethodIdentToSensorType m JOIN m.methodIdent mi JOIN m.methodSensorTypeIdent ms WHERE mi.id=:methodIdentId AND ms.id=:methodSensorTypeIdentId"),
+	@NamedQuery(name = MethodIdentToSensorType.UPDATE_TIMESTAMP, query = "UPDATE MethodIdentToSensorType SET timestamp=CURRENT_TIMESTAMP WHERE id IN :ids") })
 @Entity
 public class MethodIdentToSensorType implements Serializable {
 
@@ -33,7 +38,7 @@ public class MethodIdentToSensorType implements Serializable {
 	private static final long serialVersionUID = -3767712432753232084L;
 
 	/**
-	 * Constant for findForMethodAndMethodSensorType query.
+	 * Constant for findIdForMethodAndMethodSensorType query.
 	 * <p>
 	 * Parameters in the query:
 	 * <ul>
@@ -41,7 +46,17 @@ public class MethodIdentToSensorType implements Serializable {
 	 * <li>methodSensorTypeIdent
 	 * </ul>
 	 */
-	public static final String FIND_FOR_METHOD_ID_AND_METOHD_SENSOR_TYPE_ID = "MethodIdentToSensorType.findForMethodIdAndMethodSensorTypeId";
+	public static final String FIND_ID_FOR_METHOD_ID_AND_METOHD_SENSOR_TYPE_ID = "MethodIdentToSensorType.findIdForMethodIdAndMethodSensorTypeId";
+
+	/**
+	 * Constant for updateTimestamp query.
+	 * <p>
+	 * Parameters in the query:
+	 * <ul>
+	 * <li>ids
+	 * </ul>
+	 */
+	public static final String UPDATE_TIMESTAMP = "MethodIdentToSensorType.updateTimestamp";
 
 	/**
 	 * The id of this instance (if persisted, otherwise <code>null</code>).
@@ -57,6 +72,7 @@ public class MethodIdentToSensorType implements Serializable {
 	@NotNull
 	@ManyToOne
 	@JoinColumn(name = "methodIdent")
+	@JsonBackReference
 	private MethodIdent methodIdent;
 
 	/**
@@ -65,6 +81,7 @@ public class MethodIdentToSensorType implements Serializable {
 	@NotNull
 	@ManyToOne
 	@JoinColumn(name = "methodSensorTypeIdent")
+	@JsonBackReference
 	private MethodSensorTypeIdent methodSensorTypeIdent;
 
 	/**
@@ -81,7 +98,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Constructor that allows setting all values.
-	 * 
+	 *
 	 * @param methodIdent
 	 *            {@link MethodIdent}.
 	 * @param methodSensorTypeIdent
@@ -98,17 +115,17 @@ public class MethodIdentToSensorType implements Serializable {
 	/**
 	 * Returns if the {@link MethodIdentToSensorType} is active, meaning if the latest agent
 	 * registration included this instrumentation.
-	 * 
+	 *
 	 * @return True if the latest agent registration included the {@link MethodSensorTypeIdent}
 	 *         instrumentation on {@link MethodIdent}.
 	 */
 	public boolean isActive() {
-		return timestamp.after(methodIdent.getPlatformIdent().getTimeStamp());
+		return timestamp.after(methodIdent.getTimeStamp());
 	}
 
 	/**
 	 * Gets {@link #id}.
-	 * 
+	 *
 	 * @return {@link #id}
 	 */
 	public Long getId() {
@@ -117,7 +134,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Sets {@link #id}.
-	 * 
+	 *
 	 * @param id
 	 *            New value for {@link #id}
 	 */
@@ -127,7 +144,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Gets {@link #methodIdent}.
-	 * 
+	 *
 	 * @return {@link #methodIdent}
 	 */
 	public MethodIdent getMethodIdent() {
@@ -136,7 +153,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Sets {@link #methodIdent}.
-	 * 
+	 *
 	 * @param methodIdent
 	 *            New value for {@link #methodIdent}
 	 */
@@ -146,7 +163,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Gets {@link #methodSensorTypeIdent}.
-	 * 
+	 *
 	 * @return {@link #methodSensorTypeIdent}
 	 */
 	public MethodSensorTypeIdent getMethodSensorTypeIdent() {
@@ -155,7 +172,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Sets {@link #methodSensorTypeIdent}.
-	 * 
+	 *
 	 * @param methodSensorTypeIdent
 	 *            New value for {@link #methodSensorTypeIdent}
 	 */
@@ -165,7 +182,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Gets {@link #timestamp}.
-	 * 
+	 *
 	 * @return {@link #timestamp}
 	 */
 	public Timestamp getTimestamp() {
@@ -174,7 +191,7 @@ public class MethodIdentToSensorType implements Serializable {
 
 	/**
 	 * Sets {@link #timestamp}.
-	 * 
+	 *
 	 * @param timestamp
 	 *            New value for {@link #timestamp}
 	 */
@@ -189,10 +206,10 @@ public class MethodIdentToSensorType implements Serializable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((methodIdent == null) ? 0 : methodIdent.hashCode());
-		result = prime * result + ((methodSensorTypeIdent == null) ? 0 : methodSensorTypeIdent.hashCode());
-		result = prime * result + ((timestamp == null) ? 0 : timestamp.hashCode());
+		result = (prime * result) + ((id == null) ? 0 : id.hashCode());
+		result = (prime * result) + ((methodIdent == null) ? 0 : methodIdent.hashCode());
+		result = (prime * result) + ((methodSensorTypeIdent == null) ? 0 : methodSensorTypeIdent.hashCode());
+		result = (prime * result) + ((timestamp == null) ? 0 : timestamp.hashCode());
 		return result;
 	}
 

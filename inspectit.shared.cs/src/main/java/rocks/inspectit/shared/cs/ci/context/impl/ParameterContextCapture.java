@@ -7,13 +7,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.commons.collections.CollectionUtils;
 
+import rocks.inspectit.shared.all.communication.data.ParameterContentType;
+import rocks.inspectit.shared.all.instrumentation.config.impl.PropertyPathStart;
 import rocks.inspectit.shared.cs.ci.context.AbstractContextCapture;
 
 /**
  * {@link AbstractContextCapture} for parameters. Saves parameter index to capture.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "parameter-capture")
@@ -22,7 +24,7 @@ public class ParameterContextCapture extends AbstractContextCapture {
 	/**
 	 * Index of the parameter to capture.
 	 */
-	@XmlAttribute(name = "index")
+	@XmlAttribute(name = "index", required = true)
 	private int index;
 
 	/**
@@ -31,7 +33,7 @@ public class ParameterContextCapture extends AbstractContextCapture {
 	@Override
 	public String getAgentStringNotation() {
 		StringBuffer stringBuffer = new StringBuffer("p=");
-		stringBuffer.append(index);
+		stringBuffer.append(getIndex());
 		stringBuffer.append(';');
 		stringBuffer.append(getDisplayName());
 		stringBuffer.append(';');
@@ -50,8 +52,21 @@ public class ParameterContextCapture extends AbstractContextCapture {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public PropertyPathStart getPropertyPathStart() {
+		PropertyPathStart propertyPathStart = new PropertyPathStart();
+		propertyPathStart.setSignaturePosition(index);
+		propertyPathStart.setName(getDisplayName());
+		propertyPathStart.setContentType(ParameterContentType.PARAM);
+		addPaths(propertyPathStart);
+		return propertyPathStart;
+	}
+
+	/**
 	 * Gets {@link #index}.
-	 * 
+	 *
 	 * @return {@link #index}
 	 */
 	public int getIndex() {
@@ -60,7 +75,7 @@ public class ParameterContextCapture extends AbstractContextCapture {
 
 	/**
 	 * Sets {@link #index}.
-	 * 
+	 *
 	 * @param index
 	 *            New value for {@link #index}
 	 */
@@ -75,7 +90,7 @@ public class ParameterContextCapture extends AbstractContextCapture {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + index;
+		result = (prime * result) + this.index;
 		return result;
 	}
 
@@ -94,10 +109,9 @@ public class ParameterContextCapture extends AbstractContextCapture {
 			return false;
 		}
 		ParameterContextCapture other = (ParameterContextCapture) obj;
-		if (index != other.index) {
+		if (this.index != other.index) {
 			return false;
 		}
 		return true;
 	}
-
 }

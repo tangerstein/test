@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,9 +42,9 @@ import rocks.inspectit.server.dao.impl.DefaultDataDaoImpl;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.exception.BusinessException;
 import rocks.inspectit.shared.all.exception.enumeration.StorageErrorCodeEnum;
+import rocks.inspectit.shared.all.serializer.ISerializer;
+import rocks.inspectit.shared.all.serializer.SerializationException;
 import rocks.inspectit.shared.all.spring.logger.Log;
-import rocks.inspectit.shared.all.storage.serializer.ISerializer;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
 import rocks.inspectit.shared.all.version.VersionService;
 import rocks.inspectit.shared.cs.cmr.service.IServerStatusService;
 import rocks.inspectit.shared.cs.communication.data.cmr.WritingStatus;
@@ -66,9 +65,9 @@ import rocks.inspectit.shared.cs.storage.util.DeleteFileVisitor;
 /**
  * Storage manager for the CMR. Manages creation, opening and closing of storages, as well as
  * recording.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Component
 public class CmrStorageManager extends StorageManager implements ApplicationListener<ContextClosedEvent> { // NOPMD
@@ -111,7 +110,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Opened storages and their writers.
 	 */
-	private Map<StorageData, StorageWriter> openedStoragesMap = new ConcurrentHashMap<StorageData, StorageWriter>(8, 0.75f, 1);
+	private Map<StorageData, StorageWriter> openedStoragesMap = new ConcurrentHashMap<>(8, 0.75f, 1);
 
 	/**
 	 * Existing storages.
@@ -143,7 +142,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Creates new storage.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage.
 	 * @throws IOException
@@ -165,7 +164,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Opens existing storage if it is not already opened.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to open.
 	 * @return {@link StorageWriter} created for this storage. Of <code>null</code> if no new writer
@@ -197,7 +196,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Closes the storage if it is open.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage.
 	 * @throws BusinessException
@@ -229,7 +228,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Deletes a storage information and files from disk.
-	 * 
+	 *
 	 * @param storageData
 	 *            {@link StorageData} to delete.
 	 * @throws BusinessException
@@ -257,7 +256,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * If the recording is active, returns the storage that is used for storing recording data.
-	 * 
+	 *
 	 * @return Storage that is used for recording, or null if recording is not active.
 	 */
 	public StorageData getRecordingStorage() {
@@ -266,7 +265,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns the properties used for the current recording on the CMR.
-	 * 
+	 *
 	 * @return {@link RecordingProperties} that are used for recording, or null if recording is not
 	 *         active.
 	 */
@@ -276,7 +275,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns the recording state.
-	 * 
+	 *
 	 * @return Returns the recording state.
 	 * @See {@link RecordingState}
 	 */
@@ -287,7 +286,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Returns the {@link WritingStatus} for the storage that is currently used as a recording one
 	 * or <code>null</code> if the recording is not active.
-	 * 
+	 *
 	 * @return {@link WritingStatus} if recording is active. <code>Null</code> otherwise.
 	 */
 	public WritingStatus getRecordingStatus() {
@@ -302,7 +301,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Starts recording on the provided storage if recording is not active. If storage is not
 	 * created it will be. If it is not open, it will be.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage.
 	 * @param recordingProperties
@@ -335,7 +334,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Stops recording.
-	 * 
+	 *
 	 * @throws SerializationException
 	 *             If serialization fails during write {@link StorageData} to disk.
 	 * @throws IOException
@@ -362,7 +361,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Writes one data to the recording storage.
-	 * 
+	 *
 	 * @param dataToRecord
 	 *            Data to write.
 	 */
@@ -380,7 +379,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Writes collection of {@link DefaultData} objects to the storage.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to write.
 	 * @param dataToWrite
@@ -419,7 +418,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Copies the content of the current CMR buffer to the Storage.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to copy data to.
 	 * @param platformIdents
@@ -435,8 +434,8 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 * @throws IOException
 	 *             If IO exception occurs.
 	 */
-	public void copyBufferToStorage(StorageData storageData, List<Long> platformIdents, Collection<AbstractDataProcessor> dataProcessors, boolean autoFinalize) throws BusinessException, IOException,
-			SerializationException {
+	public void copyBufferToStorage(StorageData storageData, List<Long> platformIdents, Collection<AbstractDataProcessor> dataProcessors, boolean autoFinalize)
+			throws BusinessException, IOException, SerializationException {
 		if (!isStorageExisting(storageData)) {
 			this.createStorage(storageData);
 		}
@@ -481,7 +480,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Copies set of template data to storage. The storage does not have to be opened before action
 	 * can be executed (storage will be created/opened first in this case)
-	 * 
+	 *
 	 * @param storageData
 	 *            {@link StorageData} to copy to.
 	 * @param elementIds
@@ -500,8 +499,8 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 * @throws BusinessException
 	 *             If {@link BusinessException} occurs.
 	 */
-	public void copyDataToStorage(StorageData storageData, Collection<Long> elementIds, long platformIdent, Collection<AbstractDataProcessor> dataProcessors, boolean autoFinalize) throws IOException,
-			SerializationException, BusinessException {
+	public void copyDataToStorage(StorageData storageData, Collection<Long> elementIds, long platformIdent, Collection<AbstractDataProcessor> dataProcessors, boolean autoFinalize)
+			throws IOException, SerializationException, BusinessException {
 		if (!isStorageExisting(storageData)) {
 			this.createStorage(storageData);
 		}
@@ -521,7 +520,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Closes all opened storages. This method should only be called when the CMR shutdown hook is
 	 * activated to ensure that no data is lost.
-	 * 
+	 *
 	 * @throws SerializationException
 	 * @throws IOException
 	 */
@@ -546,7 +545,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Returns the storage data based on the ID. This method can be helpful when the updated version
 	 * of {@link StorageData} needs to be retrieved.
-	 * 
+	 *
 	 * @param id
 	 *            ID of storage.
 	 * @return {@link StorageData}
@@ -562,33 +561,33 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns list of existing storages.
-	 * 
+	 *
 	 * @return Returns list of existing storages.
 	 */
 	public List<StorageData> getExistingStorages() {
-		List<StorageData> list = new ArrayList<StorageData>();
+		List<StorageData> list = new ArrayList<>();
 		list.addAll(existingStoragesSet);
 		return list;
 	}
 
 	/**
 	 * Returns list of opened storages.
-	 * 
+	 *
 	 * @return Returns list of opened storages.
 	 */
 	public List<StorageData> getOpenedStorages() {
-		List<StorageData> list = new ArrayList<StorageData>();
+		List<StorageData> list = new ArrayList<>();
 		list.addAll(openedStoragesMap.keySet());
 		return list;
 	}
 
 	/**
 	 * Returns list of readable storages.
-	 * 
+	 *
 	 * @return Returns list of readable storages.
 	 */
 	public List<StorageData> getReadableStorages() {
-		List<StorageData> list = new ArrayList<StorageData>();
+		List<StorageData> list = new ArrayList<>();
 		for (StorageData storageData : existingStoragesSet) {
 			if (storageData.isStorageClosed()) {
 				list.add(storageData);
@@ -599,7 +598,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns if the storage is opened, and thus if the write to the storage can be executed.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to check.
 	 * @return True if storage is opened, otherwise false.
@@ -615,7 +614,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns if the storage is existing.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to check.
 	 * @return True if storage exists, otherwise false.
@@ -631,7 +630,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns if the storage is closed.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage to check.
 	 * @return True if storage is closed, in any other situation false.
@@ -648,7 +647,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Returns the amount of writing tasks storage still has to process. Note that this is an
 	 * approximate number.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage data to get information for.
 	 * @return Returns number of queued tasks. Note that if the storage is not in writable mode
@@ -675,6 +674,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Path getStoragePath(IStorageData storageData) {
 		return getDefaultStorageDirPath().resolve(storageData.getStorageFolder());
 	}
@@ -689,7 +689,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns list of files paths with given extension for a storage in HTTP form.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage.
 	 * @param extension
@@ -701,11 +701,11 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 */
 	public Map<String, Long> getFilesHttpLocation(StorageData storageData, final String extension) throws IOException {
 		Path storagePath = getStoragePath(storageData);
-		if (storagePath == null || !Files.isDirectory(storagePath)) {
+		if ((storagePath == null) || !Files.isDirectory(storagePath)) {
 			return Collections.emptyMap();
 		}
 
-		final List<Path> filesPaths = new ArrayList<Path>();
+		final List<Path> filesPaths = new ArrayList<>();
 		Files.walkFileTree(storagePath, new SimpleFileVisitor<Path>() {
 			@Override
 			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -716,7 +716,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 			}
 		});
 
-		Map<String, Long> result = new HashMap<String, Long>();
+		Map<String, Long> result = new HashMap<>();
 		for (Path path : filesPaths) {
 			result.put(getPathAsHttp(path), Files.size(path));
 		}
@@ -726,7 +726,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Add a label to the storage and saves new state of the storage to the disk.
-	 * 
+	 *
 	 * @param storageData
 	 *            {@link StorageData}.
 	 * @param storageLabel
@@ -750,7 +750,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Removes label from storage and saves new state of the storage data to the disk.
-	 * 
+	 *
 	 * @param storageData
 	 *            {@link StorageData}.
 	 * @param storageLabel
@@ -765,17 +765,14 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 */
 	public boolean removeLabelFromStorage(StorageData storageData, AbstractStorageLabel<?> storageLabel) throws IOException, SerializationException, BusinessException {
 		StorageData local = getLocalStorageDataObject(storageData);
-		if (null != local) {
-			boolean removed = local.removeLabel(storageLabel);
-			writeStorageDataToDisk(local);
-			return removed;
-		}
-		return false;
+		boolean removed = local.removeLabel(storageLabel);
+		writeStorageDataToDisk(local);
+		return removed;
 	}
 
 	/**
 	 * Updates the storage data for already existing storage.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage data containing update values.
 	 * @throws BusinessException
@@ -787,31 +784,27 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 */
 	public void updateStorageData(StorageData storageData) throws BusinessException, IOException, SerializationException {
 		StorageData local = getLocalStorageDataObject(storageData);
-		if (null == local) {
-			throw new BusinessException("Update of the storage data" + storageData + ".", StorageErrorCodeEnum.STORAGE_DOES_NOT_EXIST);
-		} else {
-			synchronized (local) {
-				local.setName(storageData.getName());
-				local.setDescription(storageData.getDescription());
-				writeStorageDataToDisk(local);
-			}
+		synchronized (local) {
+			local.setName(storageData.getName());
+			local.setDescription(storageData.getDescription());
+			writeStorageDataToDisk(local);
 		}
 	}
 
 	/**
 	 * Returns the status of the active storage writers. This can be used for logging purposes.
-	 * 
+	 *
 	 * @return Returns the status of the active storage writers.
 	 */
 	public Map<StorageData, String> getWritersStatus() {
-		Map<StorageData, String> map = new HashMap<StorageData, String>();
+		Map<StorageData, String> map = new HashMap<>();
 		for (Map.Entry<StorageData, StorageWriter> entry : openedStoragesMap.entrySet()) {
 			map.put(entry.getKey(), entry.getValue().getExecutorServiceStatus());
 		}
 		if (storageRecorder.isRecordingOn()) {
 			StorageData storageData = recorderStorageData;
 			StorageWriter storageWriter = storageRecorder.getStorageWriter();
-			if (null != storageData && null != storageWriter) {
+			if ((null != storageData) && (null != storageWriter)) {
 				map.put(storageData, storageWriter.getExecutorServiceStatus());
 			}
 		}
@@ -822,7 +815,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 * Updates the size of each existing storage, if it changed.
 	 * <p>
 	 * This method is called from a Spring configured job.
-	 * 
+	 *
 	 * @throws IOException
 	 *             If {@link IOException} happened during operation.
 	 * @throws SerializationException
@@ -837,7 +830,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Updates size of the given storage and saves information to this.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage data.
 	 * @throws IOException
@@ -860,10 +853,10 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Checks for the uploaded files in the storage uploads folder and tries to extract data to the
 	 * default storage folder.
-	 * 
+	 *
 	 * @param packedStorageData
 	 *            Storage data that is packed in the file that needs to be unpacked.
-	 * 
+	 *
 	 * @throws IOException
 	 *             IF {@link IOException} occurs during the file tree walk.
 	 * @throws BusinessException
@@ -920,7 +913,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Creates a storage form the uploaded local storage directory.
-	 * 
+	 *
 	 * @param localStorageData
 	 *            Local storage information.
 	 * @throws IOException
@@ -977,7 +970,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 			// do the rest out of the file walk
 			Path parentDir = (Path) storageUploadPath.getValue();
 			StorageData storageData = (StorageData) uploadedStorageData.getValue();
-			if (null != storageData && null != parentDir) {
+			if ((null != storageData) && (null != parentDir)) {
 				Path storageDir = getStoragePath(storageData);
 				if (existingStoragesSet.add(storageData)) {
 					if (Files.notExists(storageDir)) {
@@ -1007,7 +1000,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 * <p>
 	 * For example, if the CMR has the ip localhost and port 8080, the address for the file would
 	 * be: http://localhost:8080/directory/file.extension
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage
 	 * @param hash
@@ -1029,15 +1022,14 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 * <p>
 	 * Note that for Jetty, root folder to deliver files is /storage/ thus path must be relative
 	 * from it.
-	 * 
+	 *
 	 * @param path
 	 *            Path to convert.
 	 * @return String that attached to server ip and port dentes HTTP location of file.
 	 */
 	private String getPathAsHttp(Path path) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (Iterator<Path> it = getDefaultStorageDirPath().relativize(path).iterator(); it.hasNext();) {
-			Path pathPart = it.next();
+		for (Path pathPart : getDefaultStorageDirPath().relativize(path)) {
 			stringBuilder.append('/');
 			stringBuilder.append(pathPart.toString());
 		}
@@ -1046,7 +1038,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns the size of the storage on disk.
-	 * 
+	 *
 	 * @param storageData
 	 *            Storage.
 	 * @return Size of storage on disk, or 0 if {@link IOException} occurs during calculations.
@@ -1070,7 +1062,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 
 	/**
 	 * Returns the local cached object that represent the {@link StorageData}.
-	 * 
+	 *
 	 * @param storageData
 	 *            Template.
 	 * @return Local object.
@@ -1177,7 +1169,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	 * Returns the unique String that will be used as a StorageData ID. This ID needs to be unique
 	 * not only for the current CMR, but we need to ensure that is unique for all CMRs, because the
 	 * correlation between storage and CMR will be done by this ID.
-	 * 
+	 *
 	 * @return Returns unique string based on the {@link UUID}.
 	 */
 	private String getRandomUUIDString() {
@@ -1187,7 +1179,7 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 	/**
 	 * Prints the warnings if the CMR version saved in the storage does not exists or is different
 	 * from the current CMR version.
-	 * 
+	 *
 	 * @param storageData
 	 *            {@link StorageData}.
 	 */
@@ -1196,7 +1188,8 @@ public class CmrStorageManager extends StorageManager implements ApplicationList
 		if (null == storageData.getCmrVersion()) {
 			log.warn("The storage " + storageData + " does not define the CMR version. The storage might be unstable on the CMR version " + cmrVersion + ".");
 		} else if (!Objects.equals(storageData.getCmrVersion(), cmrVersion)) {
-			log.warn("The storage " + storageData + " has different CMR version (" + storageData.getCmrVersion() + ") than the current CMR version(" + cmrVersion + "). The storage might be unstable.");
+			log.warn(
+					"The storage " + storageData + " has different CMR version (" + storageData.getCmrVersion() + ") than the current CMR version(" + cmrVersion + "). The storage might be unstable.");
 		}
 	}
 

@@ -32,9 +32,9 @@ import rocks.inspectit.shared.cs.indexing.buffer.IBufferTreeComponent;
  * Buffer uses atomic variables and references to handle the synchronization. Thus, non of its
  * methods is synchronized, nor synchronized block were used. However, the whole buffer is thread
  * safe.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  * @param <E>
  *            Parameterized type of elements buffer can hold.
  */
@@ -228,6 +228,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * <p>
 	 * This method is designed for multiply thread access.
 	 */
+	@Override
 	public void put(IBufferElement<E> element) {
 		boolean informAnalyzing = false;
 		boolean informIndexing = false;
@@ -294,6 +295,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * <p>
 	 * This method is designed for multiply thread access.
 	 */
+	@Override
 	public void evict() throws InterruptedException {
 		// wait until there is need for eviction
 		while (!shouldEvict()) {
@@ -372,6 +374,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * <p>
 	 * This method is designed for multiply thread access.
 	 */
+	@Override
 	public void analyzeNext() throws InterruptedException {
 		analyzeProcessor.process();
 	}
@@ -383,6 +386,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * <p>
 	 * This method is designed for multiply thread access.
 	 */
+	@Override
 	public void indexNext() throws InterruptedException {
 		indexProcessor.process();
 	}
@@ -390,6 +394,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getMaxSize() {
 		return maxSize.get();
 	}
@@ -402,6 +407,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * Using this method does not provide any check for the supplied new maximum size. Thus, it is
 	 * responsibility of the user to assure that the given value is correct.
 	 */
+	@Override
 	public void setMaxSize(long maxSize) {
 		this.maxSize.set(maxSize);
 		notifyEvictionIfNeeded();
@@ -410,13 +416,14 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getCurrentSize() {
 		return currentSize.get();
 	}
 
 	/**
 	 * Sets the current size of the buffer.
-	 * 
+	 *
 	 * @param currentSize
 	 *            Size in bytes.
 	 */
@@ -429,7 +436,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * Adds size value to the current size.
 	 * <p>
 	 * This method is thread safe.
-	 * 
+	 *
 	 * @param size
 	 *            Size in bytes.
 	 * @param areObjects
@@ -449,7 +456,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * Subtracts size value from the current size.
 	 * <p>
 	 * This method is thread safe.
-	 * 
+	 *
 	 * @param size
 	 *            Size in bytes.
 	 */
@@ -461,6 +468,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public float getEvictionOccupancyPercentage() {
 		return Float.intBitsToFloat(evictionOccupancyPercentage.get());
 	}
@@ -470,6 +478,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * <p>
 	 * This method is thread safe.
 	 */
+	@Override
 	public void setEvictionOccupancyPercentage(float evictionOccupancyPercentage) {
 		this.evictionOccupancyPercentage.set(Float.floatToIntBits(evictionOccupancyPercentage));
 		notifyEvictionIfNeeded();
@@ -480,6 +489,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	 * <p>
 	 * This method is thread safe.
 	 */
+	@Override
 	public float getOccupancyPercentage() {
 		return ((float) currentSize.get()) / maxSize.get();
 	}
@@ -496,6 +506,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void clearAll() {
 		clearWriteLock.lock();
 		try {
@@ -520,7 +531,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 
 	/**
 	 * Returns the number of inserted elements since the buffer has been created.
-	 * 
+	 *
 	 * @return Number of inserted elements.
 	 */
 	public long getInsertedElemenets() {
@@ -529,7 +540,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 
 	/**
 	 * Returns the number of evicted elements since the buffer has been created.
-	 * 
+	 *
 	 * @return Number of evicted elements.
 	 */
 	public long getEvictedElemenets() {
@@ -538,7 +549,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 
 	/**
 	 * Returns the number of indexed elements since the buffer has been created.
-	 * 
+	 *
 	 * @return Number of indexed elements.
 	 */
 	public long getIndexedElements() {
@@ -547,7 +558,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 
 	/**
 	 * Returns the number of analyzed elements since the buffer has been created.
-	 * 
+	 *
 	 * @return Number of analyzed elements.
 	 */
 	public long getAnalyzedElements() {
@@ -557,6 +568,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public E getOldestElement() {
 		IBufferElement<E> bufferElement = last.get();
 		if (null != bufferElement) {
@@ -568,6 +580,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public E getNewestElement() {
 		IBufferElement<E> bufferElement = first.get();
 		if (null != bufferElement) {
@@ -578,7 +591,7 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 
 	/**
 	 * Is executed after dependency injection is done to perform any initialization.
-	 * 
+	 *
 	 * @throws Exception
 	 *             if an error occurs during {@link PostConstruct}
 	 */
@@ -595,8 +608,8 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 		this.flagsSetOnBytes = bufferProperties.getFlagsSetOnBytes(this.maxSize.get());
 
 		// initialize processors
-		this.analyzeProcessor = new AnalyzeBufferElementProcessor<E>(this, lastAnalyzed, analyzeLock, nothingToAnalyze);
-		this.indexProcessor = new IndexBufferElementProcessor<E>(this, lastIndexed, indexingLock, nothingToIndex);
+		this.analyzeProcessor = new AnalyzeBufferElementProcessor<>(this, lastAnalyzed, analyzeLock, nothingToAnalyze);
+		this.indexProcessor = new IndexBufferElementProcessor<>(this, lastIndexed, indexingLock, nothingToIndex);
 
 		if (log.isInfoEnabled()) {
 			log.info("|-Using buffer with maximum size " + NumberFormat.getInstance().format(maxSize) + " bytes...");
@@ -683,9 +696,9 @@ public class AtomicBuffer<E extends DefaultData> implements IBuffer<E>, BeanName
 
 	/**
 	 * Class that serves as a marker for empty buffer element.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class EmptyBufferElement implements IBufferElement<E> {
 

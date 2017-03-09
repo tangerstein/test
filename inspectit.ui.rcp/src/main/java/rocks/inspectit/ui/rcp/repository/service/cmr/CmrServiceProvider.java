@@ -1,10 +1,14 @@
 package rocks.inspectit.ui.rcp.repository.service.cmr;
 
+import rocks.inspectit.shared.cs.cmr.service.IAgentInstrumentationService;
+import rocks.inspectit.shared.cs.cmr.service.IAlertService;
+import rocks.inspectit.shared.cs.cmr.service.IBusinessContextManagementService;
 import rocks.inspectit.shared.cs.cmr.service.ICmrManagementService;
 import rocks.inspectit.shared.cs.cmr.service.IConfigurationInterfaceService;
 import rocks.inspectit.shared.cs.cmr.service.IExceptionDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IGlobalDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IHttpTimerDataAccessService;
+import rocks.inspectit.shared.cs.cmr.service.IInfluxDBService;
 import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IJmxDataAccessService;
 import rocks.inspectit.shared.cs.cmr.service.IServerStatusService;
@@ -15,16 +19,17 @@ import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 
 /**
  * Provider of the {@link ICmrService}s via Spring.
- * 
+ *
  * @author Ivan Senic
  * @author Alfred Krauss
- * 
+ * @author Marius Oehler
+ *
  */
 public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns properly initialized {@link BufferService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link BufferService}.
@@ -37,14 +42,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link BufferService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link BufferService}.
 	 */
 	protected abstract ICmrManagementService getCmrManagementService();
 
 	/**
 	 * Returns properly initialized {@link ExceptionDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link ExceptionDataAccessService}.
@@ -57,14 +62,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link ExceptionDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link ExceptionDataAccessService}.
 	 */
 	protected abstract IExceptionDataAccessService getExceptionDataAccessService();
 
 	/**
 	 * Returns properly initialized {@link GlobalDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link GlobalDataAccessService}.
@@ -77,14 +82,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link GlobalDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link GlobalDataAccessService}.
 	 */
 	protected abstract IGlobalDataAccessService getGlobalDataAccessService();
-	
+
 	/**
 	 * Returns properly initialized {@link JmxDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link JmxDataAccessService}.
@@ -97,14 +102,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link JmxDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link JmxDataAccessService}.
 	 */
 	protected abstract IJmxDataAccessService getJmxDataAccessService();
 
 	/**
 	 * Returns properly initialized {@link InvocationDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link InvocationDataAccessService}.
@@ -117,14 +122,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link InvocationDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link InvocationDataAccessService}.
 	 */
 	protected abstract IInvocationDataAccessService getInvocationDataAccessService();
 
 	/**
 	 * Returns properly initialized {@link ServerStatusService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link ServerStatusService}.
@@ -137,14 +142,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link ServerStatusService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link ServerStatusService}.
 	 */
 	protected abstract IServerStatusService getServerStatusService();
 
 	/**
 	 * Returns properly initialized {@link SqlDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link SqlDataAccessService}.
@@ -157,14 +162,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link SqlDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link SqlDataAccessService}.
 	 */
 	protected abstract ISqlDataAccessService getSqlDataAccessService();
 
 	/**
 	 * Returns properly initialized {@link TimerDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link TimerDataAccessService}.
@@ -177,14 +182,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link TimerDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link TimerDataAccessService}.
 	 */
 	protected abstract ITimerDataAccessService getTimerDataAccessService();
 
 	/**
 	 * Returns properly initialized {@link TimerDataAccessService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link TimerDataAccessService}.
@@ -197,14 +202,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link TimerDataAccessService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link TimerDataAccessService}.
 	 */
 	protected abstract IHttpTimerDataAccessService getHttpTimerDataAccessService();
 
 	/**
 	 * Returns properly initialized {@link IStorageService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link IStorageService}.
@@ -217,14 +222,14 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link IStorageService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link IStorageService}.
 	 */
 	protected abstract IStorageService getStorageService();
 
 	/**
 	 * Returns properly initialized {@link IConfigurationInterfaceService}.
-	 * 
+	 *
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to bound service to.
 	 * @return Returns {@link IConfigurationInterfaceService}.
@@ -237,9 +242,88 @@ public abstract class CmrServiceProvider {
 
 	/**
 	 * Returns Spring created {@link IConfigurationInterfaceService}.
-	 * 
+	 *
 	 * @return Returns Spring created {@link IConfigurationInterfaceService}.
 	 */
 	protected abstract IConfigurationInterfaceService getConfigurationInterfaceService();
 
+	/**
+	 * Returns properly initialized {@link IBusinessContextManagement}.
+	 *
+	 * @param cmrRepositoryDefinition
+	 *            {@link CmrRepositoryDefinition} to bound service to.
+	 * @return Returns {@link IBusinessContextManagementService}.
+	 */
+	public IBusinessContextManagementService getBusinessContextManagementService(CmrRepositoryDefinition cmrRepositoryDefinition) {
+		IBusinessContextManagementService businessCtxMgmtService = getBusinessContextManagementService();
+		((ICmrService) businessCtxMgmtService).initService(cmrRepositoryDefinition);
+		return businessCtxMgmtService;
+	}
+
+	/**
+	 * Returns Spring created {@link BusinessContextManagementService}.
+	 *
+	 * @return Returns Spring created {@link BusinessContextManagementService}.
+	 */
+	protected abstract IBusinessContextManagementService getBusinessContextManagementService();
+
+	/**
+	 * Returns properly initialized {@link IInfluxDBService}.
+	 *
+	 * @param cmrRepositoryDefinition
+	 *            {@link CmrRepositoryDefinition} to bound service to.
+	 * @return Returns {@link IInfluxDBService}.
+	 */
+	public IInfluxDBService getInfluxDBService(CmrRepositoryDefinition cmrRepositoryDefinition) {
+		IInfluxDBService influxDBService = getInfluxDBService();
+		((ICmrService) influxDBService).initService(cmrRepositoryDefinition);
+		return influxDBService;
+	}
+
+	/**
+	 * Returns Spring created {@link IInfluxDBService}.
+	 *
+	 * @return Returns Spring created {@link IInfluxDBService}.
+	 */
+	protected abstract IInfluxDBService getInfluxDBService();
+
+	/**
+	 * Returns properly initialized {@link IAlertService}.
+	 *
+	 * @param cmrRepositoryDefinition
+	 *            {@link CmrRepositoryDefinition} to bound service to.
+	 * @return Returns {@link IAlertService}.
+	 */
+	public IAlertService getAlertAccessService(CmrRepositoryDefinition cmrRepositoryDefinition) {
+		IAlertService alertService = getAlertAccessService();
+		((ICmrService) alertService).initService(cmrRepositoryDefinition);
+		return alertService;
+	}
+
+	/**
+	 * Returns Spring created {@link IAlertService}.
+	 *
+	 * @return Returns Spring created {@link IAlertService}.
+	 */
+	protected abstract IAlertService getAlertAccessService();
+
+	/**
+	 * Returns properly initialized {@link IAgentInstrumentationService}.
+	 *
+	 * @param cmrRepositoryDefinition
+	 *            {@link CmrRepositoryDefinition} to bound service to.
+	 * @return Returns {@link IAgentInstrumentationService}.
+	 */
+	public IAgentInstrumentationService getAgentInstrumentationService(CmrRepositoryDefinition cmrRepositoryDefinition) {
+		IAgentInstrumentationService agentInstrumentationService = getAgentInstrumentationService();
+		((ICmrService) agentInstrumentationService).initService(cmrRepositoryDefinition);
+		return agentInstrumentationService;
+	}
+
+	/**
+	 * Returns Spring created {@link IAgentInstrumentationService}.
+	 *
+	 * @return Returns Spring created {@link IAgentInstrumentationService}.
+	 */
+	protected abstract IAgentInstrumentationService getAgentInstrumentationService();
 }

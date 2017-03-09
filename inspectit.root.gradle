@@ -9,30 +9,41 @@ buildscript {
 		maven {
 			url "https://plugins.gradle.org/m2/"
 		}
+		jcenter()
 	}
 	dependencies {
-		classpath "net.saliman:gradle-cobertura-plugin:2.3.1"
 		classpath "gradle.plugin.me.champeau.gradle:jmh-gradle-plugin:0.3.0"
+		classpath "org.standardout:bnd-platform:1.4.0"
 	}
 }
 
 /** apply cpd to the root project, as this was how the plugin is intended to be used **/
 plugins {
-	id "de.aaschmid.cpd" version "0.5"
+	id "de.aaschmid.cpd" version "1.0"
 }
 
 File propertiesFile = file("properties.gradle")
 File dependenciesFile = file("dependencies.gradle")
+File platformFile = file("platform.gradle")
+
+/** Apply base plug-in to the root project so that we enable tasks like clean */
+apply plugin: 'base'
 
 allprojects {
 	apply from: file(propertiesFile.absolutePath)
 	apply from: file(dependenciesFile.absolutePath)
 
 	/**
+	* It is required to set the encoding for all projects to UTF-8, otherwise the build may fail on windows.
+	*/
+	System.setProperty("file.encoding", "utf-8")
+	 
+	/**
 	 * If -PintegrateVersionInfo=true is passed with the build, then we will create versionInfo property for the project.
+	 * The build must be started then with -DRELEASE_VERSION and -DBUILD_NUMBER properties set.
 	 */
 	if (project.hasProperty('integrateVersionInfo')) {
-		ext.versionInfo = System.getProperty('env.RELEASE_VERSION') + "." + System.getProperty('env.BUILD_NUMBER')
+		ext.versionInfo = System.getProperty('RELEASE_VERSION') + "." + System.getProperty('BUILD_NUMBER')
 	}
 }
 
@@ -53,15 +64,6 @@ task unzipEclipse (type: Copy){
 }
 unzipEclipse.onlyIf { !file(eclipseDir).exists() }
 
-/**
- * Easy way to copy all dependencies that are needed by the inspectIT.target file
- */
-task copyTargetDependencies {
-	description = 'Copies all productive dependencies to the "prod/lib" folder for all plug-in projects. Run this task before setting the inspectIT.target in Eclipse IDE.'
-
-	dependsOn(':inspectit.shared.all:prodToLib', ':inspectit.shared.cs:prodToLib', ':inspectit.ui.rcp:prodToLib')
-}
-
 gradle.projectsEvaluated {
 
 	/**
@@ -75,6 +77,7 @@ gradle.projectsEvaluated {
 		dependsOn(izpack('inspectit.installer-all.windows.x64', 'Windows', '64', 'release-windows-x64', 'release-inspectit-win32.win32.x86_64'))
 		dependsOn(izpack('inspectit.installer-all.linux.x86', 'Linux', '32', 'release-linux-x86', 'release-inspectit-linux.gtk.x86'))
 		dependsOn(izpack('inspectit.installer-all.linux.x64', 'Linux', '64', 'release-linux-x64', 'release-inspectit-linux.gtk.x86_64'))
+		dependsOn(izpack('inspectit.installer-all.macosx.x64', 'MacOSX', '64', 'release-macosx-x64', 'release-inspectit-macosx.cocoa.x86_64'))
 	}
 }
 
@@ -164,28 +167,37 @@ def izpack(installerName, os, arch, cmrReleaseTask, uiReleaseTask) {
 					pathelement(location: installerResources)
 				}
 			}
+			ant.taskdef(name: 'var', classname: 'net.sf.antcontrib.property.Variable', classpath: configurations.antContrib.asPath) {
+				classpath {
+					pathelement(location: installerResources)
+				}
+			}
 
 			// copy all existing properties to the ant
 			project.properties.entrySet().each {
-				ant.property(name: it.key, value: it.value)
+				ant.var(name: it.key, value: it.value)
 			}
 
 			// set specific properties
-			ant.property(name: 'targetOs', value: os)
-			ant.property(name: 'targetOsArch', value: arch)
-			ant.property(name: 'installerAgentPointer', value: agentPointer.absolutePath)
-			ant.property(name: 'installerCmrPointer', value: cmrPointer.absolutePath)
-			ant.property(name: 'installerUiPointer', value: uiPointer.absolutePath)
-			ant.property(name: 'installerApplicationVersion', value: versionInfo)
+			ant.var(name: 'targetOs', value: os)
+			ant.var(name: 'targetOsArch', value: arch)
+			ant.var(name: 'installerAgentPointer', value: agentPointer.absolutePath)
+			ant.var(name: 'installerCmrPointer', value: cmrPointer.absolutePath)
+			ant.var(name: 'installerUiPointer', value: uiPointer.absolutePath)
+			ant.var(name: 'installerApplicationVersion', value: versionInfo)
 			if (os == 'Windows') {
-				ant.property(name: 'installerInstallServiceBat', value: file("${buildInstallerRoot}/installService.bat").absolutePath)
-				ant.property(name: 'installerUninstallServiceBat', value: file("${buildInstallerRoot}/uninstallService.bat").absolutePath)
+				ant.var(name: 'installerInstallServiceBat', value: file("${buildInstallerRoot}/installService.bat").absolutePath)
+				ant.var(name: 'installerUninstallServiceBat', value: file("${buildInstallerRoot}/uninstallService.bat").absolutePath)
 			
 				if (arch == '64') {
-					ant.property(name: 'installerWindowsServiceDisplayNamePointer', value: installerWindowsService64DisplayName)
+					ant.var(name: 'installerWindowsServiceDisplayNamePointer', value: installerWindowsService64DisplayName)
 				} else if (arch == '32') {
-					ant.property(name: 'installerWindowsServiceDisplayNamePointer', value: installerWindowsService32DisplayName)
+					ant.var(name: 'installerWindowsServiceDisplayNamePointer', value: installerWindowsService32DisplayName)
 				}
+			} else {
+				// reset in case of other OS types
+				ant.var(name: 'installerInstallServiceBat', value: "")
+				ant.var(name: 'installerUninstallServiceBat', value: "")
 			}
 
 			// fire the task
@@ -218,10 +230,15 @@ cpdCheck {
 	}
 }
 
-task cpdHtmlReport << {
-	ant.xslt(in: "${buildQAAnalysisCPD}/main.xml", style: cpdReportFile, out: "${buildQAAnalysisCPD}/../cpd.html")
+task cpdHtmlReport {
+	doLast {
+		ant.xslt(in: "${buildQAAnalysisCPD}/main.xml", style: cpdReportFile, out: "${buildQAAnalysisCPD}/../cpd.html")
+	}
 }
 cpdCheck.finalizedBy cpdHtmlReport
+
+/** Platform settings defined in separate file */
+apply from: file(platformFile.absolutePath)
 
 /**
  * All tasks that sub-projects can use.
@@ -234,8 +251,8 @@ subprojects {
 	apply plugin: 'pmd'
 	apply plugin: 'checkstyle'
 	apply plugin: 'findbugs'
-	apply plugin: 'net.saliman.cobertura'
 	apply plugin: 'me.champeau.gradle.jmh'
+	apply plugin: 'jacoco'
 	
 	/** all compile, test and runtime configurations to transitive = false */
 	configurations.compile.transitive = false
@@ -276,30 +293,12 @@ subprojects {
 	task analyze {
 		description = 'Runs all unit tests and all checks.'
 		group = 'Verification'
-		dependsOn(project.tasks.cobertura, check)
-	}
-
-	/**
-	 * Copies all productive dependencies to the lib/prod folder
-	 */
-	task prodToLib (type: Copy) {
-		description = 'Copies all productive dependencies to the "lib/prod" folder.'
-		into file("${libRoot}/prod") 
-		from project.configurations.compile
+		dependsOn(check)
 	}
 
 	/**
 	 *  Tasks for the TestNG and Cobertura.
 	 */
-	cobertura {
-		// ignore getters and setters, new options from Cobertura
-		// can not be used for now due to the https://github.com/cobertura/cobertura/issues/200
-		//coverageIgnoreTrivial = true
-
-		//reporting
-		coverageReportDir = file(buildQATestCoveragedata)
-		coverageFormats = ['xml', 'html']
-	}
 
 	/**
 	 * Definition of the test properties.
@@ -330,13 +329,15 @@ subprojects {
 		ruleSetFiles = files(pmdRulesFile)
 		ruleSets = []
 		reportsDir = file(buildQAAnalysisPMD)
-		toolVersion = '5.1.0'
+		toolVersion = '5.4.1'
 	}
 
-	task pmdHtmlReport << {
-		ant.xslt(in: "${buildQAAnalysisPMD}/main.xml", style: pmdReportFile, out: "${buildQAAnalysisPMD}/sortable_report.html")
-		ant.copy(todir: buildQAAnalysisPMD, file: pmdSortableFile)      
-		new File(buildQAAnalysis, "pmd.html").text = "<meta http-equiv=\"refresh\" content=\"0; url=pmd/sortable_report.html\" >"
+	task pmdHtmlReport {
+		doLast {
+			ant.xslt(in: "${buildQAAnalysisPMD}/main.xml", style: pmdReportFile, out: "${buildQAAnalysisPMD}/sortable_report.html")
+			ant.copy(todir: buildQAAnalysisPMD, file: pmdSortableFile)      
+			new File(buildQAAnalysis, "pmd.html").text = "<meta http-equiv=\"refresh\" content=\"0; url=pmd/sortable_report.html\" >"
+		}
 	}
 	pmdMain.finalizedBy pmdHtmlReport
 
@@ -350,8 +351,10 @@ subprojects {
 		toolVersion = '5.6'
 	}
 
-	task checkstyleHtmlReport << {
-		ant.xslt(in: "${buildQAAnalysisCheckstyle}/main.xml", style: "${checkstyleReportFile}", out: "${buildQAAnalysisCheckstyle}/../checkstyle.html")
+	task checkstyleHtmlReport {
+		doLast {
+			ant.xslt(in: "${buildQAAnalysisCheckstyle}/main.xml", style: "${checkstyleReportFile}", out: "${buildQAAnalysisCheckstyle}/../checkstyle.html")
+		}
 	}
 	checkstyleMain.finalizedBy checkstyleHtmlReport
 
@@ -366,8 +369,10 @@ subprojects {
 		toolVersion = '2.0.0'
 	}
 
-	task findbugsHtmlReport << {
-		ant.xslt(in: "${buildQAAnalysisFindbugs}/main.xml", style: findbugsConfigFancyHist, out: "${buildQAAnalysisFindbugs}/../findbugs.html")
+	task findbugsHtmlReport {
+		doLast {
+			ant.xslt(in: "${buildQAAnalysisFindbugs}/main.xml", style: findbugsConfigFancyHist, out: "${buildQAAnalysisFindbugs}/../findbugs.html")
+		}
 	} 
 	findbugsMain.finalizedBy findbugsHtmlReport
 
@@ -377,9 +382,27 @@ subprojects {
 	/** 
 	 * JMH-Perf tests.
 	 */
+	jmhJar {
+		doFirst {
+			duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+		}
+	}
 	jmh {
-		
+		/**
+		 * Use -PjmhInclude='regular expression' to specify what tests to run with JMH.
+		 */
+		if (project.hasProperty('jmhInclude')) {
+			include = project.getProperty('jmhInclude')
+		}
 		humanOutputFile = file("${buildQAPerfTest}/jmh/human.txt") 
 		resultsFile = file("${buildQAPerfTest}/jmh/results.txt")
 	}
+	
+	/** 
+	 * Configures the jacoco plugin.
+	 */
+	jacoco {
+		reportsDir = file(buildQATestCoveragedata)
+	}
+	
 }

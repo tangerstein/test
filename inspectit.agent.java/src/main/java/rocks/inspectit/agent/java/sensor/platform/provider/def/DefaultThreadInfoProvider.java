@@ -7,9 +7,9 @@ import rocks.inspectit.agent.java.sensor.platform.provider.ThreadInfoProvider;
 
 /**
  * Uses the {@link java.lang.management.ThreadMXBean} in order to retrieve all needed information.
- * 
+ *
  * @author Eduard Tudenhoefner
- * 
+ *
  */
 public class DefaultThreadInfoProvider implements ThreadInfoProvider {
 	/**
@@ -20,6 +20,7 @@ public class DefaultThreadInfoProvider implements ThreadInfoProvider {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int getThreadCount() {
 		return threadBean.getThreadCount();
 	}
@@ -27,6 +28,7 @@ public class DefaultThreadInfoProvider implements ThreadInfoProvider {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int getPeakThreadCount() {
 		return threadBean.getPeakThreadCount();
 	}
@@ -34,6 +36,7 @@ public class DefaultThreadInfoProvider implements ThreadInfoProvider {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getTotalStartedThreadCount() {
 		return threadBean.getTotalStartedThreadCount();
 	}
@@ -41,6 +44,7 @@ public class DefaultThreadInfoProvider implements ThreadInfoProvider {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int getDaemonThreadCount() {
 		return threadBean.getDaemonThreadCount();
 	}

@@ -8,22 +8,22 @@ import javax.persistence.NamedQuery;
 /**
  * The Jmx Sensor Type Ident class is used to store the sensortypes which are collecting data of the
  * target VM/System/etc.
- * 
+ *
  * @author Alfred Krauss
- * 
+ *
  */
 @Entity
 @DiscriminatorValue("JSTI")
-@NamedQueries({ @NamedQuery(name = JmxSensorTypeIdent.FIND_BY_PLATFORM, query = "SELECT j FROM JmxSensorTypeIdent j JOIN j.platformIdent p WHERE p.id=:platformIdentId") })
+@NamedQueries({ @NamedQuery(name = JmxSensorTypeIdent.FIND_ID_BY_PLATFORM, query = "SELECT j.id FROM JmxSensorTypeIdent j JOIN j.platformIdent p WHERE p.id=:platformIdentId") })
 public class JmxSensorTypeIdent extends SensorTypeIdent {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 6608523838770959163L;
 
 	/**
-	 * Constant for findByPlatform query.
+	 * Constant for findIdByPlatform query.
 	 * <p>
 	 * Parameters in the query:
 	 * <ul>
@@ -31,5 +31,5 @@ public class JmxSensorTypeIdent extends SensorTypeIdent {
 	 * </ul>
 	 * </p>
 	 */
-	public static final String FIND_BY_PLATFORM = "JmxSensorTypeIdent.findByPlatform";
+	public static final String FIND_ID_BY_PLATFORM = "JmxSensorTypeIdent.findIdByPlatform";
 }

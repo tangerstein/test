@@ -11,9 +11,9 @@ import rocks.inspectit.shared.all.communication.valueobject.TimerRawVO;
  * This timer storage just stores the passed value in the a {@link PlainTimerValueObject}, without
  * computing anything. When {@link #finalizeValueObject()} is called, it computes all the values
  * (min, max, variance etc.) and stores it in a {@link VarianceTimerValueObject}.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class AggregateTimerStorage implements ITimerStorage {
 
@@ -24,7 +24,7 @@ public class AggregateTimerStorage implements ITimerStorage {
 
 	/**
 	 * Default constructor which initializes a {@link TimerRawVO} object.
-	 * 
+	 *
 	 * @param timeStamp
 	 *            The time stamp.
 	 * @param platformIdent
@@ -45,6 +45,7 @@ public class AggregateTimerStorage implements ITimerStorage {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void addData(double time, double cpuTime) {
 		if (cpuTime < 0) {
 			timerRawVO.add(time);
@@ -56,6 +57,7 @@ public class AggregateTimerStorage implements ITimerStorage {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public DefaultData finalizeDataObject() {
 		return timerRawVO.finalizeData();
 	}

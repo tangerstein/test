@@ -18,12 +18,12 @@ import rocks.inspectit.shared.cs.indexing.query.factory.impl.SqlStatementDataQue
 
 /**
  * Implementation of the {@link SqlDataDao} that searches for the SQL statements in the indexing
- * tree.
- * <br>The query-Method of {@link AbstractBranch} which uses fork&join is executed, because much SQL- data is expected and 
- * querying with fork&join will be faster.<br>
- * 
+ * tree. <br>
+ * The query-Method of {@link AbstractBranch} which uses fork&join is executed, because much SQL-
+ * data is expected and querying with fork&join will be faster.<br>
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Repository
 public class BufferSqlDataDaoImpl extends DefaultBufferDataDao<SqlStatementData> implements SqlDataDao {
@@ -41,6 +41,7 @@ public class BufferSqlDataDaoImpl extends DefaultBufferDataDao<SqlStatementData>
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public List<SqlStatementData> getAggregatedSqlStatements(SqlStatementData sqlStatementData) {
 		return this.getAggregatedSqlStatements(sqlStatementData, null, null);
 	}
@@ -48,6 +49,7 @@ public class BufferSqlDataDaoImpl extends DefaultBufferDataDao<SqlStatementData>
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public List<SqlStatementData> getAggregatedSqlStatements(SqlStatementData sqlStatementData, Date fromDate, Date toDate) {
 		IIndexQuery query = sqlDataQueryFactory.getAggregatedSqlStatementsQuery(sqlStatementData, fromDate, toDate);
 		return super.executeQuery(query, Aggregators.SQL_STATEMENT_DATA_AGGREGATOR, true);
@@ -56,6 +58,7 @@ public class BufferSqlDataDaoImpl extends DefaultBufferDataDao<SqlStatementData>
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public List<SqlStatementData> getParameterAggregatedSqlStatements(SqlStatementData sqlStatementData) {
 		return this.getParameterAggregatedSqlStatements(sqlStatementData, null, null);
 	}
@@ -63,6 +66,7 @@ public class BufferSqlDataDaoImpl extends DefaultBufferDataDao<SqlStatementData>
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public List<SqlStatementData> getParameterAggregatedSqlStatements(SqlStatementData sqlStatementData, Date fromDate, Date toDate) {
 		IIndexQuery query = sqlDataQueryFactory.getAggregatedSqlStatementsQuery(sqlStatementData, fromDate, toDate);
 		return super.executeQuery(query, Aggregators.SQL_STATEMENT_DATA_PARAMETER_AGGREGATOR, true);

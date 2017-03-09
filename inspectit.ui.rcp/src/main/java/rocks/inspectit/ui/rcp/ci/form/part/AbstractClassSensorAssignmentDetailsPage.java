@@ -1,12 +1,7 @@
 package rocks.inspectit.ui.rcp.ci.form.part;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.resource.JFaceResources;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -17,88 +12,42 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.forms.IDetailsPage;
 import org.eclipse.ui.forms.IFormColors;
-import org.eclipse.ui.forms.IFormPart;
-import org.eclipse.ui.forms.IManagedForm;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 
 import rocks.inspectit.shared.cs.ci.assignment.AbstractClassSensorAssignment;
-import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.sensor.ISensorConfig;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
-import rocks.inspectit.ui.rcp.ci.form.part.SensorAssignmentMasterBlock.RemoveSelection;
+import rocks.inspectit.ui.rcp.ci.listener.IDetailsModifiedListener;
 import rocks.inspectit.ui.rcp.formatter.ImageFormatter;
 import rocks.inspectit.ui.rcp.formatter.TextFormatter;
-import rocks.inspectit.ui.rcp.validation.IControlValidationListener;
+import rocks.inspectit.ui.rcp.validation.AbstractValidationManager;
 import rocks.inspectit.ui.rcp.validation.InputValidatorControlDecoration;
 import rocks.inspectit.ui.rcp.validation.ValidationControlDecoration;
 import rocks.inspectit.ui.rcp.validation.validator.FqnWildcardValidator;
 
 /**
  * The abstract class for all the class sensor assignments.
- * 
+ *
+ * @param <E>
+ *            type of element being edited
  * @author Ivan Senic
- * 
+ *
  */
-public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetailsPage, IControlValidationListener {
-
-	/**
-	 * Listener in the master block to inform about the changes in the input editing.
-	 */
-	private final ISensorAssignmentUpdateListener masterBlockListener;
+public abstract class AbstractClassSensorAssignmentDetailsPage<E extends AbstractClassSensorAssignment<?>> extends AbstractDetailsPage<E> {
 
 	/**
 	 * If the data can be edited.
 	 */
-	private boolean canEdit;
-
-	/**
-	 * Marker for updating the widgets contents when the selection changes, so that mark dirty is
-	 * only fired when changes occur as result of user interaction.
-	 */
-	private boolean updateInProgress;
-
-	/**
-	 * If input is valid.
-	 */
-	private boolean valid;
-
-	/**
-	 * List of {@link ValidationControlDecoration}s.
-	 */
-	private List<ValidationControlDecoration<?>> validationControlDecorations = new ArrayList<>();
-
-	/**
-	 * Managed for part belongs to.
-	 */
-	protected IManagedForm managedForm;
-
-	/**
-	 * Listener that marks dirty on any event.
-	 */
-	protected Listener markDirtyListener = new Listener() {
-		@Override
-		public void handleEvent(Event event) {
-			if (!updateInProgress) {
-				commitToInput();
-
-				AbstractClassSensorAssignment<?> input = getInput();
-				if (null != masterBlockListener && null != input) {
-					masterBlockListener.sensorAssignmentUpdated(input, true, isValid(), validationControlDecorations);
-				}
-			}
-
-		}
-	};
+	private final boolean canEdit;
 
 	/**
 	 * Selection for the interface assignment.
@@ -137,37 +86,17 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param masterBlockListener
+	 *
+	 * @param detailsModifiedListener
 	 *            listener to inform the master block on changes to the input
+	 * @param validationManager
+	 *            Validation manager of the master view.
 	 * @param canEdit
 	 *            If the data can be edited.
 	 */
-	public AbstractClassSensorAssignmentDetailsPage(ISensorAssignmentUpdateListener masterBlockListener, boolean canEdit) {
-		this.masterBlockListener = masterBlockListener;
+	public AbstractClassSensorAssignmentDetailsPage(IDetailsModifiedListener<E> detailsModifiedListener, AbstractValidationManager<E> validationManager, boolean canEdit) {
+		super(detailsModifiedListener, validationManager);
 		this.canEdit = canEdit;
-	}
-
-	/**
-	 * @return Returns currently displayed {@link MethodSensorAssignment} or <code>null</code> if
-	 *         one does not exists.
-	 */
-	protected abstract AbstractClassSensorAssignment<?> getInput();
-
-	/**
-	 * Sets the input from the given selection.
-	 * 
-	 * @param selection
-	 *            selection
-	 */
-	protected abstract void setInput(ISelection selection);
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void initialize(IManagedForm form) {
-		this.managedForm = form;
 	}
 
 	/**
@@ -178,7 +107,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 		FormToolkit toolkit = managedForm.getToolkit();
 
 		// section
-		Section section = toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+		Section section = toolkit.createSection(parent, ExpandableComposite.TITLE_BAR | ExpandableComposite.EXPANDED);
 		section.setText("Class definition");
 		section.marginWidth = 10;
 		section.marginHeight = 5;
@@ -204,7 +133,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 
 	/**
 	 * Adds content related to class.
-	 * 
+	 *
 	 * @param mainComposite
 	 *            Composite to create on.
 	 */
@@ -241,9 +170,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 		classSearchButton.setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_SEARCH));
 		classSearchButton.setToolTipText("Search for class");
 		classSearchButton.setEnabled(false);
-		createInfoLabel(
-				mainComposite,
-				toolkit,
+		createInfoLabel(mainComposite, toolkit,
 				"The class/interface that should be monitored including the package name using the standard Java notation (e.g. rocks.inspectit.shared.cs.MyTestClass). The wildcard * can be used to match any length of characters.");
 
 		// class validation
@@ -259,9 +186,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 		annotationSearchButton.setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_SEARCH));
 		annotationSearchButton.setToolTipText("Search for annotation class");
 		annotationSearchButton.setEnabled(false);
-		createInfoLabel(
-				mainComposite,
-				toolkit,
+		createInfoLabel(mainComposite, toolkit,
 				"Sensor assignment can include the special additional option, where an annotation can be specified and used as additional instrumentation filter. If the annotation is added to the additional options part, the agent will instrument the methods/constructors based on the annotation target:\n\n1. If the annotation target is Class, then all methods from the classes that have the specified annotation will be instrumented.\n2. If the annotation target is Method, then only methods that have the specified annotation will be instrumented.");
 
 		// annotation validation
@@ -278,7 +203,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 
 	/**
 	 * Gets {@link #markDirtyListener}.
-	 * 
+	 *
 	 * @return {@link #markDirtyListener}
 	 */
 	protected Listener getMarkDirtyListener() {
@@ -286,63 +211,9 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 	}
 
 	/**
-	 * Validates all {@link ValidationControlDecoration} on the page and returns the current valid
-	 * state.
-	 * 
-	 * 
-	 * @param executeValidation
-	 *            if each {@link #validationControlDecorations} should execute new validation before
-	 *            calculating
-	 * @return If the all data in the controls are valid.
-	 */
-	protected boolean checkValid(boolean executeValidation) {
-		boolean valid = true;
-		for (ValidationControlDecoration<?> decoration : validationControlDecorations) {
-			if (executeValidation) {
-				decoration.executeValidation();
-			}
-
-			if (!decoration.isValid()) {
-				valid = false;
-				if (!executeValidation) {
-					// if we don't need to execute validation of all decorations, then as soon as we
-					// find the first invalid we can break out
-					break;
-				}
-			}
-		}
-		this.valid = valid;
-		return valid;
-	}
-
-	/**
-	 * Gets {@link #valid}.
-	 * 
-	 * @return {@link #valid}
-	 */
-	protected boolean isValid() {
-		return valid;
-	}
-
-	/**
-	 * Updates the display state with validation.
-	 */
-	protected final void update() {
-		updateInProgress = true;
-		updateFromInput();
-		checkValid(true);
-
-		// inform upper part so it receives validation notification
-		AbstractClassSensorAssignment<?> input = getInput();
-		if (null != input) {
-			masterBlockListener.sensorAssignmentUpdated(input, false, isValid(), validationControlDecorations);
-		}
-		updateInProgress = false;
-	}
-
-	/**
 	 * Updates controls from the input.
 	 */
+	@Override
 	protected void updateFromInput() {
 		interfaceButton.setSelection(false);
 		superclassButton.setSelection(false);
@@ -351,8 +222,8 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 			updateTitle(assignment.getSensorConfigClass());
 			interfaceButton.setSelection(assignment.isInterf());
 			superclassButton.setSelection(assignment.isSuperclass());
-			classText.setText(getEmptyIfNull(assignment.getClassName()));
-			annotationText.setText(getEmptyIfNull(assignment.getAnnotation()));
+			classText.setText(StringUtils.defaultString(assignment.getClassName()));
+			annotationText.setText(StringUtils.defaultString(assignment.getAnnotation()));
 		} else {
 			classText.setText("");
 			annotationText.setText("");
@@ -362,6 +233,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 	/**
 	 * Commits changes in page to input.
 	 */
+	@Override
 	protected void commitToInput() {
 		AbstractClassSensorAssignment<?> assignment = getInput();
 		if (null != assignment) {
@@ -377,38 +249,8 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 	}
 
 	/**
-	 * @param string
-	 *            String
-	 * @return Returns "" string if given is <code>null</code>, otherwise returs original
-	 *         {@link String}.
-	 */
-	protected String getEmptyIfNull(String string) {
-		if (StringUtils.isNotEmpty(string)) {
-			return string;
-		} else {
-			return "";
-		}
-	}
-
-	/**
-	 * Creates info icon with given text as tool-tip.
-	 * 
-	 * @param parent
-	 *            Composite to create on.
-	 * @param toolkit
-	 *            {@link FormToolkit} to use.
-	 * @param text
-	 *            Information text.
-	 */
-	protected void createInfoLabel(Composite parent, FormToolkit toolkit, String text) {
-		Label label = toolkit.createLabel(parent, "");
-		label.setToolTipText(text);
-		label.setImage(InspectIT.getDefault().getImage(InspectITImages.IMG_INFORMATION));
-	}
-
-	/**
 	 * Create title part based on the sensor configuration being assigned.
-	 * 
+	 *
 	 * @param parent
 	 *            Composite to create on.
 	 * @param toolkit
@@ -424,7 +266,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 
 	/**
 	 * Updates title based on the sensor configuration class.
-	 * 
+	 *
 	 * @param sensorConfigClass
 	 *            Sensor configuration class.
 	 */
@@ -436,28 +278,8 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 	}
 
 	/**
-	 * Adds the {@link ValidationControlDecoration} to the list of the decorations. This list is
-	 * used for validating if the complete input on the page is correct.
-	 * 
-	 * @param validationControlDecoration
-	 *            {@link ValidationControlDecoration}.
-	 */
-	protected void addValidationControlDecoration(ValidationControlDecoration<?> validationControlDecoration) {
-		validationControlDecorations.add(validationControlDecoration);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void validationStateChanged(boolean valid, ValidationControlDecoration<?> validationControlDecoration) {
-		// just call is valid
-		checkValid(false);
-	}
-
-	/**
 	 * Gets {@link #canEdit}.
-	 * 
+	 *
 	 * @return {@link #canEdit}
 	 */
 	protected boolean isCanEdit() {
@@ -466,7 +288,7 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 
 	/**
 	 * Helper method to enable/disable all children of a composite.
-	 * 
+	 *
 	 * @param composite
 	 *            Composite
 	 * @param enabled
@@ -489,78 +311,8 @@ public abstract class AbstractClassSensorAssignmentDetailsPage implements IDetai
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void selectionChanged(IFormPart part, ISelection selection) {
-		if (selection instanceof RemoveSelection) {
-			boolean currentlyEdited = false;
-			for (Object element : ((RemoveSelection) selection).toList()) {
-				if (element == getInput()) {
-					currentlyEdited = true;
-					break;
-				}
-			}
-			if (currentlyEdited) {
-				setInput(StructuredSelection.EMPTY);
-				update();
-			}
-		} else {
-			setInput(selection);
-			update();
-		}
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * <p>
-	 * The details page never reports dirty state.
-	 */
-	@Override
-	public boolean isDirty() {
-		return false;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void commit(boolean onSave) {
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean isStale() {
-		return false;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void refresh() {
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
 	public void setFocus() {
 		classText.setFocus();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean setFormInput(Object input) {
-		return false;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void dispose() {
 	}
 
 }

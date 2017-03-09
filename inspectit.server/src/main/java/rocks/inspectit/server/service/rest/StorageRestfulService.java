@@ -1,5 +1,7 @@
 package rocks.inspectit.server.service.rest;
 
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,10 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,9 +54,9 @@ import rocks.inspectit.shared.cs.storage.recording.RecordingState;
 
 /**
  * Restful service provider for storages.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Controller
 @RequestMapping(value = "/storage")
@@ -64,7 +70,7 @@ public class StorageRestfulService {
 
 	/**
 	 * Handling of all the exceptions happening in this controller.
-	 * 
+	 *
 	 * @param exception
 	 *            Exception being thrown
 	 * @return {@link ModelAndView}
@@ -77,11 +83,11 @@ public class StorageRestfulService {
 	/**
 	 * Returns all storages.
 	 * <p>
-	 * <i> Example URL: /storage/all</i>
-	 * 
+	 * <i> Example URL: /storage</i>
+	 *
 	 * @return List of all storages.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "all")
+	@RequestMapping(method = GET, value = "")
 	@ResponseBody
 	public List<StorageData> getAllStorages() {
 		List<StorageData> storages = storageService.getExistingStorages();
@@ -91,15 +97,15 @@ public class StorageRestfulService {
 	/**
 	 * Returns storage by ID.
 	 * <p>
-	 * <i> Example URL: /storage/get?id=1</i>
-	 * 
+	 * <i> Example URL: /storage/{id}</i>
+	 *
 	 * @param id
 	 *            ID bounded from path.
 	 * @return One storage or <code>null</code> if the storage with given ID does not exists.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "get")
+	@RequestMapping(method = GET, value = "{id}")
 	@ResponseBody
-	public StorageData getStorageById(@RequestParam(value = "id", required = true) String id) {
+	public StorageData getStorageById(@PathVariable String id) {
 		List<StorageData> storages = storageService.getExistingStorages();
 		for (StorageData storageData : storages) {
 			if (Objects.equals(id, storageData.getId())) {
@@ -112,17 +118,17 @@ public class StorageRestfulService {
 	/**
 	 * Creates a new storage with given name.
 	 * <p>
-	 * <i> Example URL: /storage/create?name=ViaRest</i>
-	 * 
+	 * <i> Example URL: /storage/{name}/create</i>
+	 *
 	 * @param name
 	 *            Name of the storage.
 	 * @return Map containing message and created storage.
 	 * @throws BusinessException
 	 *             If {@link BusinessException} occurs.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "create")
+	@RequestMapping(method = GET, value = "{name}/create")
 	@ResponseBody
-	public Object createStorage(@RequestParam(value = "name", required = true) String name) throws BusinessException {
+	public Object createStorage(@PathVariable String name) throws BusinessException {
 		if (StringUtils.isEmpty(name)) {
 			throw new BusinessException("Create a new storage via storage REST service.", StorageErrorCodeEnum.STORAGE_NAME_IS_NOT_PROVIDED);
 		}
@@ -140,17 +146,17 @@ public class StorageRestfulService {
 	/**
 	 * Finalize storage by ID.
 	 * <p>
-	 * <i> Example URL: /storage/finalize?id=1</i>
-	 * 
+	 * <i> Example URL: /storage/{id}/finalize</i>
+	 *
 	 * @param id
 	 *            ID bounded from path.
 	 * @throws BusinessException
 	 *             If {@link BusinessException} occurs.
 	 * @return Message for the user.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "finalize")
+	@RequestMapping(method = GET, value = "{id}/finalize")
 	@ResponseBody
-	public Object finalizeStorage(@RequestParam(value = "id", required = true) String id) throws BusinessException {
+	public Object finalizeStorage(@PathVariable String id) throws BusinessException {
 		StorageData storageData = new StorageData();
 		storageData.setId(id);
 		storageService.closeStorage(storageData);
@@ -160,17 +166,17 @@ public class StorageRestfulService {
 	/**
 	 * Deletes storage by ID.
 	 * <p>
-	 * <i> Example URL: /storage/delete?id=1</i>
-	 * 
+	 * <i> Example URL: /storage/{id}/delete</i>
+	 *
 	 * @param id
 	 *            ID bounded from path.
 	 * @throws BusinessException
 	 *             If {@link BusinessException} occurs.
 	 * @return Message for the user.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "delete")
+	@RequestMapping(method = GET, value = "{id}/delete")
 	@ResponseBody
-	public Object deleteStorage(@RequestParam(value = "id", required = true) String id) throws BusinessException {
+	public Object deleteStorage(@PathVariable String id) throws BusinessException {
 		StorageData storageData = new StorageData();
 		storageData.setId(id);
 		storageService.deleteStorage(storageData);
@@ -180,11 +186,11 @@ public class StorageRestfulService {
 	/**
 	 * Returns the current state of the recording.
 	 * <p>
-	 * <i> Example URL: /storage/recording-state</i>
-	 * 
+	 * <i> Example URL: /storage/state</i>
+	 *
 	 * @return {@link RecordingState}.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "recording-state")
+	@RequestMapping(method = GET, value = "state")
 	@ResponseBody
 	public Map<String, Object> getRecordingState() {
 		RecordingState state = storageService.getRecordingState();
@@ -215,13 +221,13 @@ public class StorageRestfulService {
 	/**
 	 * Stops recording.
 	 * <p>
-	 * <i> Example URL: /storage/stop-recording</i>
-	 * 
+	 * <i> Example URL: /storage/stop</i>
+	 *
 	 * @throws BusinessException
 	 *             If {@link BusinessException} occurs.
 	 * @return Message for the user.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "stop-recording")
+	@RequestMapping(method = GET, value = "stop")
 	@ResponseBody
 	public Object stopRecording() throws BusinessException {
 		storageService.stopRecording();
@@ -233,9 +239,9 @@ public class StorageRestfulService {
 	 * allows specification of the start delay and recording duration in milliseconds. Zero values
 	 * for that parameters are omitting them.
 	 * <p>
-	 * <i> Example URL: /storage/start-recording/?id=1&startDelay=30000&recordingDuration=60000
-	 * (makes a 30s delay and records for 60s)</i>
-	 * 
+	 * <i> Example URL: /storage/start?id=1&startDelay=30000&recordingDuration=60000 (makes a 30s
+	 * delay and records for 60s)</i>
+	 *
 	 * @param id
 	 *            Storage ID.
 	 * @param startDelay
@@ -250,7 +256,7 @@ public class StorageRestfulService {
 	 * @throws BusinessException
 	 *             If {@link BusinessException} occurs.
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "start-recording")
+	@RequestMapping(method = RequestMethod.GET, value = "start")
 	@ResponseBody
 	public Object startOrScheduleRecording(@RequestParam(value = "id", required = true) String id, @RequestParam(value = "startDelay", required = false) Long startDelay,
 			@RequestParam(value = "recordingDuration", required = false) Long recordingDuration,
@@ -267,11 +273,11 @@ public class StorageRestfulService {
 		RecordingProperties recordingProperties = getRecordingProperties(extractInvocations.booleanValue());
 		recordingProperties.setAutoFinalize(autoFinalize.booleanValue());
 
-		if (null != startDelay && startDelay.longValue() > 0) {
+		if ((null != startDelay) && (startDelay.longValue() > 0)) {
 			recordingProperties.setStartDelay(startDelay.longValue());
 		}
 
-		if (null != recordingDuration && recordingDuration.longValue() > 0) {
+		if ((null != recordingDuration) && (recordingDuration.longValue() > 0)) {
 			recordingProperties.setRecordDuration(recordingDuration.longValue());
 		}
 
@@ -290,7 +296,7 @@ public class StorageRestfulService {
 	/**
 	 * Returns the recording properties with correctly set default set of
 	 * {@link AbstractDataProcessor}s.
-	 * 
+	 *
 	 * @param extractInvocations
 	 *            If invocations should be extracted.
 	 * @return {@link RecordingProperties}.
@@ -298,22 +304,22 @@ public class StorageRestfulService {
 	private RecordingProperties getRecordingProperties(boolean extractInvocations) {
 		RecordingProperties recordingProperties = new RecordingProperties();
 
-		List<AbstractDataProcessor> normalProcessors = new ArrayList<AbstractDataProcessor>();
+		List<AbstractDataProcessor> normalProcessors = new ArrayList<>();
 
 		// data saver
-		List<Class<? extends DefaultData>> classesToSave = new ArrayList<Class<? extends DefaultData>>();
+		List<Class<? extends DefaultData>> classesToSave = new ArrayList<>();
 		Collections.addAll(classesToSave, InvocationSequenceData.class, HttpTimerData.class, ExceptionSensorData.class, MemoryInformationData.class, CpuInformationData.class,
 				ClassLoadingInformationData.class, ThreadInformationData.class, SystemInformationData.class);
 		DataSaverProcessor dataSaverProcessor = new DataSaverProcessor(classesToSave, true);
 		normalProcessors.add(dataSaverProcessor);
 
 		// data aggregators
-		normalProcessors.add(new DataAggregatorProcessor<TimerData>(TimerData.class, 5000, new TimerDataAggregator(), true));
-		normalProcessors.add(new DataAggregatorProcessor<SqlStatementData>(SqlStatementData.class, 5000, new SqlStatementDataAggregator(true), true));
+		normalProcessors.add(new DataAggregatorProcessor<>(TimerData.class, 5000, new TimerDataAggregator(), true));
+		normalProcessors.add(new DataAggregatorProcessor<>(SqlStatementData.class, 5000, new SqlStatementDataAggregator(true), true));
 
 		// invocations support
 		if (extractInvocations) {
-			List<AbstractDataProcessor> chainedProcessorsForExtractor = new ArrayList<AbstractDataProcessor>();
+			List<AbstractDataProcessor> chainedProcessorsForExtractor = new ArrayList<>();
 			chainedProcessorsForExtractor.addAll(normalProcessors);
 			InvocationExtractorDataProcessor invocationExtractorDataProcessor = new InvocationExtractorDataProcessor(chainedProcessorsForExtractor);
 			normalProcessors.add(invocationExtractorDataProcessor);
@@ -325,4 +331,15 @@ public class StorageRestfulService {
 		return recordingProperties;
 	}
 
+	/**
+	 * Header information for swagger requests.
+	 *
+	 * @param response
+	 *            Response information
+	 */
+	@ModelAttribute
+	public void setVaryResponseHeader(HttpServletResponse response) {
+		response.setHeader("Access-Control-Allow-Origin", "*");
+		response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	}
 }

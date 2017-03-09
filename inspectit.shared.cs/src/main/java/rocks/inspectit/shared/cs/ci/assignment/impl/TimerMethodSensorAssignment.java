@@ -1,6 +1,8 @@
 package rocks.inspectit.shared.cs.ci.assignment.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -10,6 +12,8 @@ import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.collections.MapUtils;
+
 import rocks.inspectit.shared.cs.ci.context.AbstractContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.FieldContextCapture;
 import rocks.inspectit.shared.cs.ci.context.impl.ParameterContextCapture;
@@ -18,31 +22,25 @@ import rocks.inspectit.shared.cs.ci.sensor.method.impl.TimerSensorConfig;
 
 /**
  * Timer sensor assignment.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "timer-method-sensor-assignment")
-public class TimerMethodSensorAssignment extends MethodSensorAssignment {
-
-	/**
-	 * If it is charting.
-	 */
-	@XmlAttribute(name = "charting")
-	private boolean charting;
+public class TimerMethodSensorAssignment extends ChartingMethodSensorAssignment {
 
 	/**
 	 * If it starts an invocation.
 	 */
 	@XmlAttribute(name = "starts-invocation")
-	private boolean startsInvocation;
+	private Boolean startsInvocation = Boolean.FALSE;
 
 	/**
 	 * Invocation min duration.
 	 */
 	@XmlAttribute(name = "min-invocation-duration")
-	private long minInvocationDuration;
+	private Long minInvocationDuration = Long.valueOf(0L);
 
 	/**
 	 * List of context captures.
@@ -59,65 +57,64 @@ public class TimerMethodSensorAssignment extends MethodSensorAssignment {
 	}
 
 	/**
-	 * Gets {@link #charting}.
-	 * 
-	 * @return {@link #charting}
+	 * {@inheritDoc}
 	 */
-	public boolean isCharting() {
-		return charting;
-	}
+	@Override
+	public Map<String, Object> getSettings() {
+		Map<String, Object> settings = super.getSettings();
+		if (MapUtils.isEmpty(settings)) {
+			settings = new HashMap<>();
+		}
 
-	/**
-	 * Sets {@link #charting}.
-	 * 
-	 * @param charting
-	 *            New value for {@link #charting}
-	 */
-	public void setCharting(boolean charting) {
-		this.charting = charting;
+		// min duration
+		if (minInvocationDuration > 0) {
+			settings.put("minduration", minInvocationDuration);
+		}
+
+		return settings;
 	}
 
 	/**
 	 * Gets {@link #startsInvocation}.
-	 * 
+	 *
 	 * @return {@link #startsInvocation}
 	 */
 	public boolean isStartsInvocation() {
-		return startsInvocation;
+		return startsInvocation.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #startsInvocation}.
-	 * 
+	 *
 	 * @param startsInvocation
 	 *            New value for {@link #startsInvocation}
 	 */
 	public void setStartsInvocation(boolean startsInvocation) {
-		this.startsInvocation = startsInvocation;
+		this.startsInvocation = Boolean.valueOf(startsInvocation);
 	}
 
 	/**
 	 * Gets {@link #minInvocationDuration}.
-	 * 
+	 *
 	 * @return {@link #minInvocationDuration}
 	 */
 	public long getMinInvocationDuration() {
-		return minInvocationDuration;
+		return minInvocationDuration.longValue();
 	}
 
 	/**
 	 * Sets {@link #minInvocationDuration}.
-	 * 
+	 *
 	 * @param minInvocationDuration
 	 *            New value for {@link #minInvocationDuration}
 	 */
 	public void setMinInvocationDuration(long minInvocationDuration) {
-		this.minInvocationDuration = minInvocationDuration;
+		this.minInvocationDuration = Long.valueOf(minInvocationDuration);
 	}
 
 	/**
 	 * Gets {@link #contextCaptures}.
-	 * 
+	 *
 	 * @return {@link #contextCaptures}
 	 */
 	public List<AbstractContextCapture> getContextCaptures() {
@@ -126,7 +123,7 @@ public class TimerMethodSensorAssignment extends MethodSensorAssignment {
 
 	/**
 	 * Sets {@link #contextCaptures}.
-	 * 
+	 *
 	 * @param contextCaptures
 	 *            New value for {@link #contextCaptures}
 	 */
@@ -141,10 +138,9 @@ public class TimerMethodSensorAssignment extends MethodSensorAssignment {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + (charting ? 1231 : 1237);
-		result = prime * result + ((contextCaptures == null) ? 0 : contextCaptures.hashCode());
-		result = prime * result + (int) (minInvocationDuration ^ (minInvocationDuration >>> 32));
-		result = prime * result + (startsInvocation ? 1231 : 1237);
+		result = (prime * result) + ((this.contextCaptures == null) ? 0 : this.contextCaptures.hashCode());
+		result = (prime * result) + ((this.minInvocationDuration == null) ? 0 : this.minInvocationDuration.hashCode());
+		result = (prime * result) + ((this.startsInvocation == null) ? 0 : this.startsInvocation.hashCode());
 		return result;
 	}
 
@@ -163,20 +159,25 @@ public class TimerMethodSensorAssignment extends MethodSensorAssignment {
 			return false;
 		}
 		TimerMethodSensorAssignment other = (TimerMethodSensorAssignment) obj;
-		if (charting != other.charting) {
-			return false;
-		}
-		if (contextCaptures == null) {
+		if (this.contextCaptures == null) {
 			if (other.contextCaptures != null) {
 				return false;
 			}
-		} else if (!contextCaptures.equals(other.contextCaptures)) {
+		} else if (!this.contextCaptures.equals(other.contextCaptures)) {
 			return false;
 		}
-		if (minInvocationDuration != other.minInvocationDuration) {
+		if (this.minInvocationDuration == null) {
+			if (other.minInvocationDuration != null) {
+				return false;
+			}
+		} else if (!this.minInvocationDuration.equals(other.minInvocationDuration)) {
 			return false;
 		}
-		if (startsInvocation != other.startsInvocation) {
+		if (this.startsInvocation == null) {
+			if (other.startsInvocation != null) {
+				return false;
+			}
+		} else if (!this.startsInvocation.equals(other.startsInvocation)) {
 			return false;
 		}
 		return true;

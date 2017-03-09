@@ -7,15 +7,15 @@ import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 
 /**
  * This DAO is used to handle all {@link MethodIdent} objects.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public interface MethodIdentDao {
 
 	/**
 	 * Load a specific {@link MethodIdent} from the underlying storage by passing the id.
-	 * 
+	 *
 	 * @param id
 	 *            The id of the object.
 	 * @return The found {@link MethodIdent} object.
@@ -24,7 +24,7 @@ public interface MethodIdentDao {
 
 	/**
 	 * Saves or updates this {@link MethodIdent} in the underlying storage.
-	 * 
+	 *
 	 * @param methodIdent
 	 *            The {@link MethodIdent} object to save or update.
 	 */
@@ -32,7 +32,7 @@ public interface MethodIdentDao {
 
 	/**
 	 * Deletes this specific {@link MethodIdent} object.
-	 * 
+	 *
 	 * @param methodIdent
 	 *            The {@link MethodIdent} object to delete.
 	 */
@@ -40,31 +40,46 @@ public interface MethodIdentDao {
 
 	/**
 	 * Deletes all {@link MethodIdent} objects which are stored in the passed list.
-	 * 
+	 *
 	 * @param methodIdents
 	 *            The list containing the {@link MethodIdent} objects to delete.
 	 */
 	void deleteAll(List<MethodIdent> methodIdents);
 
 	/**
-	 * This method returns a list containing {@link MethodIdent} objects which have an association
-	 * to the given {@link PlatformIdent} object.
-	 * 
+	 * This method returns a list containing {@link MethodIdent} objects IDs which have an
+	 * association to the given {@link PlatformIdent} object.
+	 *
 	 * @param platformId
 	 *            The id of the platform.
 	 * @param methodIdentExample
 	 *            The {@link MethodIdent} example object to look for similar object(s).
-	 * @return A list containing the {@link MethodIdent} objects which are already in an association
-	 *         with the passed {@link PlatformIdent} object and have identical fields like the
-	 *         example object.
+	 * @param updateTimestamp
+	 *            As this method is used by the registration service there is an optional flag to
+	 *            automatically update the time-stamp of the found {@link MethodIdent} to current
+	 *            time.
+	 * @return A list containing the {@link MethodIdent} objects IDs which are already in an
+	 *         association with the passed {@link PlatformIdent} object and have identical fields
+	 *         like the example object.
 	 */
-	List<MethodIdent> findForPlatformIdAndExample(long platformId, MethodIdent methodIdentExample);
+	List<Long> findIdForPlatformIdAndExample(long platformId, MethodIdent methodIdentExample, boolean updateTimestamp);
 
 	/**
 	 * Returns all {@link MethodIdent} objects which are saved in the underlying storage.
-	 * 
+	 *
 	 * @return Returns all stored {@link MethodIdent} objects.
 	 */
 	List<MethodIdent> findAll();
 
+	/**
+	 * Updates the timestamp of all matching {@link MethodIdent}s.
+	 *
+	 * @param platformId
+	 *            the id of the platform
+	 * @param packageName
+	 *            the package name
+	 * @param className
+	 *            the class name
+	 */
+	void updateTimestamps(long platformId, String packageName, String className);
 }

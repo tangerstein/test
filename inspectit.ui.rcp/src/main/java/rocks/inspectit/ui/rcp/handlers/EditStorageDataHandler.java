@@ -7,10 +7,11 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.window.Window;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import rocks.inspectit.shared.all.exception.BusinessException;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
+import rocks.inspectit.shared.all.serializer.SerializationException;
 import rocks.inspectit.shared.cs.storage.StorageData;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.dialog.EditNameDescriptionDialog;
@@ -20,9 +21,9 @@ import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition.OnlineStatus;
 
 /**
  * Edit storage name and description handler.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class EditStorageDataHandler extends AbstractHandler implements IHandler {
 
@@ -42,7 +43,7 @@ public class EditStorageDataHandler extends AbstractHandler implements IHandler 
 		StorageData storageData = storageDataProvider.getStorageData();
 		EditNameDescriptionDialog editStorageDataDialog = new EditNameDescriptionDialog(HandlerUtil.getActiveShell(event), storageData.getName(), storageData.getDescription());
 		editStorageDataDialog.open();
-		if (editStorageDataDialog.getReturnCode() == EditNameDescriptionDialog.OK) {
+		if (editStorageDataDialog.getReturnCode() == Window.OK) {
 			CmrRepositoryDefinition cmrRepositoryDefinition = storageDataProvider.getCmrRepositoryDefinition();
 			if (cmrRepositoryDefinition.getOnlineStatus() != OnlineStatus.OFFLINE) {
 				try {

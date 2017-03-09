@@ -21,6 +21,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 
 import rocks.inspectit.shared.cs.ci.assignment.AbstractClassSensorAssignment;
+import rocks.inspectit.shared.cs.ci.assignment.impl.ChartingMethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.MethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.assignment.impl.TimerMethodSensorAssignment;
 import rocks.inspectit.shared.cs.ci.context.AbstractContextCapture;
@@ -34,12 +35,13 @@ import rocks.inspectit.ui.rcp.editor.tooltip.ColumnAwareToolTipSupport;
 import rocks.inspectit.ui.rcp.editor.viewers.ImageFixStyledCellIndexLabelProvider;
 import rocks.inspectit.ui.rcp.formatter.ImageFormatter;
 import rocks.inspectit.ui.rcp.formatter.TextFormatter;
+import rocks.inspectit.ui.rcp.viewer.ReferenceElementComparer;
 
 /**
  * Table provider for the tab folder containing the sensor assignments.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class SensorAssignmentTableProvider {
 
@@ -50,7 +52,7 @@ public class SensorAssignmentTableProvider {
 
 	/**
 	 * Constructor. Table can be retrieved by calling {@link #getTableViewer()}.
-	 * 
+	 *
 	 * @param masterBlock
 	 *            Master block containing this table.
 	 * @param parent
@@ -62,7 +64,7 @@ public class SensorAssignmentTableProvider {
 
 	/**
 	 * Initializes the table.
-	 * 
+	 *
 	 * @param parent
 	 *            Parent composite
 	 * @param selectionChangedListener
@@ -78,6 +80,7 @@ public class SensorAssignmentTableProvider {
 
 		tableViewer = new TableViewer(table);
 		tableViewer.setUseHashlookup(false);
+		tableViewer.setComparer(ReferenceElementComparer.INSTANCE);
 		createColumns(tableViewer);
 		tableViewer.setContentProvider(getContentProvider());
 		tableViewer.setLabelProvider(getLabelProvider());
@@ -90,7 +93,7 @@ public class SensorAssignmentTableProvider {
 
 	/**
 	 * Gets {@link #tableViewer}.
-	 * 
+	 *
 	 * @return {@link #tableViewer}
 	 */
 	public TableViewer getTableViewer() {
@@ -99,7 +102,7 @@ public class SensorAssignmentTableProvider {
 
 	/**
 	 * Sets the input for the table in the tab item.
-	 * 
+	 *
 	 * @param assignments
 	 *            Assignments as input.
 	 */
@@ -110,7 +113,7 @@ public class SensorAssignmentTableProvider {
 
 	/**
 	 * Creates columns for Table.
-	 * 
+	 *
 	 * @param tableViewer
 	 *            Table viewer to create columns for.
 	 */
@@ -152,7 +155,7 @@ public class SensorAssignmentTableProvider {
 			/**
 			 * The resource manager is used for the images etc.
 			 */
-			private LocalResourceManager resourceManager = new LocalResourceManager(JFaceResources.getResources());
+			private final LocalResourceManager resourceManager = new LocalResourceManager(JFaceResources.getResources());
 
 			/**
 			 * Empty styled string.
@@ -164,12 +167,12 @@ public class SensorAssignmentTableProvider {
 			 */
 			@Override
 			protected StyledString getStyledText(Object element, int index) {
-				if (0 == index && element instanceof AbstractClassSensorAssignment<?>) {
+				if ((0 == index) && (element instanceof AbstractClassSensorAssignment<?>)) {
 					AbstractClassSensorAssignment<?> assignment = (AbstractClassSensorAssignment<?>) element;
 					if (null != assignment.getClassName()) {
 						return new StyledString(assignment.getClassName());
 					}
-				} else if (1 == index && element instanceof MethodSensorAssignment) {
+				} else if ((1 == index) && (element instanceof MethodSensorAssignment)) {
 					MethodSensorAssignment assignment = (MethodSensorAssignment) element;
 					return new StyledString(TextFormatter.getMethodWithParameters(assignment));
 				}
@@ -183,7 +186,7 @@ public class SensorAssignmentTableProvider {
 			@Override
 			protected Image getColumnImage(Object element, int index) {
 				// first column have images only
-				if (0 == index && element instanceof AbstractClassSensorAssignment) {
+				if ((0 == index) && (element instanceof AbstractClassSensorAssignment)) {
 					AbstractClassSensorAssignment<?> assignment = (AbstractClassSensorAssignment<?>) element;
 					if (assignment.isSuperclass()) {
 						return InspectIT.getDefault().getImage(InspectITImages.IMG_SUPERCLASS);
@@ -192,10 +195,10 @@ public class SensorAssignmentTableProvider {
 					} else {
 						return InspectIT.getDefault().getImage(InspectITImages.IMG_CLASS);
 					}
-				} else if (1 == index && element instanceof MethodSensorAssignment) {
+				} else if ((1 == index) && (element instanceof MethodSensorAssignment)) {
 					MethodSensorAssignment assignment = (MethodSensorAssignment) element;
 					return ImageFormatter.getMethodVisibilityImage(resourceManager, assignment);
-				} else if (2 == index && element instanceof AbstractClassSensorAssignment) {
+				} else if ((2 == index) && (element instanceof AbstractClassSensorAssignment)) {
 					AbstractClassSensorAssignment<?> assignment = (AbstractClassSensorAssignment<?>) element;
 					return ImageFormatter.getSensorAssignmentOptionsImage(resourceManager, assignment);
 				}
@@ -207,14 +210,14 @@ public class SensorAssignmentTableProvider {
 			 */
 			@Override
 			public String getToolTipText(Object element, int index) {
-				if (0 == index && element instanceof AbstractClassSensorAssignment) {
+				if ((0 == index) && (element instanceof AbstractClassSensorAssignment)) {
 					AbstractClassSensorAssignment<?> assignment = (AbstractClassSensorAssignment<?>) element;
 					if (assignment.isSuperclass()) {
 						return "Superclass instrumentation";
 					} else if (assignment.isInterf()) {
 						return "Interface instrumentation";
 					}
-				} else if (1 == index && element instanceof MethodSensorAssignment) {
+				} else if ((1 == index) && (element instanceof MethodSensorAssignment)) {
 					MethodSensorAssignment assignment = (MethodSensorAssignment) element;
 					StringBuilder stringBuilder = new StringBuilder("Method visibility:");
 					if (assignment.isPublicModifier()) {
@@ -240,14 +243,19 @@ public class SensorAssignmentTableProvider {
 						}
 					}
 
+					if (element instanceof ChartingMethodSensorAssignment) {
+						ChartingMethodSensorAssignment assignment = (ChartingMethodSensorAssignment) element;
+
+						if (assignment.isCharting()) {
+							stringBuilder.append("Charting = ON\n");
+						}
+					}
+
 					if (element instanceof TimerMethodSensorAssignment) {
 						TimerMethodSensorAssignment assignment = (TimerMethodSensorAssignment) element;
 
 						if (assignment.isStartsInvocation()) {
 							stringBuilder.append("Starts invocation = ON\n");
-						}
-						if (assignment.isCharting()) {
-							stringBuilder.append("Charting = ON\n");
 						}
 						if (CollectionUtils.isNotEmpty(assignment.getContextCaptures())) {
 							for (AbstractContextCapture contextCapture : assignment.getContextCaptures()) {

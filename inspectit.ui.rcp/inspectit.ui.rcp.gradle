@@ -9,6 +9,19 @@ evaluationDependsOn(':inspectit.shared.all')
 evaluationDependsOn(':inspectit.shared.cs')
 defaultTasks 'releaseAndAnalyze'
 
+/** used by the eclipse buildship plugin */
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'
+
+/** defined to have it included in Eclipse as source */
+sourceSets {
+	externalResources {
+		resources {
+			srcDir mainExtResources
+		}
+	}
+}
+
 /** Setting compile configuration as plugin in Eclipse needs it */
 configurations {
 	compile {
@@ -23,7 +36,7 @@ configurations {
 dependencies {
 	compile project(':inspectit.shared.all')
 	compile project(':inspectit.shared.cs')
-	testCompile project(':inspectit.shared.all').sourceSets.test.output
+	testCompile project (path: ':inspectit.shared.all', configuration: 'testArchives')
 }
 
 /** Compile compatibility to 1.7 for all compile tasks */
@@ -32,23 +45,26 @@ tasks.withType(JavaCompile) {
 	targetCompatibility = '1.7'
 }
 
-/** Include shared.all & shared.cs also for the coverage Extend auxiliaryClasspath so that corbertura can find eclipse-base jars. */
-cobertura {
-	coverageDirs += project(':inspectit.shared.all').sourceSets.main.output.classesDir.path
-	coverageDirs += project(':inspectit.shared.cs').sourceSets.main.output.classesDir.path
-	auxiliaryClasspath += fileTree(include: '**/*.jar', dir: eclipsePlugins) 
+/**
+ * Cleans the PDE build 'plugins/rocks.inspectit.ui.rcp' folder.
+ */
+task cleanPdeBuild(type: Delete) {
+	description = 'Cleans the PDE build folder.'
+	group = 'Build Setup'
+
+	delete "${pdeBuildDir}/plugins/rocks.inspectit.ui.rcp"
 }
 
 /**
  * Copies relevant files for the PDE build to the 'plugins' folder.
  */
-task preparePdeBuild(type: Copy) {
+task preparePdeBuild(type: Copy, dependsOn: [cleanPdeBuild, rootProject.updateSite]) {
 	description = 'Prepares artifacts for the PDE build.'
 	group = 'Build Setup'
 
 	// all dependencies and our shared jars (we rename it to mach the plugin name)
 	into ('plugins') {
-		from configurations.uiRcpProd
+		from file(updateSiteInternal)
 		from project(':inspectit.shared.all').jar.outputs
 		from project(':inspectit.shared.cs').jar.outputs
 		exclude '**/*sources*.jar'
@@ -110,23 +126,26 @@ task pdeBuild (type: JavaExec,  dependsOn: [rootProject.unzipEclipse, preparePde
 	
 	def packagesDir = file("${pdeBuildDir}/I.inspectit")
 	def builtClassesDir = file("${pdeBuildDir}/plugins/rocks.inspectit.ui.rcp/@dot")
-	def logfile = file("${pdeBuildDir}/build.log")
 	
 	inputs.files preparePdeBuild.outputs
 	outputs.dir builtClassesDir
 	outputs.dir packagesDir
 	
-	// setup for the log file, delete if exists, then create first directories, then new file
-	if (logfile.exists()) {
-		logfile.delete()
-	}
-	file(pdeBuildDir).mkdirs()
-	logfile.createNewFile()
-	logger.info "PDE build output is logged in the file " + logfile
+	doFirst {
+		def logfile = file("${pdeBuildDir}/build.log")
+		
+		// setup for the log file, delete if exists, then create first directories, then new file
+		if (logfile.exists()) {
+			logfile.delete()
+		}
+		file(pdeBuildDir).mkdirs()
+		logfile.createNewFile()
+		logger.info "PDE build output is logged in the file " + logfile
 
-	def logOutputStream = logfile.newOutputStream()
-	standardOutput = logOutputStream
-	errorOutput = logOutputStream
+		def logOutputStream = logfile.newOutputStream()
+		standardOutput = logOutputStream
+		errorOutput = logOutputStream
+	}
 	classpath = files("${eclipseBaseDir}/plugins/org.eclipse.equinox.launcher_${equinoxLauncherPluginVersion}.jar")
 	main = 'org.eclipse.equinox.launcher.Main'
 	args = ['-application', 'org.eclipse.ant.core.antRunner', '-buildfile', "${eclipseBaseDir}/plugins/org.eclipse.pde.build_${pdeBuildPluginVersion}/scripts/productBuild/productBuild.xml", "-Drelease.basedir=${buildRoot}", "-Declipse.basedir=${eclipseDir}", "-Dbuilder=${mainExtResources}/pdebuild"]
@@ -182,7 +201,7 @@ def releaseSingle(os, arch, distName) {
 		def distNameWithExtension = "${distName}.zip"
 		def archiveFile  = file("${pdeBuildDir}/I.inspectit/${distNameWithExtension}")
 		def distDir = file(buildReleasePackages)
-		def logConfigFile = file("${mainExtResources}/logging-config.xml")
+		def extResourcesDir = file(mainExtResources)
 		// match the correct jre
 		def jreFile
 		configurations.jvms.getFiles().each { path ->
@@ -199,7 +218,11 @@ def releaseSingle(os, arch, distName) {
 		from zipTree(archiveFile)
 		into('inspectit'){
 			from files(sharedResourcesLicense)
-			from logConfigFile
+		}
+		into('inspectit'){
+			from extResourcesDir
+			include('logging-config.xml')
+			includeEmptyDirs = false
 		}
 		into('inspectit/jre'){
 			from zipTree(jreFile)

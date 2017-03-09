@@ -1,7 +1,9 @@
 package rocks.inspectit.server.dao.impl;
 
 import java.util.List;
+import java.util.Map;
 
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import org.springframework.stereotype.Repository;
@@ -12,9 +14,9 @@ import rocks.inspectit.shared.all.cmr.model.MethodSensorTypeIdent;
 /**
  * The default implementation of the {@link MethodSensorTypeIdentDao} interface by using the Entity
  * manager.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 @Repository
 public class MethodSensorTypeIdentDaoImpl extends AbstractJpaDao<MethodSensorTypeIdent> implements MethodSensorTypeIdentDao {
@@ -29,6 +31,7 @@ public class MethodSensorTypeIdentDaoImpl extends AbstractJpaDao<MethodSensorTyp
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void saveOrUpdate(MethodSensorTypeIdent methodSensorTypeIdent) {
 		// we save if id is not set, otherwise merge
 		if (null == methodSensorTypeIdent.getId()) {
@@ -48,11 +51,23 @@ public class MethodSensorTypeIdentDaoImpl extends AbstractJpaDao<MethodSensorTyp
 	 * {@inheritDoc}
 	 */
 	@Override
-	public List<MethodSensorTypeIdent> findByClassNameAndPlatformId(String fullyQualifiedClassName, long platformId) {
-		TypedQuery<MethodSensorTypeIdent> query = getEntityManager().createNamedQuery(MethodSensorTypeIdent.FIND_BY_CLASS_AND_PLATFORM_ID, MethodSensorTypeIdent.class);
+	public List<Long> findIdByClassNameAndPlatformId(String fullyQualifiedClassName, long platformId) {
+		TypedQuery<Long> query = getEntityManager().createNamedQuery(MethodSensorTypeIdent.FIND_ID_BY_CLASS_AND_PLATFORM_ID, Long.class);
 		query.setParameter("fullyQualifiedClassName", fullyQualifiedClassName);
 		query.setParameter("platformIdent", platformId);
 
 		return query.getResultList();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void updateParameters(Long id, Map<String, Object> parameters) {
+		Query query = getEntityManager().createNamedQuery(MethodSensorTypeIdent.UPDATE_PARAMETERS);
+		query.setParameter("id", id);
+		query.setParameter("parameters", parameters);
+
+		query.executeUpdate();
 	}
 }

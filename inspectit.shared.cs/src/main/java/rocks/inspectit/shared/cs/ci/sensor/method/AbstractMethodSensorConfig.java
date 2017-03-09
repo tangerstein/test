@@ -5,7 +5,6 @@ import java.util.Map;
 
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionMetaDataSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.HttpSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.InvocationSequenceSensorConfig;
@@ -16,12 +15,12 @@ import rocks.inspectit.shared.cs.ci.sensor.method.impl.TimerSensorConfig;
 
 /**
  * Abstract class for all platform sensor configurations.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
-@XmlSeeAlso({ ConnectionMetaDataSensorConfig.class, ConnectionSensorConfig.class, HttpSensorConfig.class, InvocationSequenceSensorConfig.class, PreparedStatementParameterSensorConfig.class,
-		PreparedStatementSensorConfig.class, StatementSensorConfig.class, TimerSensorConfig.class })
+@XmlSeeAlso({ ConnectionSensorConfig.class, HttpSensorConfig.class, InvocationSequenceSensorConfig.class, PreparedStatementParameterSensorConfig.class, PreparedStatementSensorConfig.class,
+		StatementSensorConfig.class, TimerSensorConfig.class })
 public abstract class AbstractMethodSensorConfig implements IMethodSensorConfig {
 
 	/**
@@ -39,7 +38,7 @@ public abstract class AbstractMethodSensorConfig implements IMethodSensorConfig 
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + this.getClass().hashCode();
+		result = (prime * result) + this.getClass().hashCode();
 		return result;
 	}
 

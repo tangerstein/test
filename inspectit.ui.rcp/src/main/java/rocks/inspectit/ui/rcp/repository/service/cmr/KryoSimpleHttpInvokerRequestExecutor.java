@@ -11,16 +11,16 @@ import org.springframework.remoting.support.RemoteInvocationResult;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import rocks.inspectit.shared.all.storage.serializer.ISerializer;
-import rocks.inspectit.shared.all.storage.serializer.SerializationException;
-import rocks.inspectit.shared.all.storage.serializer.provider.SerializationManagerProvider;
+import rocks.inspectit.shared.all.serializer.ISerializer;
+import rocks.inspectit.shared.all.serializer.SerializationException;
+import rocks.inspectit.shared.all.serializer.provider.SerializationManagerProvider;
 import rocks.inspectit.ui.rcp.InspectIT;
 
 /**
  * This class extends the simple http one by using Kryo for (de-)serializing.
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 public class KryoSimpleHttpInvokerRequestExecutor extends SimpleHttpInvokerRequestExecutor {
 
@@ -59,7 +59,7 @@ public class KryoSimpleHttpInvokerRequestExecutor extends SimpleHttpInvokerReque
 
 	/**
 	 * Gets {@link #serializationManagerProvider}.
-	 * 
+	 *
 	 * @return {@link #serializationManagerProvider}
 	 */
 	public SerializationManagerProvider getSerializationManagerProvider() {
@@ -68,7 +68,7 @@ public class KryoSimpleHttpInvokerRequestExecutor extends SimpleHttpInvokerReque
 
 	/**
 	 * Sets {@link #serializationManagerProvider}.
-	 * 
+	 *
 	 * @param serializationManagerProvider
 	 *            New value for {@link #serializationManagerProvider}
 	 */

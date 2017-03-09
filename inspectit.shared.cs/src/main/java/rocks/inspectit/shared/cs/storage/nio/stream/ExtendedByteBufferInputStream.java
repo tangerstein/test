@@ -17,14 +17,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.Resource;
 
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import rocks.inspectit.shared.all.spring.logger.Log;
 import rocks.inspectit.shared.all.storage.nio.ByteBufferProvider;
 import rocks.inspectit.shared.all.storage.nio.stream.AbstractExtendedByteBufferInputStream;
 import rocks.inspectit.shared.cs.indexing.storage.IStorageDescriptor;
@@ -41,20 +39,14 @@ import rocks.inspectit.shared.cs.storage.nio.read.ReadingChannelManager;
  * <p>
  * The stream uses {@link ByteBufferProvider} to get the buffers and will release the buffers on the
  * {@link #close()} method. It's a must to call a {@link #close()} after the stream has been used.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Lazy
 public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInputStream {
-
-	/**
-	 * The log of this class.
-	 */
-	@Log
-	Logger log;
 
 	/**
 	 * {@link ReadingChannelManager}.
@@ -102,9 +94,9 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 	}
 
 	/**
-	 * Default constructor. Sets number of buffers to 3. Same as calling {@link
-	 * #ExtendedByteBufferInputStream(StorageData, List, 3)}.
-	 * 
+	 * Default constructor. Sets number of buffers to 3. Same as calling
+	 * {@link #ExtendedByteBufferInputStream(StorageData, List, 3)}.
+	 *
 	 * @param storageData
 	 *            {@link StorageData} to read information for.
 	 * @param descriptors
@@ -116,7 +108,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Secondary constructor. Sets the amount of buffers to use.
-	 * 
+	 *
 	 * @param numberOfBuffers
 	 *            Amount of buffers to use during read.
 	 * @param storageData
@@ -132,10 +124,11 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Prepares the stream for read. Must be called before any read operation is executed.
-	 * 
+	 *
 	 * @throws IOException
 	 *             if preparation fails due to inability to obtain defined number of byte buffers
 	 */
+	@Override
 	public void prepare() throws IOException {
 		super.prepare();
 
@@ -169,7 +162,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Sets {@link #storageData}.
-	 * 
+	 *
 	 * @param storageData
 	 *            New value for {@link #storageData}
 	 */
@@ -179,7 +172,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Gets {@link #descriptors}.
-	 * 
+	 *
 	 * @return {@link #descriptors}
 	 */
 	public List<IStorageDescriptor> getDescriptors() {
@@ -188,7 +181,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Sets {@link #descriptors}.
-	 * 
+	 *
 	 * @param descriptors
 	 *            New value for {@link #descriptors}
 	 */
@@ -198,7 +191,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Sets {@link #readingChannelManager}.
-	 * 
+	 *
 	 * @param readingChannelManager
 	 *            New value for {@link #readingChannelManager}
 	 */
@@ -208,7 +201,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Sets {@link #storageManager}.
-	 * 
+	 *
 	 * @param storageManager
 	 *            New value for {@link #storageManager}
 	 */
@@ -218,7 +211,7 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 
 	/**
 	 * Sets {@link #executorService}.
-	 * 
+	 *
 	 * @param executorService
 	 *            New value for {@link #executorService}
 	 */
@@ -229,9 +222,9 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 	/**
 	 * Read task that reads one by one descriptor and puts the full buffers to the full buffers
 	 * queue.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	private class ReadTask implements Runnable {
 
@@ -322,7 +315,14 @@ public class ExtendedByteBufferInputStream extends AbstractExtendedByteBufferInp
 							}
 						}
 					} catch (IOException e) {
-						log.warn("Exception occurred trying to read in the ReadTask.", e);
+						// log error not to lose it
+						log.error("Exception occurred trying to read in the ReadTask.", e);
+
+						// return buffer and signal error
+						finalByteBuffer.clear();
+						getEmptyBuffers().add(finalByteBuffer);
+						setReadFailed(true);
+						break;
 					}
 				}
 				nextDescriptorIndex.incrementAndGet();

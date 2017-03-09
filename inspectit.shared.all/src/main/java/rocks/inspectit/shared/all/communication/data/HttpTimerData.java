@@ -14,10 +14,10 @@ import rocks.inspectit.shared.all.cmr.cache.IObjectSizes;
 /**
  * Data object holding http based timer data. All timer related information are inherited from the
  * super class.
- * 
+ *
  * <b> Be careful when adding new attributes. Do not forget to add them to the size calculation.
  * </b>
- * 
+ *
  * @author Stefan Siegl
  */
 @Entity
@@ -63,6 +63,12 @@ public class HttpTimerData extends TimerData {
 	private Map<String, String> sessionAttributes = null;
 
 	/**
+	 * HTTP response status.
+	 */
+	@Transient
+	private int httpResponseStatus;
+
+	/**
 	 * Http info for optimizing saving to the DB.
 	 */
 	@ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
@@ -76,7 +82,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param timeStamp
 	 *            the timestamp of this data
 	 * @param platformIdent
@@ -92,7 +98,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Gets {@link #parameters}.
-	 * 
+	 *
 	 * @return {@link #parameters}
 	 */
 	public Map<String, String[]> getParameters() {
@@ -101,7 +107,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Sets {@link #parameters}.
-	 * 
+	 *
 	 * @param parameters
 	 *            New value for {@link #parameters}
 	 */
@@ -111,7 +117,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Gets {@link #attributes}.
-	 * 
+	 *
 	 * @return {@link #attributes}
 	 */
 	public Map<String, String> getAttributes() {
@@ -120,7 +126,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Sets {@link #attributes}.
-	 * 
+	 *
 	 * @param attributes
 	 *            New value for {@link #attributes}
 	 */
@@ -130,7 +136,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Gets {@link #headers}.
-	 * 
+	 *
 	 * @return {@link #headers}
 	 */
 	public Map<String, String> getHeaders() {
@@ -139,7 +145,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Sets {@link #headers}.
-	 * 
+	 *
 	 * @param headers
 	 *            New value for {@link #headers}
 	 */
@@ -156,7 +162,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Gets {@link #sessionAttributes}.
-	 * 
+	 *
 	 * @return {@link #sessionAttributes}
 	 */
 	public Map<String, String> getSessionAttributes() {
@@ -165,7 +171,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Sets {@link #sessionAttributes}.
-	 * 
+	 *
 	 * @param sessionAttributes
 	 *            New value for {@link #sessionAttributes}
 	 */
@@ -175,7 +181,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Gets {@link #httpInfo}.
-	 * 
+	 *
 	 * @return {@link #httpInfo}
 	 */
 	public HttpInfo getHttpInfo() {
@@ -184,7 +190,7 @@ public class HttpTimerData extends TimerData {
 
 	/**
 	 * Sets {@link #httpInfo}.
-	 * 
+	 *
 	 * @param httpInfo
 	 *            New value for {@link #httpInfo}
 	 */
@@ -193,11 +199,31 @@ public class HttpTimerData extends TimerData {
 	}
 
 	/**
+	 * Gets {@link #httpResponseStatus}.
+	 *
+	 * @return {@link #httpResponseStatus}
+	 */
+	public int getHttpResponseStatus() {
+		return httpResponseStatus;
+	}
+
+	/**
+	 * Sets {@link #httpResponseStatus}.
+	 *
+	 * @param httpResponseStatus
+	 *            New value for {@link #httpResponseStatus}
+	 */
+	public void setHttpResponseStatus(int httpResponseStatus) {
+		this.httpResponseStatus = httpResponseStatus;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = super.getObjectSize(objectSizes, doAlign);
-		size += objectSizes.getPrimitiveTypesSize(5, 0, 0, 0, 0, 0);
+		size += objectSizes.getPrimitiveTypesSize(5, 0, 1, 0, 0, 0);
 
 		if (null != parameters) {
 			size += objectSizes.getSizeOfHashMap(parameters.size());
@@ -205,8 +231,8 @@ public class HttpTimerData extends TimerData {
 				size += objectSizes.getSizeOf(entry.getKey());
 				String[] values = entry.getValue();
 				size += objectSizes.getSizeOfArray(values.length);
-				for (int i = 0; i < values.length; i++) {
-					size += objectSizes.getSizeOf(values[i]);
+				for (String value : values) {
+					size += objectSizes.getSizeOf(value);
 				}
 			}
 		}
@@ -251,11 +277,11 @@ public class HttpTimerData extends TimerData {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
-		result = prime * result + ((headers == null) ? 0 : headers.hashCode());
-		result = prime * result + ((httpInfo == null) ? 0 : httpInfo.hashCode());
-		result = prime * result + ((parameters == null) ? 0 : parameters.hashCode());
-		result = prime * result + ((sessionAttributes == null) ? 0 : sessionAttributes.hashCode());
+		result = (prime * result) + ((attributes == null) ? 0 : attributes.hashCode());
+		result = (prime * result) + ((headers == null) ? 0 : headers.hashCode());
+		result = (prime * result) + ((httpInfo == null) ? 0 : httpInfo.hashCode());
+		result = (prime * result) + ((parameters == null) ? 0 : parameters.hashCode());
+		result = (prime * result) + ((sessionAttributes == null) ? 0 : sessionAttributes.hashCode());
 		return result;
 	}
 
@@ -315,6 +341,7 @@ public class HttpTimerData extends TimerData {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String toString() {
 		String sup = super.toString();
 		return sup + "HttpTimerData [uri=" + (null != httpInfo ? httpInfo.getUri() : HttpInfo.UNDEFINED) + ", parameters=" + parameters + ", attributes=" + attributes + ", headers=" + headers + "]";

@@ -9,9 +9,9 @@ import rocks.inspectit.agent.java.sensor.platform.provider.MemoryInfoProvider;
 /**
  * Uses the {@link java.lang.management.MemoryMXBean} in order to retrieve all information that are
  * provided here.
- * 
+ *
  * @author Eduard Tudenhoefner
- * 
+ *
  */
 public class DefaultMemoryInfoProvider implements MemoryInfoProvider {
 
@@ -23,6 +23,7 @@ public class DefaultMemoryInfoProvider implements MemoryInfoProvider {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public MemoryUsage getHeapMemoryUsage() {
 		return memoryBean.getHeapMemoryUsage();
 	}
@@ -30,6 +31,7 @@ public class DefaultMemoryInfoProvider implements MemoryInfoProvider {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public MemoryUsage getNonHeapMemoryUsage() {
 		return memoryBean.getNonHeapMemoryUsage();
 	}

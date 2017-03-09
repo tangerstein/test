@@ -2,9 +2,9 @@ package rocks.inspectit.shared.all.exception;
 
 /**
  * Remote exception that transforms any checked or un-checked exception occurring in the services.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class RemoteException extends RuntimeException {
 
@@ -33,19 +33,19 @@ public class RemoteException extends RuntimeException {
 	/**
 	 * Constructs a RemoteException using the given original Exception extracting the message, its
 	 * canonical name and its original stacktrace.
-	 * 
+	 *
 	 * @param originalException
 	 *            the orginalException used to construct the {@link RemoteException}
 	 */
 	public RemoteException(Throwable originalException) {
 		super(assertNotNull(originalException).getMessage());
-		this.originalExceptionClass = originalException.getClass().getCanonicalName();
+		this.originalExceptionClass = originalException.getClass().getName();
 		super.setStackTrace(originalException.getStackTrace());
 	}
 
 	/**
 	 * Asserts original exception is not null.
-	 * 
+	 *
 	 * @param originalException
 	 *            the orginalException used to construct the {@link RemoteException}
 	 * @return original exception
@@ -59,7 +59,7 @@ public class RemoteException extends RuntimeException {
 
 	/**
 	 * Gets {@link #originalExceptionClass}.
-	 * 
+	 *
 	 * @return {@link #originalExceptionClass}
 	 */
 	public String getOriginalExceptionClass() {
@@ -68,7 +68,7 @@ public class RemoteException extends RuntimeException {
 
 	/**
 	 * Gets {@link #serviceMethodSignature}.
-	 * 
+	 *
 	 * @return {@link #serviceMethodSignature}
 	 */
 	public String getServiceMethodSignature() {
@@ -77,7 +77,7 @@ public class RemoteException extends RuntimeException {
 
 	/**
 	 * Sets {@link #serviceMethodSignature}.
-	 * 
+	 *
 	 * @param serviceMethodSignature
 	 *            New value for {@link #serviceMethodSignature}
 	 */

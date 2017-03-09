@@ -2,14 +2,16 @@ package rocks.inspectit.shared.all.communication.comparator;
 
 import java.util.Comparator;
 
+import com.google.common.primitives.Longs;
+
 import rocks.inspectit.shared.all.cmr.service.ICachedDataService;
 import rocks.inspectit.shared.all.communication.data.TimerData;
 
 /**
  * Comparators for the {@link TimerData}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public enum TimerDataComparatorEnum implements IDataComparator<TimerData>, Comparator<TimerData> {
 
@@ -86,6 +88,7 @@ public enum TimerDataComparatorEnum implements IDataComparator<TimerData>, Compa
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int compare(TimerData o1, TimerData o2, ICachedDataService cachedDataService) {
 		return compare(o1, o2);
 	}
@@ -93,11 +96,12 @@ public enum TimerDataComparatorEnum implements IDataComparator<TimerData>, Compa
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int compare(TimerData o1, TimerData o2) {
 		switch (this) {
 		case COUNT:
-			// Java5 does not have Long.compare
-			return Long.valueOf(o1.getCount()).compareTo(Long.valueOf(o2.getCount()));
+			// Java6 does not have Long.compare
+			return Longs.compare(o1.getCount(), o2.getCount());
 		case AVERAGE:
 			return Double.compare(o1.getAverage(), o2.getAverage());
 		case MIN:

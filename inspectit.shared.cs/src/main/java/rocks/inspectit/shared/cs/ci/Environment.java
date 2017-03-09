@@ -6,7 +6,6 @@ import java.util.Set;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
@@ -16,8 +15,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import rocks.inspectit.shared.cs.ci.factory.ConfigurationDefaultsFactory;
 import rocks.inspectit.shared.cs.ci.sensor.exception.IExceptionSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.exception.impl.ExceptionSensorConfig;
+import rocks.inspectit.shared.cs.ci.sensor.jmx.JmxSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.IMethodSensorConfig;
-import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionMetaDataSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.ConnectionSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.HttpSensorConfig;
 import rocks.inspectit.shared.cs.ci.sensor.method.impl.InvocationSequenceSensorConfig;
@@ -49,31 +48,7 @@ import rocks.inspectit.shared.cs.ci.strategy.impl.TimeSendingStrategyConfig;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "environment")
-public class Environment {
-
-	/**
-	 * Id of the environment.
-	 */
-	@XmlAttribute(name = "id", required = true)
-	private String id;
-
-	/**
-	 * Name of the environment.
-	 */
-	@XmlAttribute(name = "name", required = true)
-	private String name;
-
-	/**
-	 * Description of the environment.
-	 */
-	@XmlAttribute(name = "description")
-	private String description;
-
-	/**
-	 * Revision. Server for version control and updating control.
-	 */
-	@XmlAttribute(name = "revision")
-	private int revision = 1;
+public class Environment extends AbstractCiData {
 
 	/**
 	 * Configuration for the sending strategy.
@@ -104,10 +79,9 @@ public class Environment {
 	 * List of the method sensor configurations.
 	 */
 	@XmlElementWrapper(name = "method-sensor-configs")
-	@XmlElementRefs({ @XmlElementRef(type = ConnectionMetaDataSensorConfig.class), @XmlElementRef(type = ConnectionSensorConfig.class), @XmlElementRef(type = HttpSensorConfig.class),
-		@XmlElementRef(type = InvocationSequenceSensorConfig.class), @XmlElementRef(type = PreparedStatementParameterSensorConfig.class),
-		@XmlElementRef(type = PreparedStatementSensorConfig.class), @XmlElementRef(type = StatementSensorConfig.class), @XmlElementRef(type = TimerSensorConfig.class),
-		@XmlElementRef(type = Log4jLoggingSensorConfig.class) })
+	@XmlElementRefs({ @XmlElementRef(type = ConnectionSensorConfig.class), @XmlElementRef(type = HttpSensorConfig.class), @XmlElementRef(type = InvocationSequenceSensorConfig.class),
+		@XmlElementRef(type = PreparedStatementParameterSensorConfig.class), @XmlElementRef(type = PreparedStatementSensorConfig.class), @XmlElementRef(type = StatementSensorConfig.class),
+		@XmlElementRef(type = TimerSensorConfig.class), @XmlElementRef(type = Log4jLoggingSensorConfig.class) })
 	private final List<IMethodSensorConfig> methodSensorConfigs = ConfigurationDefaultsFactory.getAvailableMethodSensorConfigs();
 
 	/**
@@ -115,6 +89,12 @@ public class Environment {
 	 */
 	@XmlElementRef(type = ExceptionSensorConfig.class)
 	private final IExceptionSensorConfig exceptionSensorConfig = ConfigurationDefaultsFactory.getDefaultExceptionSensorConfig();
+
+	/**
+	 * JMX sensor config. We have only one.
+	 */
+	@XmlElementRef(type = JmxSensorConfig.class)
+	private final JmxSensorConfig jmxSensorConfig = ConfigurationDefaultsFactory.getDefaultJmxSensorConfig();
 
 	/**
 	 * List of profile ids. Needed for saving to the XML.
@@ -130,79 +110,20 @@ public class Environment {
 	private boolean classLoadingDelegation = true;
 
 	/**
-	 * Gets {@link #id}.
+	 * Returns the {@link IMethodSensorConfig} for the given {@link IMethodSensorConfig} class.
 	 *
-	 * @return {@link #id}
+	 * @param clazz
+	 *            Class to look for.
+	 * @return Returns the {@link IMethodSensorConfig} for the given {@link IMethodSensorConfig}
+	 *         class.
 	 */
-	public String getId() {
-		return id;
-	}
-
-	/**
-	 * Sets {@link #id}.
-	 *
-	 * @param id
-	 *            New value for {@link #id}
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	/**
-	 * Gets {@link #name}.
-	 *
-	 * @return {@link #name}
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * Sets {@link #name}.
-	 *
-	 * @param name
-	 *            New value for {@link #name}
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	/**
-	 * Gets {@link #description}.
-	 *
-	 * @return {@link #description}
-	 */
-	public String getDescription() {
-		return description;
-	}
-
-	/**
-	 * Sets {@link #description}.
-	 *
-	 * @param description
-	 *            New value for {@link #description}
-	 */
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	/**
-	 * Gets {@link #revision}.
-	 *
-	 * @return {@link #revision}
-	 */
-	public int getRevision() {
-		return revision;
-	}
-
-	/**
-	 * Sets {@link #revision}.
-	 *
-	 * @param revision
-	 *            New value for {@link #revision}
-	 */
-	public void setRevision(int revision) {
-		this.revision = revision;
+	public IMethodSensorConfig getMethodSensorTypeConfig(Class<? extends IMethodSensorConfig> clazz) {
+		for (IMethodSensorConfig config : methodSensorConfigs) {
+			if (config.getClass().equals(clazz)) {
+				return config;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -271,6 +192,15 @@ public class Environment {
 	}
 
 	/**
+	 * Gets {@link #jmxSensorConfig}.
+	 *
+	 * @return {@link #jmxSensorConfig}
+	 */
+	public JmxSensorConfig getJmxSensorConfig() {
+		return jmxSensorConfig;
+	}
+
+	/**
 	 * Gets {@link #profileIds}.
 	 *
 	 * @return {@link #profileIds}
@@ -314,18 +244,15 @@ public class Environment {
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((bufferStrategyConfig == null) ? 0 : bufferStrategyConfig.hashCode());
-		result = prime * result + (classLoadingDelegation ? 1231 : 1237);
-		result = prime * result + ((description == null) ? 0 : description.hashCode());
-		result = prime * result + ((exceptionSensorConfig == null) ? 0 : exceptionSensorConfig.hashCode());
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((methodSensorConfigs == null) ? 0 : methodSensorConfigs.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((platformSensorConfigs == null) ? 0 : platformSensorConfigs.hashCode());
-		result = prime * result + ((profileIds == null) ? 0 : profileIds.hashCode());
-		result = prime * result + revision;
-		result = prime * result + ((sendingStrategyConfig == null) ? 0 : sendingStrategyConfig.hashCode());
+		int result = super.hashCode();
+		result = (prime * result) + ((this.bufferStrategyConfig == null) ? 0 : this.bufferStrategyConfig.hashCode());
+		result = (prime * result) + (this.classLoadingDelegation ? 1231 : 1237);
+		result = (prime * result) + ((this.exceptionSensorConfig == null) ? 0 : this.exceptionSensorConfig.hashCode());
+		result = (prime * result) + ((this.jmxSensorConfig == null) ? 0 : this.jmxSensorConfig.hashCode());
+		result = (prime * result) + ((this.methodSensorConfigs == null) ? 0 : this.methodSensorConfigs.hashCode());
+		result = (prime * result) + ((this.platformSensorConfigs == null) ? 0 : this.platformSensorConfigs.hashCode());
+		result = (prime * result) + ((this.profileIds == null) ? 0 : this.profileIds.hashCode());
+		result = (prime * result) + ((this.sendingStrategyConfig == null) ? 0 : this.sendingStrategyConfig.hashCode());
 		return result;
 	}
 
@@ -337,80 +264,63 @@ public class Environment {
 		if (this == obj) {
 			return true;
 		}
-		if (obj == null) {
+		if (!super.equals(obj)) {
 			return false;
 		}
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
 		Environment other = (Environment) obj;
-		if (bufferStrategyConfig == null) {
+		if (this.bufferStrategyConfig == null) {
 			if (other.bufferStrategyConfig != null) {
 				return false;
 			}
-		} else if (!bufferStrategyConfig.equals(other.bufferStrategyConfig)) {
+		} else if (!this.bufferStrategyConfig.equals(other.bufferStrategyConfig)) {
 			return false;
 		}
-		if (classLoadingDelegation != other.classLoadingDelegation) {
+		if (this.classLoadingDelegation != other.classLoadingDelegation) {
 			return false;
 		}
-		if (description == null) {
-			if (other.description != null) {
-				return false;
-			}
-		} else if (!description.equals(other.description)) {
-			return false;
-		}
-		if (exceptionSensorConfig == null) {
+		if (this.exceptionSensorConfig == null) {
 			if (other.exceptionSensorConfig != null) {
 				return false;
 			}
-		} else if (!exceptionSensorConfig.equals(other.exceptionSensorConfig)) {
+		} else if (!this.exceptionSensorConfig.equals(other.exceptionSensorConfig)) {
 			return false;
 		}
-		if (id == null) {
-			if (other.id != null) {
+		if (this.jmxSensorConfig == null) {
+			if (other.jmxSensorConfig != null) {
 				return false;
 			}
-		} else if (!id.equals(other.id)) {
+		} else if (!this.jmxSensorConfig.equals(other.jmxSensorConfig)) {
 			return false;
 		}
-		if (methodSensorConfigs == null) {
+		if (this.methodSensorConfigs == null) {
 			if (other.methodSensorConfigs != null) {
 				return false;
 			}
-		} else if (!methodSensorConfigs.equals(other.methodSensorConfigs)) {
+		} else if (!this.methodSensorConfigs.equals(other.methodSensorConfigs)) {
 			return false;
 		}
-		if (name == null) {
-			if (other.name != null) {
-				return false;
-			}
-		} else if (!name.equals(other.name)) {
-			return false;
-		}
-		if (platformSensorConfigs == null) {
+		if (this.platformSensorConfigs == null) {
 			if (other.platformSensorConfigs != null) {
 				return false;
 			}
-		} else if (!platformSensorConfigs.equals(other.platformSensorConfigs)) {
+		} else if (!this.platformSensorConfigs.equals(other.platformSensorConfigs)) {
 			return false;
 		}
-		if (profileIds == null) {
+		if (this.profileIds == null) {
 			if (other.profileIds != null) {
 				return false;
 			}
-		} else if (!profileIds.equals(other.profileIds)) {
+		} else if (!this.profileIds.equals(other.profileIds)) {
 			return false;
 		}
-		if (revision != other.revision) {
-			return false;
-		}
-		if (sendingStrategyConfig == null) {
+		if (this.sendingStrategyConfig == null) {
 			if (other.sendingStrategyConfig != null) {
 				return false;
 			}
-		} else if (!sendingStrategyConfig.equals(other.sendingStrategyConfig)) {
+		} else if (!this.sendingStrategyConfig.equals(other.sendingStrategyConfig)) {
 			return false;
 		}
 		return true;

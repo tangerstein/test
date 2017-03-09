@@ -9,6 +9,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import rocks.inspectit.server.cache.IBuffer;
+import rocks.inspectit.server.externalservice.IExternalService;
 import rocks.inspectit.server.property.PropertyManager;
 import rocks.inspectit.server.spring.aop.MethodLog;
 import rocks.inspectit.server.util.ShutdownService;
@@ -32,9 +34,9 @@ import rocks.inspectit.shared.cs.storage.StorageManager;
 
 /**
  * Implementation of the {@link ICmrManagementService}. Provides general management of the CMR.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Service
 public class CmrManagementService implements ICmrManagementService {
@@ -79,6 +81,12 @@ public class CmrManagementService implements ICmrManagementService {
 	private ShutdownService shutdownService;
 
 	/**
+	 * List of {@link IExternalService}s.
+	 */
+	@Autowired
+	private List<IExternalService> services;
+
+	/**
 	 * Time in milliseconds when the CMR has started.
 	 */
 	private long timeStarted;
@@ -107,6 +115,7 @@ public class CmrManagementService implements ICmrManagementService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public void clearBuffer() {
 		buffer.clearAll();
@@ -115,6 +124,7 @@ public class CmrManagementService implements ICmrManagementService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@MethodLog
 	public CmrStatusData getCmrStatusData() {
 		// cmr status data should always report in bytes!
@@ -130,15 +140,21 @@ public class CmrManagementService implements ICmrManagementService {
 		cmrStatusData.setUpTime(System.currentTimeMillis() - timeStarted);
 		cmrStatusData.setDateStarted(dateStarted);
 		cmrStatusData.setDatabaseSize(getDatabaseSize());
+
+		for (IExternalService service : services) {
+			cmrStatusData.getExternalServiceStatusMap().put(service.getServiceType(), service.getServiceStatus());
+		}
+
 		return cmrStatusData;
 	}
 
 	/**
 	 * Reports that an amount of data has been dropped.
-	 * 
+	 *
 	 * @param count
 	 *            Dropped amount.
 	 */
+	@Override
 	public void addDroppedDataCount(int count) {
 		droppedDataCount += count;
 	}
@@ -146,6 +162,7 @@ public class CmrManagementService implements ICmrManagementService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int getDroppedDataCount() {
 		return droppedDataCount;
 	}
@@ -153,6 +170,7 @@ public class CmrManagementService implements ICmrManagementService {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Collection<PropertySection> getConfigurationPropertySections() {
 		return propertyManager.getConfigurationPropertySections();
 	}
@@ -168,7 +186,7 @@ public class CmrManagementService implements ICmrManagementService {
 	/**
 	 * Returns the {@link Long} holding the size of the database folder or <code>null</code> if
 	 * database folder does not exists or calculation of size fails.
-	 * 
+	 *
 	 * @return Returns the {@link Long} holding the size of the database folder or <code>null</code>
 	 *         if database folder does not exists or calculation of size fails.
 	 */
@@ -194,7 +212,7 @@ public class CmrManagementService implements ICmrManagementService {
 
 	/**
 	 * Is executed after dependency injection is done to perform any initialization.
-	 * 
+	 *
 	 * @throws Exception
 	 *             if an error occurs during {@link PostConstruct}
 	 */

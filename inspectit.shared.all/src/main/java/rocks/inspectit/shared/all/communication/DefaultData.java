@@ -31,9 +31,9 @@ import rocks.inspectit.shared.all.indexing.IIndexQuery;
  * <p>
  * Data objects are free to use the {@link #finalizeData()} method to generate some additional
  * values (like the average).
- * 
+ *
  * @author Patrice Bouillet
- * 
+ *
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
@@ -85,7 +85,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Constructor which accepts three parameters to initialize itself.
-	 * 
+	 *
 	 * @param timeStamp
 	 *            The timestamp.
 	 * @param platformIdent
@@ -101,7 +101,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Gets {@link #id}.
-	 * 
+	 *
 	 * @return {@link #id}
 	 */
 	public long getId() {
@@ -110,7 +110,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Sets {@link #id}.
-	 * 
+	 *
 	 * @param id
 	 *            New value for {@link #id}
 	 */
@@ -120,7 +120,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Gets {@link #platformIdent}.
-	 * 
+	 *
 	 * @return {@link #platformIdent}
 	 */
 	public long getPlatformIdent() {
@@ -129,7 +129,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Sets {@link #platformIdent}.
-	 * 
+	 *
 	 * @param platformIdent
 	 *            New value for {@link #platformIdent}
 	 */
@@ -139,7 +139,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Gets {@link #sensorTypeIdent}.
-	 * 
+	 *
 	 * @return {@link #sensorTypeIdent}
 	 */
 	public long getSensorTypeIdent() {
@@ -148,7 +148,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Sets {@link #sensorTypeIdent}.
-	 * 
+	 *
 	 * @param sensorTypeIdent
 	 *            New value for {@link #sensorTypeIdent}
 	 */
@@ -158,7 +158,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Gets {@link #timeStamp}.
-	 * 
+	 *
 	 * @return {@link #timeStamp}
 	 */
 	public Timestamp getTimeStamp() {
@@ -167,7 +167,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Sets {@link #timeStamp}.
-	 * 
+	 *
 	 * @param timeStamp
 	 *            New value for {@link #timeStamp}
 	 */
@@ -178,7 +178,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 	/**
 	 * This method has to be overridden by every implementation of a value object to return a
 	 * {@link DefaultData} object which can be persisted.
-	 * 
+	 *
 	 * @return Returns a {@link DefaultData} object which can be persisted.
 	 */
 	public DefaultData finalizeData() {
@@ -188,19 +188,21 @@ public abstract class DefaultData implements Serializable, Sizeable {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (id ^ (id >>> 32));
-		result = prime * result + (int) (platformIdent ^ (platformIdent >>> 32));
-		result = prime * result + (int) (sensorTypeIdent ^ (sensorTypeIdent >>> 32));
-		result = prime * result + ((timeStamp == null) ? 0 : timeStamp.hashCode());
+		result = (prime * result) + (int) (id ^ (id >>> 32));
+		result = (prime * result) + (int) (platformIdent ^ (platformIdent >>> 32));
+		result = (prime * result) + (int) (sensorTypeIdent ^ (sensorTypeIdent >>> 32));
+		result = (prime * result) + ((timeStamp == null) ? 0 : timeStamp.hashCode());
 		return result;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
@@ -233,11 +235,12 @@ public abstract class DefaultData implements Serializable, Sizeable {
 
 	/**
 	 * Returns the approximate size of the object in the memory in bytes.
-	 * 
+	 *
 	 * @param objectSizes
 	 *            Appropriate instance of {@link IObjectSizes} depending on the VM architecture.
 	 * @return Approximate object size in bytes.
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes) {
 		return this.getObjectSize(objectSizes, true);
 	}
@@ -246,7 +249,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 	 * Returns the approximate size of the object in the memory in bytes.
 	 * <p>
 	 * This method needs to be overridden by all subclasses.
-	 * 
+	 *
 	 * @param objectSizes
 	 *            Appropriate instance of {@link IObjectSizes} depending on the VM architecture.
 	 * @param doAlign
@@ -254,6 +257,7 @@ public abstract class DefaultData implements Serializable, Sizeable {
 	 *            align the result because the align occurs only one time per whole object.
 	 * @return Approximate object size in bytes.
 	 */
+	@Override
 	public long getObjectSize(IObjectSizes objectSizes, boolean doAlign) {
 		long size = objectSizes.getSizeOfObjectHeader();
 		size += objectSizes.getPrimitiveTypesSize(1, 0, 0, 0, 3, 0);
@@ -269,22 +273,22 @@ public abstract class DefaultData implements Serializable, Sizeable {
 	 * Returns if the object is complied with passed {@link IIndexQuery}. This method will only
 	 * return true if the object data correspond to the searching parameters set in
 	 * {@link IIndexQuery}.
-	 * 
+	 *
 	 * @param query
 	 *            Query to be check against.
 	 * @return True if the object is complied with query, otherwise false.
 	 */
 	public boolean isQueryComplied(IIndexQuery query) {
-		if (query.getObjectClasses() != null && !query.getObjectClasses().contains(this.getClass())) {
+		if ((query.getObjectClasses() != null) && !query.getObjectClasses().contains(this.getClass())) {
 			return false;
 		}
 		if (query.getMinId() > id) {
 			return false;
 		}
-		if (query.getPlatformIdent() != 0 && query.getPlatformIdent() != platformIdent) {
+		if ((query.getPlatformIdent() != 0) && (query.getPlatformIdent() != platformIdent)) {
 			return false;
 		}
-		if (query.getSensorTypeIdent() != 0 && query.getSensorTypeIdent() != sensorTypeIdent) {
+		if ((query.getSensorTypeIdent() != 0) && (query.getSensorTypeIdent() != sensorTypeIdent)) {
 			return false;
 		}
 		if (!query.isInInterval(timeStamp)) {

@@ -21,9 +21,9 @@ import rocks.inspectit.ui.rcp.documentation.DocumentationService;
 
 /**
  * Handler that opens that InspectIT Documentation page on Confluence.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public abstract class OpenUrlHandler extends AbstractHandler {
 
@@ -50,7 +50,7 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 
 	/**
 	 * Implementing classes should return the correct URL string to open.
-	 * 
+	 *
 	 * @param event
 	 *            {@link ExecutionEvent} that activated the handler.
 	 * @return URL as a string or <code>null</code> to signal the abort of the action due to the not
@@ -60,9 +60,9 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 
 	/**
 	 * Handler for opening the Confluence documentation.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	public static class OpenDocumentationHandler extends OpenUrlHandler {
 
@@ -82,9 +82,9 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 
 	/**
 	 * Handler for staring the feedback email.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	public static class GiveFeedbackHandler extends OpenUrlHandler {
 
@@ -99,9 +99,9 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 
 	/**
 	 * Handler for staring the support email.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	public static class RequestSupportHandler extends OpenUrlHandler {
 
@@ -116,9 +116,9 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 
 	/**
 	 * Handler for sending the exception to the support mail.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	public static class ExceptionSupportHandler extends OpenUrlHandler {
 
@@ -136,6 +136,7 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 		 * {@inheritDoc}
 		 */
 		@Override
+		@SuppressWarnings("PMD.ConsecutiveLiteralAppends")
 		protected String getUrlString(ExecutionEvent event) {
 			// Get the exception out of the context
 			IEvaluationContext context = (IEvaluationContext) event.getApplicationContext();
@@ -176,9 +177,9 @@ public abstract class OpenUrlHandler extends AbstractHandler {
 
 	/**
 	 * Handler for searching the documentation.
-	 * 
+	 *
 	 * @author Ivan Senic
-	 * 
+	 *
 	 */
 	public static class SearchDocumentationHandler extends OpenDocumentationHandler {
 

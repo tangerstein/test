@@ -2,6 +2,9 @@ package rocks.inspectit.shared.all.communication;
 
 import java.sql.Timestamp;
 
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import rocks.inspectit.shared.all.cmr.model.MethodIdent;
@@ -20,17 +23,16 @@ import rocks.inspectit.shared.all.communication.data.SqlStatementData;
 import rocks.inspectit.shared.all.communication.data.SystemInformationData;
 import rocks.inspectit.shared.all.communication.data.ThreadInformationData;
 import rocks.inspectit.shared.all.communication.data.TimerData;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import rocks.inspectit.shared.all.communication.data.cmr.ApplicationData;
+import rocks.inspectit.shared.all.communication.data.cmr.BusinessTransactionData;
 
 /**
  * Test all domain model classes to verify whether the contract for the equals and hashCode methods
  * in a class is met. The contracts are described in the Javadoc comments for the java.lang.Object
  * class.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @SuppressWarnings("PMD")
 public class EqualsVerifierTest {
@@ -41,11 +43,11 @@ public class EqualsVerifierTest {
 	public static final Object[][] TESTING_CLASSES = new Object[][] { { TimerData.class }, { SqlStatementData.class }, { ExceptionSensorData.class }, { InvocationSequenceData.class },
 			{ ClassLoadingInformationData.class }, { CompilationInformationData.class }, { MemoryInformationData.class }, { RuntimeInformationData.class }, { SystemInformationData.class },
 			{ ThreadInformationData.class }, { HttpTimerData.class }, { MethodIdent.class }, { MethodSensorTypeIdent.class }, { PlatformIdent.class }, { PlatformSensorTypeIdent.class },
-			{ SensorTypeIdent.class } };
+			{ SensorTypeIdent.class }, { ApplicationData.class }, { BusinessTransactionData.class } };
 
 	/**
 	 * Verify equals contract test.
-	 * 
+	 *
 	 * @param clazz
 	 *            Class to test.
 	 */
@@ -54,12 +56,14 @@ public class EqualsVerifierTest {
 		EqualsVerifier.forClass(clazz).usingGetClass().withPrefabValues(Timestamp.class, new Timestamp(1), new Timestamp(2))
 				.withPrefabValues(ExceptionSensorData.class, new ExceptionSensorData(new Timestamp(1), 1, 1, 1), new ExceptionSensorData(new Timestamp(2), 2, 2, 2))
 				.withPrefabValues(InvocationSequenceData.class, new InvocationSequenceData(new Timestamp(1), 1, 1, 1), new InvocationSequenceData(new Timestamp(2), 2, 2, 2)).withRedefinedSuperclass()
+				.withPrefabValues(ApplicationData.class, new ApplicationData(1, 1, "name1"), new ApplicationData(2, 2, "name2")).withPrefabValues(BusinessTransactionData.class,
+						new BusinessTransactionData(1, 1, new ApplicationData(1, 1, "name1"), "name1"), new BusinessTransactionData(2, 2, new ApplicationData(2, 2, "name2"), "name2"))
 				.suppress(Warning.NONFINAL_FIELDS).suppress(Warning.TRANSIENT_FIELDS).verify();
 	}
 
 	/**
 	 * Provides classes to be tested.
-	 * 
+	 *
 	 * @return Provides classes to be tested.
 	 */
 	@DataProvider(name = "classProvider")

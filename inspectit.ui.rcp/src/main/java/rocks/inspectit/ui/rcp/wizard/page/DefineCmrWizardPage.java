@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -15,14 +16,13 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 
 import rocks.inspectit.ui.rcp.InspectIT;
-import rocks.inspectit.ui.rcp.formatter.TextFormatter;
 import rocks.inspectit.ui.rcp.repository.CmrRepositoryDefinition;
 
 /**
  * Wizard page for definition of the new or existing {@link CmrRepositoryDefinition}.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 public class DefineCmrWizardPage extends WizardPage {
 
@@ -54,16 +54,16 @@ public class DefineCmrWizardPage extends WizardPage {
 	/**
 	 * Repository to edit if edit mode is on.
 	 */
-	private CmrRepositoryDefinition cmrRepositoryDefinition;
+	private final CmrRepositoryDefinition cmrRepositoryDefinition;
 
 	/**
 	 * List of existing repositories to check if the same one already exists.
 	 */
-	private List<CmrRepositoryDefinition> existingRepositories;
+	private final List<CmrRepositoryDefinition> existingRepositories;
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param title
 	 *            title for the wizard page
 	 */
@@ -73,19 +73,19 @@ public class DefineCmrWizardPage extends WizardPage {
 
 	/**
 	 * Secondary constructor for editing existing CMR.
-	 * 
+	 *
 	 * @param title
 	 *            title for the wizard page
 	 * @param cmrRepositoryDefinition
 	 *            {@link CmrRepositoryDefinition} to edit
-	 * 
+	 *
 	 */
 	public DefineCmrWizardPage(String title, CmrRepositoryDefinition cmrRepositoryDefinition) {
 		super(title);
 		this.setTitle(title);
 		this.setMessage(DEFAULT_MESSAGE);
 		this.cmrRepositoryDefinition = cmrRepositoryDefinition;
-		this.existingRepositories = new ArrayList<CmrRepositoryDefinition>(InspectIT.getDefault().getCmrRepositoryManager().getCmrRepositoryDefinitions());
+		this.existingRepositories = new ArrayList<>(InspectIT.getDefault().getCmrRepositoryManager().getCmrRepositoryDefinitions());
 		if (null != cmrRepositoryDefinition) {
 			this.existingRepositories.remove(cmrRepositoryDefinition);
 		}
@@ -151,7 +151,7 @@ public class DefineCmrWizardPage extends WizardPage {
 			nameBox.setText(cmrRepositoryDefinition.getName());
 			ipBox.setText(cmrRepositoryDefinition.getIp());
 			portBox.setText(String.valueOf(cmrRepositoryDefinition.getPort()));
-			descriptionBox.setText(TextFormatter.emptyStringIfNull(cmrRepositoryDefinition.getDescription()));
+			descriptionBox.setText(StringUtils.defaultString(cmrRepositoryDefinition.getDescription()));
 		}
 
 		setControl(main);
@@ -189,7 +189,7 @@ public class DefineCmrWizardPage extends WizardPage {
 		String ip = ipBox.getText().trim();
 		int port = Integer.parseInt(portBox.getText().trim());
 		for (CmrRepositoryDefinition cmrRepositoryDefinition : existingRepositories) {
-			if (Objects.equals(ip, cmrRepositoryDefinition.getIp()) && port == cmrRepositoryDefinition.getPort()) {
+			if (Objects.equals(ip, cmrRepositoryDefinition.getIp()) && (port == cmrRepositoryDefinition.getPort())) {
 				return false;
 			}
 		}
@@ -236,7 +236,7 @@ public class DefineCmrWizardPage extends WizardPage {
 		String ip = ipBox.getText().trim();
 		int port = Integer.parseInt(portBox.getText().trim());
 		for (CmrRepositoryDefinition cmrRepositoryDefinition : existingRepositories) {
-			if (Objects.equals(ip, cmrRepositoryDefinition.getIp()) && port == cmrRepositoryDefinition.getPort()) {
+			if (Objects.equals(ip, cmrRepositoryDefinition.getIp()) && (port == cmrRepositoryDefinition.getPort())) {
 				setMessage("The repository with given IP address and port already exists", ERROR);
 				return;
 			}

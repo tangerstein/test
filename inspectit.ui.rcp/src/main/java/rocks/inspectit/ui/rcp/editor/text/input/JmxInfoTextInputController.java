@@ -27,7 +27,7 @@ import rocks.inspectit.ui.rcp.util.SafeExecutor;
 
 /**
  * This class represents the textual view of the {@link JmxSensorValueData} sensor-type.
- * 
+ *
  * @author Marius Oehler
  *
  */
@@ -145,29 +145,30 @@ public class JmxInfoTextInputController extends AbstractTextInputController {
 	 */
 	@Override
 	public void createPartControl(Composite parent, FormToolkit toolkit) {
+		int minTitleColumnWidth = 170;
 		// first section
 		addSection(parent, toolkit, SECTION_BEAN_DETAILS);
 
 		if (sections.containsKey(SECTION_BEAN_DETAILS)) {
 			// creates the labels
 
-			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Domain: ", InspectIT.getDefault().getImage(InspectITImages.IMG_PACKAGE));
+			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Domain: ", InspectIT.getDefault().getImage(InspectITImages.IMG_PACKAGE), minTitleColumnWidth);
 			packageLabel = toolkit.createLabel(sections.get(SECTION_BEAN_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			packageLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Type: ", InspectIT.getDefault().getImage(InspectITImages.IMG_BOOK));
+			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Type: ", InspectIT.getDefault().getImage(InspectITImages.IMG_BOOK), minTitleColumnWidth);
 			typeLabel = toolkit.createLabel(sections.get(SECTION_BEAN_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			typeLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Attribute: ", InspectIT.getDefault().getImage(InspectITImages.IMG_BLUE_DOCUMENT_TABLE));
+			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Attribute: ", InspectIT.getDefault().getImage(InspectITImages.IMG_BLUE_DOCUMENT_TABLE), minTitleColumnWidth);
 			attributeLabel = toolkit.createLabel(sections.get(SECTION_BEAN_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			attributeLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Data type: ");
+			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Data type: ", minTitleColumnWidth);
 			dataTypeLabel = toolkit.createLabel(sections.get(SECTION_BEAN_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			dataTypeLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Description: ", InspectIT.getDefault().getImage(InspectITImages.IMG_INFORMATION));
+			addItemToSection(toolkit, SECTION_BEAN_DETAILS, "Description: ", InspectIT.getDefault().getImage(InspectITImages.IMG_INFORMATION), minTitleColumnWidth);
 			descriptionLabel = toolkit.createLabel(sections.get(SECTION_BEAN_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			descriptionLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
@@ -178,11 +179,11 @@ public class JmxInfoTextInputController extends AbstractTextInputController {
 
 		if (sections.containsKey(SECTION_VALUE_DETAILS)) {
 			// creates the labels
-			addItemToSection(toolkit, SECTION_VALUE_DETAILS, "Timestamp: ", InspectIT.getDefault().getImage(InspectITImages.IMG_TIMESTAMP));
+			addItemToSection(toolkit, SECTION_VALUE_DETAILS, "Timestamp: ", InspectIT.getDefault().getImage(InspectITImages.IMG_TIMESTAMP), minTitleColumnWidth);
 			timestampLabel = toolkit.createLabel(sections.get(SECTION_VALUE_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			timestampLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_VALUE_DETAILS, "Value: ");
+			addItemToSection(toolkit, SECTION_VALUE_DETAILS, "Value: ", minTitleColumnWidth);
 			valueLabel = toolkit.createLabel(sections.get(SECTION_VALUE_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			valueLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		}
@@ -192,19 +193,19 @@ public class JmxInfoTextInputController extends AbstractTextInputController {
 
 		if (sections.containsKey(SECTION_AGGREGATED_DETAILS)) {
 			// creates the labels
-			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Count: ", InspectIT.getDefault().getImage(InspectITImages.IMG_COUNTER));
+			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Count: ", InspectIT.getDefault().getImage(InspectITImages.IMG_COUNTER), minTitleColumnWidth);
 			countLabel = toolkit.createLabel(sections.get(SECTION_AGGREGATED_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			countLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Average: ");
+			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Average: ", minTitleColumnWidth);
 			averageValueLabel = toolkit.createLabel(sections.get(SECTION_AGGREGATED_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			averageValueLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Min: ");
+			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Min: ", minTitleColumnWidth);
 			minValueLabel = toolkit.createLabel(sections.get(SECTION_AGGREGATED_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			minValueLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Max: ");
+			addItemToSection(toolkit, SECTION_AGGREGATED_DETAILS, "Max: ", minTitleColumnWidth);
 			maxValueLabel = toolkit.createLabel(sections.get(SECTION_AGGREGATED_DETAILS), NOT_AVAILABLE, SWT.LEFT);
 			maxValueLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		}
@@ -215,7 +216,7 @@ public class JmxInfoTextInputController extends AbstractTextInputController {
 	 */
 	@Override
 	public void doRefresh() {
-		if (currentData != null && !currentData.isEmpty()) {
+		if ((currentData != null) && !currentData.isEmpty()) {
 			final JmxSensorValueData jmxData = currentData.get(currentData.size() - 1);
 
 			if (jmxIdent == null) {
@@ -257,11 +258,11 @@ public class JmxInfoTextInputController extends AbstractTextInputController {
 	 * Aggregates the {@link #currentData} list and returns the result as an array of nicely
 	 * formatted strings. The first array element represents the average value, the second element
 	 * the minimum value and the third value is the maximum value of the data list.
-	 * 
+	 *
 	 * @param dataSolver
 	 *            the used {@link AbstractPlotDataSolver} to convert the values into a human
 	 *            readable string
-	 * 
+	 *
 	 * @return an array containing aggregated data as human readable strings
 	 */
 	private String[] getAggregatedData(AbstractPlotDataSolver dataSolver) {
@@ -300,7 +301,7 @@ public class JmxInfoTextInputController extends AbstractTextInputController {
 	 */
 	@Override
 	public void setDataInput(List<? extends DefaultData> dataInput) {
-		currentData = new ArrayList<JmxSensorValueData>();
+		currentData = new ArrayList<>();
 		for (DefaultData data : dataInput) {
 			if (data instanceof JmxSensorValueData) {
 				currentData.add((JmxSensorValueData) data);

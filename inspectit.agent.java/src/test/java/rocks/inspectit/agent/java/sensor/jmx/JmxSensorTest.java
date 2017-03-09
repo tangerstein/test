@@ -3,16 +3,18 @@ package rocks.inspectit.agent.java.sensor.jmx;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.anyLong;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
@@ -20,250 +22,669 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
+import javax.management.MBeanServerNotification;
+import javax.management.Notification;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
+import javax.management.RuntimeMBeanException;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import rocks.inspectit.agent.java.config.IConfigurationStorage;
-import rocks.inspectit.agent.java.config.impl.JmxSensorConfig;
-import rocks.inspectit.agent.java.config.impl.JmxSensorTypeConfig;
-import rocks.inspectit.agent.java.config.impl.UnregisteredJmxConfig;
+import rocks.inspectit.agent.java.connection.IConnection;
 import rocks.inspectit.agent.java.core.ICoreService;
-import rocks.inspectit.agent.java.core.IIdManager;
+import rocks.inspectit.agent.java.core.IPlatformManager;
+import rocks.inspectit.agent.java.sensor.jmx.JmxSensor.MBeanServerHolder;
 import rocks.inspectit.shared.all.communication.data.JmxSensorValueData;
+import rocks.inspectit.shared.all.instrumentation.config.impl.JmxAttributeDescriptor;
+import rocks.inspectit.shared.all.instrumentation.config.impl.JmxSensorTypeConfig;
 import rocks.inspectit.shared.all.testbase.TestBase;
 
-@SuppressWarnings({ "unchecked", "PMD" })
+/**
+ * All JMX sensor tests disabled until we support JXM via the Configuration interface.
+ *
+ * @author Ivan Senic
+ *
+ */
+@SuppressWarnings({ "unchecked", "PMD", "all" })
 public class JmxSensorTest extends TestBase {
 
 	@InjectMocks
-	private JmxSensor jmxSensor;
+	JmxSensor jmxSensor;
 
 	@Mock
-	private IConfigurationStorage configurationStorage;
+	JmxSensorTypeConfig sensorTypeConfig;
 
 	@Mock
-	private IIdManager idManager;
+	IConnection connection;
 
-	private @Mock
+	@Mock
+	IConfigurationStorage configurationStorage;
+
+	@Mock
+	IPlatformManager platformManager;
+
+	@Mock
 	MBeanServer mBeanServer;
 
 	@Mock
-	private ICoreService coreService;
+	ICoreService coreService;
 
 	@Mock
-	private MBeanInfo mBeanInfo;
+	MBeanInfo mBeanInfo;
 
 	@Mock
-	private Logger logger;
+	Logger logger;
 
-	/**
-	 * Tests the registration of a mBean.
-	 *
-	 * @throws Exception
-	 *             any occurring exception
-	 */
-	@Test
-	public void registerAndCollect() throws Exception {
-		long sensorType = 13L;
-		long platformIdent = 11L;
-		String value = "value";
-		JmxSensorTypeConfig sensorTypeConfig = new JmxSensorTypeConfig();
-		String testObjectName = "Testdomain:Test=TestObjectName,name=test";
-		String testAttributeName = "TestAttributename";
-		String testAttrDescription = "test-description";
-		String testAttrType = "test-type";
-		boolean testAttrIsReadable = true;
-		boolean testAttrIsWriteable = false;
-		boolean testAttrIsIs = false;
+	public static class Init extends JmxSensorTest {
 
-		MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
-		MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
-		UnregisteredJmxConfig unregisteredJmxConfig = new UnregisteredJmxConfig(sensorTypeConfig, testObjectName, testAttributeName);
-		jmxSensor.setUnregisteredJmxConfigs(Collections.singletonList(unregisteredJmxConfig));
+		@Test
+		public void sensorSet() {
+			JmxSensorTypeConfig sensorTypeConfig1 = mock(JmxSensorTypeConfig.class);
 
-		ObjectName objectName = new ObjectName(testObjectName);
-		when(mBeanServer.queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
-		when(mBeanServer.getMBeanInfo(Mockito.<ObjectName> any())).thenReturn(mBeanInfo);
-		when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			jmxSensor.init(sensorTypeConfig1);
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(anyLong())).thenReturn(sensorType);
-		when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(value);
+			assertThat(jmxSensor.getSensorTypeConfig(), is(sensorTypeConfig1));
+		}
 
-		jmxSensor.update(coreService, sensorType);
+		@Test
+		public void serverCreationForced() throws Exception {
+			when(sensorTypeConfig.getParameters()).thenReturn(Collections.<String, Object> singletonMap("forceMBeanServer", Boolean.TRUE));
 
-		verify(mBeanServer, times(1)).queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null));
+			jmxSensor.init(sensorTypeConfig);
 
-		ArgumentCaptor<JmxSensorConfig> captor = ArgumentCaptor.forClass(JmxSensorConfig.class);
-		verify(idManager, times(1)).registerJmxSensorConfig(captor.capture());
+			// assert that field in Management factory has been created
+			Field field = ManagementFactory.class.getDeclaredField("platformMBeanServer");
+			field.setAccessible(true);
+			Object server = field.get(null);
+			assertThat(server, is(notNullValue()));
+		}
 
-		JmxSensorConfig sensorConfig = captor.getValue();
-		assertThat(sensorConfig.getJmxSensorTypeConfig(), is(equalTo(sensorTypeConfig)));
-		assertThat(sensorConfig.getmBeanObjectName(), is(equalTo(testObjectName)));
-		assertThat(sensorConfig.getAttributeName(), is(equalTo(testAttributeName)));
-		assertThat(sensorConfig.getmBeanAttributeDescription(), is(equalTo(testAttrDescription)));
-		assertThat(sensorConfig.getmBeanAttributeType(), is(equalTo(testAttrType)));
-		assertThat(sensorConfig.getmBeanAttributeIsIs(), is(equalTo(testAttrIsIs)));
-		assertThat(sensorConfig.getmBeanAttributeIsReadable(), is(equalTo(testAttrIsReadable)));
-		assertThat(sensorConfig.getmBeanAttributeIsWritable(), is(equalTo(testAttrIsWriteable)));
-
-		verify(mBeanServer, times(1)).getAttribute(objectName, testAttributeName);
-
-		ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
-		verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
-
-		assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
-		assertThat(valueCaptor.getValue().getValue(), is(equalTo(value)));
 	}
 
-	@Test(dataProvider = "throwableProvider")
-	public void beanReactivated(Class<? extends Throwable> throwable) throws Exception {
-		long sensorType = 13L;
-		long platformIdent = 11L;
-		String value = "value";
-		JmxSensorTypeConfig sensorTypeConfig = new JmxSensorTypeConfig();
-		String testObjectName = "Testdomain:Test=TestObjectName,name=test";
-		String testAttributeName = "TestAttributename";
-		String testAttrDescription = "test-description";
-		String testAttrType = "test-type";
-		boolean testAttrIsReadable = true;
-		boolean testAttrIsWriteable = false;
-		boolean testAttrIsIs = false;
+	public static class MbeanServerAdded extends JmxSensorTest {
 
-		MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
-		MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
-		UnregisteredJmxConfig unregisteredJmxConfig = new UnregisteredJmxConfig(sensorTypeConfig, testObjectName, testAttributeName);
-		jmxSensor.setUnregisteredJmxConfigs(Collections.singletonList(unregisteredJmxConfig));
+		@BeforeMethod
+		public void init() {
+			jmxSensor.init(sensorTypeConfig);
+		}
 
-		ObjectName objectName = new ObjectName(testObjectName);
-		when(mBeanServer.queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
-		when(mBeanServer.getMBeanInfo(Mockito.<ObjectName> any())).thenReturn(mBeanInfo);
-		when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+		@Test
+		public void nullServer() {
+			jmxSensor.mbeanServerAdded(null);
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(anyLong())).thenReturn(sensorType);
-		when(mBeanServer.getAttribute(objectName, testAttributeName)).thenThrow(throwable).thenReturn(value);
+			verifyZeroInteractions(connection);
+		}
 
-		// two updates but reset time stamps
-		jmxSensor.update(coreService, sensorType);
-		jmxSensor.lastDataCollectionTimestamp = 0;
-		jmxSensor.lastRegisterBeanTimestamp = 0;
-		jmxSensor.update(coreService, sensorType);
+		@Test
+		public void listenerRegistered() throws Exception {
+			ArgumentCaptor<MBeanServerHolder> captor = ArgumentCaptor.forClass(MBeanServerHolder.class);
 
-		verify(mBeanServer, times(2)).queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null));
+			jmxSensor.mbeanServerAdded(mBeanServer);
 
-		ArgumentCaptor<JmxSensorConfig> captor = ArgumentCaptor.forClass(JmxSensorConfig.class);
-		verify(idManager, times(1)).registerJmxSensorConfig(captor.capture());
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), captor.capture(), Matchers.<NotificationFilter> any(), eq(null));
+			assertThat(captor.getValue().mBeanServer, is(mBeanServer));
+		}
 
-		JmxSensorConfig sensorConfig = captor.getValue();
-		assertThat(sensorConfig.getJmxSensorTypeConfig(), is(equalTo(sensorTypeConfig)));
-		assertThat(sensorConfig.getmBeanObjectName(), is(equalTo(testObjectName)));
-		assertThat(sensorConfig.getAttributeName(), is(equalTo(testAttributeName)));
-		assertThat(sensorConfig.getmBeanAttributeDescription(), is(equalTo(testAttrDescription)));
-		assertThat(sensorConfig.getmBeanAttributeType(), is(equalTo(testAttrType)));
-		assertThat(sensorConfig.getmBeanAttributeIsIs(), is(equalTo(testAttrIsIs)));
-		assertThat(sensorConfig.getmBeanAttributeIsReadable(), is(equalTo(testAttrIsReadable)));
-		assertThat(sensorConfig.getmBeanAttributeIsWritable(), is(equalTo(testAttrIsWriteable)));
+		@Test
+		public void connectionOff() throws Exception {
+			when(connection.isConnected()).thenReturn(false);
 
-		verify(mBeanServer, times(2)).getAttribute(objectName, testAttributeName);
+			jmxSensor.mbeanServerAdded(mBeanServer);
 
-		ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
-		verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+		}
 
-		assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
-		assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
-		assertThat(valueCaptor.getValue().getValue(), is(equalTo(value)));
+		@Test
+		public void connectionOnRegister() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), captor.capture())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			JmxAttributeDescriptor sensorConfig = (JmxAttributeDescriptor) captor.getValue().iterator().next();
+			assertThat(sensorConfig.getId(), is(equalTo(definitionDataIdentId)));
+			assertThat(sensorConfig.getmBeanObjectName(), is(equalTo(testObjectName)));
+			assertThat(sensorConfig.getAttributeName(), is(equalTo(testAttributeName)));
+			assertThat(sensorConfig.getmBeanAttributeDescription(), is(equalTo(testAttrDescription)));
+			assertThat(sensorConfig.getmBeanAttributeType(), is(equalTo(testAttrType)));
+			assertThat(sensorConfig.ismBeanAttributeIsIs(), is(equalTo(testAttrIsIs)));
+			assertThat(sensorConfig.ismBeanAttributeIsReadable(), is(equalTo(testAttrIsReadable)));
+			assertThat(sensorConfig.ismBeanAttributeIsWritable(), is(equalTo(testAttrIsWriteable)));
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+		}
 	}
 
-	@Test(dataProvider = "throwableProvider")
-	public void beanDeactivated(Class<? extends Throwable> throwable) throws Exception {
-		long sensorType = 13L;
-		long platformIdent = 11L;
-		JmxSensorTypeConfig sensorTypeConfig = new JmxSensorTypeConfig();
-		String testObjectName = "Testdomain:Test=TestObjectName,name=test";
-		String testAttributeName = "TestAttributename";
-		String testAttrDescription = "test-description";
-		String testAttrType = "test-type";
-		boolean testAttrIsReadable = true;
-		boolean testAttrIsWriteable = false;
-		boolean testAttrIsIs = false;
+	public static class MbeanServerRemoved extends JmxSensorTest {
 
-		MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
-		MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
-		UnregisteredJmxConfig unregisteredJmxConfig = new UnregisteredJmxConfig(sensorTypeConfig, testObjectName, testAttributeName);
-		jmxSensor.setUnregisteredJmxConfigs(Collections.singletonList(unregisteredJmxConfig));
+		@BeforeMethod
+		public void init() {
+			jmxSensor.init(sensorTypeConfig);
+		}
 
-		ObjectName objectName = new ObjectName(testObjectName);
-		when(mBeanServer.queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName)).thenReturn(Collections.<ObjectName> emptySet());
-		when(mBeanServer.getMBeanInfo(Mockito.<ObjectName> any())).thenReturn(mBeanInfo);
-		when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+		@Test
+		public void unknownServer() throws Exception {
+			jmxSensor.mbeanServerRemoved(mBeanServer);
 
-		when(idManager.getPlatformId()).thenReturn(platformIdent);
-		when(idManager.getRegisteredSensorTypeId(anyLong())).thenReturn(sensorType);
-		when(mBeanServer.getAttribute(objectName, testAttributeName)).thenThrow(throwable);
+			verifyZeroInteractions(mBeanServer);
+		}
 
-		// two updates but reset time stamps
-		jmxSensor.update(coreService, sensorType);
-		jmxSensor.lastDataCollectionTimestamp = 0;
-		jmxSensor.lastRegisterBeanTimestamp = 0;
-		jmxSensor.update(coreService, sensorType);
+		@Test
+		public void listenerUnregistered() throws Exception {
+			ArgumentCaptor<MBeanServerHolder> captor = ArgumentCaptor.forClass(MBeanServerHolder.class);
+			jmxSensor.mbeanServerAdded(mBeanServer);
 
-		verify(mBeanServer, times(2)).queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null));
+			jmxSensor.mbeanServerRemoved(mBeanServer);
 
-		ArgumentCaptor<JmxSensorConfig> captor = ArgumentCaptor.forClass(JmxSensorConfig.class);
-		verify(idManager, times(1)).registerJmxSensorConfig(captor.capture());
-
-		JmxSensorConfig sensorConfig = captor.getValue();
-		assertThat(sensorConfig.getJmxSensorTypeConfig(), is(equalTo(sensorTypeConfig)));
-		assertThat(sensorConfig.getmBeanObjectName(), is(equalTo(testObjectName)));
-		assertThat(sensorConfig.getAttributeName(), is(equalTo(testAttributeName)));
-		assertThat(sensorConfig.getmBeanAttributeDescription(), is(equalTo(testAttrDescription)));
-		assertThat(sensorConfig.getmBeanAttributeType(), is(equalTo(testAttrType)));
-		assertThat(sensorConfig.getmBeanAttributeIsIs(), is(equalTo(testAttrIsIs)));
-		assertThat(sensorConfig.getmBeanAttributeIsReadable(), is(equalTo(testAttrIsReadable)));
-		assertThat(sensorConfig.getmBeanAttributeIsWritable(), is(equalTo(testAttrIsWriteable)));
-
-		verify(mBeanServer, times(1)).getAttribute(objectName, testAttributeName);
-		verifyZeroInteractions(coreService);
+			verify(mBeanServer).removeNotificationListener(Matchers.<ObjectName> any(), captor.capture(), Matchers.<NotificationFilter> any(), eq(null));
+			assertThat(captor.getValue().mBeanServer, is(mBeanServer));
+		}
 	}
 
-	@Test
-	public void malformedObjectName() {
-		long sensorType = 13L;
-		JmxSensorTypeConfig sensorTypeConfig = new JmxSensorTypeConfig();
-		String testObjectName = "Testdomain:Test=TestObjectName,name=test";
-		String testAttributeName = "TestAttributename";
-		UnregisteredJmxConfig unregisteredJmxConfig = new UnregisteredJmxConfig(sensorTypeConfig, testObjectName, testAttributeName);
-		List<UnregisteredJmxConfig> list = new ArrayList<UnregisteredJmxConfig>();
-		list.add(unregisteredJmxConfig);
-		jmxSensor.setUnregisteredJmxConfigs(list);
+	public static class Update extends JmxSensorTest {
 
-		when(mBeanServer.queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null))).thenThrow(MalformedObjectNameException.class);
+		@BeforeMethod
+		public void init() {
+			jmxSensor.init(sensorTypeConfig);
+		}
 
-		// two updates to confirm the removal
-		jmxSensor.update(coreService, sensorType);
-		jmxSensor.lastDataCollectionTimestamp = 0;
-		jmxSensor.lastRegisterBeanTimestamp = 0;
-		jmxSensor.update(coreService, sensorType);
+		@Test
+		public void nothingToCollect() {
+			jmxSensor.update(coreService);
 
-		verify(mBeanServer, times(1)).queryNames(Mockito.<ObjectName> any(), (QueryExp) eq(null));
-		verifyZeroInteractions(coreService, idManager);
+			verifyZeroInteractions(coreService);
+		}
+
+		/**
+		 * Tests the registration of a mBean.
+		 *
+		 * @throws Exception
+		 *             any occurring exception
+		 */
+		@Test
+		public void registerAndCollect() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String value = "value";
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(value);
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).getAttribute(objectName, testAttributeName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+
+			ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
+			verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
+
+			assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
+			assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
+			assertThat(valueCaptor.getValue().getJmxSensorDefinitionDataIdentId(), is(equalTo(definitionDataIdentId)));
+			assertThat(valueCaptor.getValue().getValue(), is(equalTo(value)));
+		}
+
+		/**
+		 * Tests the registration of a mBean.
+		 *
+		 * @throws Exception
+		 *             any occurring exception
+		 */
+		@Test
+		public void registerMonitorNothing() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			String value = "value";
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenReturn(Collections.<JmxAttributeDescriptor> emptyList());
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(value);
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+			verifyZeroInteractions(coreService);
+		}
+
+		@Test(dataProvider = "throwableProvider")
+		public void collectDataException(Class<? extends Throwable> throwableClass) throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenThrow(throwableClass);
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			// update twice
+			jmxSensor.update(coreService);
+			jmxSensor.lastDataCollectionTimestamp = 0;
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).getAttribute(objectName, testAttributeName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+		}
+
+		@Test
+		public void collectDataNullValue() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(null);
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).getAttribute(objectName, testAttributeName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+
+			ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
+			verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
+
+			assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
+			assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
+			assertThat(valueCaptor.getValue().getJmxSensorDefinitionDataIdentId(), is(equalTo(definitionDataIdentId)));
+			assertThat(valueCaptor.getValue().getValue(), is("null"));
+		}
+
+		@Test
+		public void collectDataPrimitiveArray() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(new int[] { 1, 2, 3 });
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).getAttribute(objectName, testAttributeName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+
+			ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
+			verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
+
+			assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
+			assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
+			assertThat(valueCaptor.getValue().getJmxSensorDefinitionDataIdentId(), is(equalTo(definitionDataIdentId)));
+			assertThat(valueCaptor.getValue().getValue(), is("[1, 2, 3]"));
+		}
+
+		@Test
+		public void collectDataObjectArray() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(new String[] { "1", "2", "3" });
+			jmxSensor.mbeanServerAdded(mBeanServer);
+
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).getAttribute(objectName, testAttributeName);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), Matchers.<NotificationListener> any(), Matchers.<NotificationFilter> any(), eq(null));
+			verifyNoMoreInteractions(mBeanServer);
+
+			ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
+			verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
+
+			assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
+			assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
+			assertThat(valueCaptor.getValue().getJmxSensorDefinitionDataIdentId(), is(equalTo(definitionDataIdentId)));
+			assertThat(valueCaptor.getValue().getValue(), is("[1, 2, 3]"));
+		}
+
+		@DataProvider(name = "throwableProvider")
+		public Object[][] getThrowables() {
+			return new Object[][] { { AttributeNotFoundException.class }, { InstanceNotFoundException.class }, { MBeanException.class }, { ReflectionException.class },
+					{ RuntimeMBeanException.class } };
+		}
+
 	}
 
-	@DataProvider(name = "throwableProvider")
-	public Object[][] getThrowables() {
-		return new Object[][] { { AttributeNotFoundException.class }, { InstanceNotFoundException.class }, { MBeanException.class }, { ReflectionException.class } };
+	public static class HandleNotification extends JmxSensorTest {
+
+		@BeforeMethod
+		public void init() {
+			jmxSensor.init(sensorTypeConfig);
+		}
+
+		@Test
+		public void registrationNotification() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String value = "value";
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			jmxSensor.mbeanServerAdded(mBeanServer);
+			ArgumentCaptor<MBeanServerHolder> notificationListener = ArgumentCaptor.forClass(MBeanServerHolder.class);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), notificationListener.capture(), Matchers.<NotificationFilter> any(), eq(null));
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), captor.capture())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			when(mBeanServer.getAttribute(objectName, testAttributeName)).thenReturn(value);
+			MBeanServerNotification notification = new MBeanServerNotification(MBeanServerNotification.REGISTRATION_NOTIFICATION, this, 1, objectName);
+
+			notificationListener.getValue().handleNotification(notification, null);
+			jmxSensor.update(coreService);
+
+			JmxAttributeDescriptor sensorConfig = (JmxAttributeDescriptor) captor.getValue().iterator().next();
+			assertThat(sensorConfig.getId(), is(equalTo(definitionDataIdentId)));
+			assertThat(sensorConfig.getmBeanObjectName(), is(equalTo(testObjectName)));
+			assertThat(sensorConfig.getAttributeName(), is(equalTo(testAttributeName)));
+			assertThat(sensorConfig.getmBeanAttributeDescription(), is(equalTo(testAttrDescription)));
+			assertThat(sensorConfig.getmBeanAttributeType(), is(equalTo(testAttrType)));
+			assertThat(sensorConfig.ismBeanAttributeIsIs(), is(equalTo(testAttrIsIs)));
+			assertThat(sensorConfig.ismBeanAttributeIsReadable(), is(equalTo(testAttrIsReadable)));
+			assertThat(sensorConfig.ismBeanAttributeIsWritable(), is(equalTo(testAttrIsWriteable)));
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verify(mBeanServer).getAttribute(objectName, testAttributeName);
+			verifyNoMoreInteractions(mBeanServer);
+
+			ArgumentCaptor<JmxSensorValueData> valueCaptor = ArgumentCaptor.forClass(JmxSensorValueData.class);
+			verify(coreService).addJmxSensorValueData(eq(sensorType), eq(testObjectName), eq(testAttributeName), valueCaptor.capture());
+
+			assertThat(valueCaptor.getValue().getPlatformIdent(), is(equalTo(platformIdent)));
+			assertThat(valueCaptor.getValue().getSensorTypeIdent(), is(equalTo(sensorType)));
+			assertThat(valueCaptor.getValue().getJmxSensorDefinitionDataIdentId(), is(equalTo(definitionDataIdentId)));
+			assertThat(valueCaptor.getValue().getValue(), is(value));
+		}
+
+		@Test
+		public void unregistrationNotification() throws Exception {
+			long sensorType = 13L;
+			long platformIdent = 11L;
+			final long definitionDataIdentId = 17L;
+			String testObjectName = "Testdomain:Test=TestObjectName,name=test";
+			String testAttributeName = "TestAttributename";
+			String testAttrDescription = "test-description";
+			String testAttrType = "test-type";
+			boolean testAttrIsReadable = true;
+			boolean testAttrIsWriteable = false;
+			boolean testAttrIsIs = false;
+			MBeanAttributeInfo mBeanAttributeInfo = new MBeanAttributeInfo(testAttributeName, testAttrType, testAttrDescription, testAttrIsReadable, testAttrIsWriteable, testAttrIsIs);
+			MBeanAttributeInfo[] mBeanAttributeInfos = { mBeanAttributeInfo };
+			ObjectName objectName = new ObjectName(testObjectName);
+
+			when(sensorTypeConfig.getId()).thenReturn(sensorType);
+			when(mBeanServer.queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null))).thenReturn(Collections.singleton(objectName));
+			when(mBeanServer.getMBeanInfo(Matchers.<ObjectName> any())).thenReturn(mBeanInfo);
+			when(mBeanInfo.getAttributes()).thenReturn(mBeanAttributeInfos);
+			when(platformManager.getPlatformId()).thenReturn(platformIdent);
+			when(connection.isConnected()).thenReturn(true);
+			when(connection.analyzeJmxAttributes(eq(platformIdent), Matchers.<Collection<JmxAttributeDescriptor>> any())).thenAnswer(new Answer<Collection<JmxAttributeDescriptor>>() {
+				@Override
+				public Collection<JmxAttributeDescriptor> answer(InvocationOnMock invocation) throws Throwable {
+					Collection<JmxAttributeDescriptor> descriptors = (Collection<JmxAttributeDescriptor>) invocation.getArguments()[1];
+					for (JmxAttributeDescriptor d : descriptors) {
+						d.setId(definitionDataIdentId);
+					}
+					return descriptors;
+				}
+			});
+			MBeanServerNotification notification = new MBeanServerNotification(MBeanServerNotification.UNREGISTRATION_NOTIFICATION, this, 1, objectName);
+
+			jmxSensor.mbeanServerAdded(mBeanServer);
+			ArgumentCaptor<MBeanServerHolder> notificationListener = ArgumentCaptor.forClass(MBeanServerHolder.class);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), notificationListener.capture(), Matchers.<NotificationFilter> any(), eq(null));
+			notificationListener.getValue().handleNotification(notification, null);
+			jmxSensor.update(coreService);
+
+			verify(mBeanServer).queryNames(Matchers.<ObjectName> any(), (QueryExp) eq(null));
+			verify(mBeanServer).getMBeanInfo(objectName);
+			verifyNoMoreInteractions(mBeanServer);
+			verifyZeroInteractions(coreService);
+		}
+
+		@Test
+		public void wrongNotification() throws Exception {
+			jmxSensor.mbeanServerAdded(mBeanServer);
+			ArgumentCaptor<MBeanServerHolder> notificationListener = ArgumentCaptor.forClass(MBeanServerHolder.class);
+			verify(mBeanServer).addNotificationListener(Matchers.<ObjectName> any(), notificationListener.capture(), Matchers.<NotificationFilter> any(), eq(null));
+			Notification notification = mock(Notification.class);
+			when(connection.isConnected()).thenReturn(true);
+
+			notificationListener.getValue().handleNotification(notification, null);
+
+			verifyZeroInteractions(mBeanServer);
+		}
 	}
 
 }

@@ -1,30 +1,33 @@
 package rocks.inspectit.agent.java.hooking.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import rocks.inspectit.agent.java.config.impl.RegisteredSensorConfig;
+import rocks.inspectit.agent.java.config.impl.SpecialSensorConfig;
 import rocks.inspectit.agent.java.core.ICoreService;
 import rocks.inspectit.agent.java.hooking.IConstructorHook;
 import rocks.inspectit.agent.java.hooking.IHook;
 import rocks.inspectit.agent.java.hooking.IHookDispatcher;
 import rocks.inspectit.agent.java.hooking.IHookDispatcherMapper;
 import rocks.inspectit.agent.java.hooking.IMethodHook;
+import rocks.inspectit.agent.java.hooking.ISpecialHook;
+import rocks.inspectit.agent.java.sensor.exception.ExceptionSensor;
 import rocks.inspectit.agent.java.sensor.exception.IExceptionSensorHook;
 import rocks.inspectit.agent.java.sensor.method.IMethodSensor;
+import rocks.inspectit.agent.java.sensor.method.invocationsequence.InvocationSequenceSensor;
+import rocks.inspectit.shared.all.instrumentation.config.impl.MethodSensorTypeConfig;
 import rocks.inspectit.shared.all.spring.logger.Log;
 
 /**
  * The hook dispatching service which is called by all the hooks throughout the instrumented target
  * application.
- * 
+ *
  * @author Patrice Bouillet
  * @author Eduard Tudenhoefner
- * 
+ * @author Ivan Senic
  */
 @Component
 public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
@@ -38,72 +41,84 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * The default core service.
 	 */
-	private final ICoreService coreService;
+	@Autowired
+	private ICoreService coreService;
 
 	/**
-	 * Contains all method hooks.
+	 * {@link InvocationSequenceSensor} directly auto-wired.
 	 */
-	private Map<Long, RegisteredSensorConfig> methodHooks = new HashMap<Long, RegisteredSensorConfig>();
+	@Autowired
+	private InvocationSequenceSensor invocationSequenceSensor;
 
 	/**
-	 * Contains all constructor hooks.
+	 * {@link ExceptionSensor} directly auto-wired.
 	 */
-	private Map<Long, RegisteredSensorConfig> constructorHooks = new HashMap<Long, RegisteredSensorConfig>();
+	@Autowired
+	private ExceptionSensor exceptionSensor;
+
+	/**
+	 * Contains all hooks. Using concurrent map as we need to enable thread-safety of
+	 * {@link #addMapping(long, RegisteredSensorConfig)}.
+	 * <p>
+	 * Not using the {@link java.util.Map} interface on purpose, in order to use put/get methods
+	 * with primitive longs.
+	 */
+	private final NonBlockingHashMapLong<RegisteredSensorConfig> mappings = new NonBlockingHashMapLong<RegisteredSensorConfig>();
+
+	/**
+	 * Contains all special hooks. Using concurrent map as we need to enable thread-safety of
+	 * {@link #addMapping(long, RegisteredSensorConfig)}.
+	 * <p>
+	 * Not using the {@link java.util.Map} interface on purpose, in order to use put/get methods
+	 * with primitive longs.
+	 */
+	private final NonBlockingHashMapLong<SpecialSensorConfig> specialMappings = new NonBlockingHashMapLong<SpecialSensorConfig>();
 
 	/**
 	 * Stores the current Status of the invocation sequence tracer in a {@link ThreadLocal} object.
 	 */
-	private InvocationSequenceCount invocationSequenceCount = new InvocationSequenceCount();
+	private final InvocationSequenceCount invocationSequenceCount = new InvocationSequenceCount();
 
 	/**
 	 * A thread local holder object to save the current started invocation sequence.
 	 */
-	private ThreadLocal<IHook> invocationSequenceHolder = new ThreadLocal<IHook>();
+	private final ThreadLocal<IHook> invocationSequenceHolder = new ThreadLocal<IHook>();
 
 	/**
 	 * If an execution of the dispatching is already in progress, we don't dispatch anything else
 	 * for this thread.
 	 */
-	private ExecutionMarker executionMarker = new ExecutionMarker();
+	private final ExecutionMarker executionMarker = new ExecutionMarker();
 
 	/**
-	 * Default constructor which needs a reference to the core service. This is needed for the
-	 * invocation sensor.
-	 * 
-	 * @param coreService
-	 *            The core service.
+	 * {@inheritDoc}
 	 */
-	@Autowired
-	public HookDispatcher(ICoreService coreService) {
-		this.coreService = coreService;
+	@Override
+	public void addMapping(long id, RegisteredSensorConfig rsc) {
+		mappings.put(id, rsc);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void addMethodMapping(long id, RegisteredSensorConfig rsc) {
-		methodHooks.put(Long.valueOf(id), rsc);
+	@Override
+	public void addMapping(long id, SpecialSensorConfig ssc) {
+		specialMappings.put(id, ssc);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void addConstructorMapping(long id, RegisteredSensorConfig rsc) {
-		constructorHooks.put(Long.valueOf(id), rsc);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
+	@Override
 	public void dispatchMethodBeforeBody(long id, Object object, Object[] parameters) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				try {
-					RegisteredSensorConfig rsc = (RegisteredSensorConfig) methodHooks.get(Long.valueOf(id));
+					RegisteredSensorConfig rsc = mappings.get(id);
 
-					if (rsc.startsInvocationSequence()) {
+					if (rsc.isStartsInvocation()) {
 						// The sensor configuration contains an invocation sequence
 						// sensor. We have to set it on the thread local map for later
 						// access. Additionally, we need to save the count of the called
@@ -112,7 +127,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 						invocationSequenceCount.increment();
 
 						if (null == invocationSequenceHolder.get()) {
-							invocationSequenceHolder.set(((IMethodSensor) rsc.getInvocationSequenceSensorTypeConfig().getSensorType()).getHook());
+							invocationSequenceHolder.set(invocationSequenceSensor.getHook());
 						}
 					} else if (null != invocationSequenceHolder.get()) {
 						// We are executing the following sensor types in an invocation
@@ -126,9 +141,10 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 					}
 
 					// Now iterate over all registered sensor types and execute them
-					for (Map.Entry<Long, IHook> entry : rsc.getReverseMethodHooks().entrySet()) {
-						IMethodHook methodHook = (IMethodHook) entry.getValue();
-						methodHook.beforeBody(id, entry.getKey().longValue(), object, parameters, rsc);
+					// reverse execution (sensor with lowest priority first)
+					for (IMethodSensor methodSensor : rsc.getMethodSensorsReverse()) {
+						IMethodHook methodHook = (IMethodHook) methodSensor.getHook();
+						methodHook.beforeBody(id, methodSensor.getSensorTypeConfig().getId(), object, parameters, rsc);
 					}
 				} catch (Throwable throwable) { // NOPMD
 					log.error("An error happened in the Hook Dispatcher! (before body)", throwable);
@@ -142,16 +158,20 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchFirstMethodAfterBody(long id, Object object, Object[] parameters, Object returnValue) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				try {
-					RegisteredSensorConfig rsc = (RegisteredSensorConfig) methodHooks.get(Long.valueOf(id));
-					for (Map.Entry<Long, IHook> entry : rsc.getMethodHooks().entrySet()) {
-						IMethodHook methodHook = (IMethodHook) entry.getValue();
-						methodHook.firstAfterBody(id, entry.getKey().longValue(), object, parameters, returnValue, rsc);
+					RegisteredSensorConfig rsc = mappings.get(id);
+
+					// Now iterate over all registered sensor types and execute them
+					// normal execution (sensor with highest priority first)
+					for (IMethodSensor methodSensor : rsc.getMethodSensors()) {
+						IMethodHook methodHook = (IMethodHook) methodSensor.getHook();
+						methodHook.firstAfterBody(id, methodSensor.getSensorTypeConfig().getId(), object, parameters, returnValue, rsc);
 					}
 				} catch (Throwable throwable) { // NOPMD
 					log.error("An error happened in the Hook Dispatcher! (after body)", throwable);
@@ -165,13 +185,14 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchSecondMethodAfterBody(long id, Object object, Object[] parameters, Object returnValue) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				try {
-					RegisteredSensorConfig rsc = (RegisteredSensorConfig) methodHooks.get(Long.valueOf(id));
+					RegisteredSensorConfig rsc = mappings.get(id);
 
 					if (null != invocationSequenceHolder.get()) {
 						// Need to replace the core service with the one from the invocation
@@ -179,23 +200,26 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 						// record.
 						ICoreService invocCoreService = (ICoreService) invocationSequenceHolder.get();
 
-						for (Map.Entry<Long, IHook> entry : rsc.getMethodHooks().entrySet()) {
-							IMethodHook methodHook = (IMethodHook) entry.getValue();
+						// Now iterate over all registered sensor types and execute them
+						// normal execution (sensor with highest priority first)
+						for (IMethodSensor methodSensor : rsc.getMethodSensors()) {
+							IMethodHook methodHook = (IMethodHook) methodSensor.getHook();
 							// the invocation sequence sensor needs the original core service!
+							long sensorId = methodSensor.getSensorTypeConfig().getId();
 							if (invocCoreService == methodHook) { // NOPMD
-								methodHook.secondAfterBody(coreService, id, entry.getKey().longValue(), object, parameters, returnValue, rsc);
+								methodHook.secondAfterBody(coreService, id, sensorId, object, parameters, returnValue, rsc);
 							} else {
-								methodHook.secondAfterBody(invocCoreService, id, entry.getKey().longValue(), object, parameters, returnValue, rsc);
+								methodHook.secondAfterBody(invocCoreService, id, sensorId, object, parameters, returnValue, rsc);
 							}
 						}
 					} else {
-						for (Map.Entry<Long, IHook> entry : rsc.getMethodHooks().entrySet()) {
-							IMethodHook methodHook = (IMethodHook) entry.getValue();
-							methodHook.secondAfterBody(coreService, id, entry.getKey().longValue(), object, parameters, returnValue, rsc);
+						for (IMethodSensor methodSensor : rsc.getMethodSensors()) {
+							IMethodHook methodHook = (IMethodHook) methodSensor.getHook();
+							methodHook.secondAfterBody(coreService, id, methodSensor.getSensorTypeConfig().getId(), object, parameters, returnValue, rsc);
 						}
 					}
 
-					if (rsc.startsInvocationSequence()) {
+					if (rsc.isStartsInvocation()) {
 						invocationSequenceCount.decrement();
 
 						if (0 == invocationSequenceCount.getCount()) {
@@ -222,14 +246,16 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchOnThrowInBody(long id, Object object, Object[] parameters, Object exceptionObject) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				// rsc contains the settings for the actual method where the exception was thrown.
-				RegisteredSensorConfig rsc = (RegisteredSensorConfig) methodHooks.get(Long.valueOf(id));
-				long sensorTypeId = rsc.getExceptionSensorTypeConfig().getId();
+				RegisteredSensorConfig rsc = mappings.get(id);
+				MethodSensorTypeConfig sensorTypeConfig = exceptionSensor.getSensorTypeConfig();
+				long sensorTypeId = sensorTypeConfig.getId();
 
 				ICoreService invocCoreService = null;
 				if (null != invocationSequenceHolder.get()) {
@@ -238,8 +264,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 					invocCoreService = (ICoreService) invocationSequenceHolder.get();
 				}
 
-				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) ((IMethodSensor) rsc.getExceptionSensorTypeConfig().getSensorType()).getHook();
-
+				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) exceptionSensor.getHook();
 				if (null != invocCoreService) {
 					exceptionHook.dispatchOnThrowInBody(invocCoreService, id, sensorTypeId, object, exceptionObject, parameters, rsc);
 				} else {
@@ -254,14 +279,15 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchBeforeCatch(long id, Object exceptionObject) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				// rsc contains the settings of the actual method where the exception is catched.
-				RegisteredSensorConfig rsc = (RegisteredSensorConfig) methodHooks.get(Long.valueOf(id));
-				long sensorTypeId = rsc.getExceptionSensorTypeConfig().getId();
+				RegisteredSensorConfig rsc = mappings.get(id);
+				long sensorTypeId = exceptionSensor.getSensorTypeConfig().getId();
 
 				ICoreService invocCoreService = null;
 				if (null != invocationSequenceHolder.get()) {
@@ -270,8 +296,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 					invocCoreService = (ICoreService) invocationSequenceHolder.get();
 				}
 
-				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) ((IMethodSensor) rsc.getExceptionSensorTypeConfig().getSensorType()).getHook();
-
+				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) exceptionSensor.getHook();
 				if (null != invocCoreService) {
 					exceptionHook.dispatchBeforeCatchBody(invocCoreService, id, sensorTypeId, exceptionObject, rsc);
 				} else {
@@ -286,6 +311,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchConstructorOnThrowInBody(long id, Object object, Object[] parameters, Object exceptionObject) {
 		if (!executionMarker.isActive()) {
 			try {
@@ -293,8 +319,8 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 
 				// rsc contains the settings for the actual constructor where the exception was
 				// thrown.
-				RegisteredSensorConfig rsc = (RegisteredSensorConfig) constructorHooks.get(Long.valueOf(id));
-				long sensorTypeId = rsc.getExceptionSensorTypeConfig().getId();
+				RegisteredSensorConfig rsc = mappings.get(id);
+				long sensorTypeId = exceptionSensor.getSensorTypeConfig().getId();
 
 				ICoreService invocCoreService = null;
 				if (null != invocationSequenceHolder.get()) {
@@ -303,8 +329,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 					invocCoreService = (ICoreService) invocationSequenceHolder.get();
 				}
 
-				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) ((IMethodSensor) rsc.getExceptionSensorTypeConfig().getSensorType()).getHook();
-
+				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) exceptionSensor.getHook();
 				if (null != invocCoreService) {
 					exceptionHook.dispatchOnThrowInBody(invocCoreService, id, sensorTypeId, object, exceptionObject, parameters, rsc);
 				} else {
@@ -319,6 +344,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchConstructorBeforeCatch(long id, Object exceptionObject) {
 		if (!executionMarker.isActive()) {
 			try {
@@ -326,8 +352,8 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 
 				// rsc contains the settings of the actual constructor where the exception is
 				// catched.
-				RegisteredSensorConfig rsc = (RegisteredSensorConfig) constructorHooks.get(Long.valueOf(id));
-				long sensorTypeId = rsc.getExceptionSensorTypeConfig().getId();
+				RegisteredSensorConfig rsc = mappings.get(id);
+				long sensorTypeId = exceptionSensor.getSensorTypeConfig().getId();
 
 				ICoreService invocCoreService = null;
 				if (null != invocationSequenceHolder.get()) {
@@ -336,8 +362,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 					invocCoreService = (ICoreService) invocationSequenceHolder.get();
 				}
 
-				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) ((IMethodSensor) rsc.getExceptionSensorTypeConfig().getSensorType()).getHook();
-
+				IExceptionSensorHook exceptionHook = (IExceptionSensorHook) exceptionSensor.getHook();
 				if (null != invocCoreService) {
 					exceptionHook.dispatchBeforeCatchBody(invocCoreService, id, sensorTypeId, exceptionObject, rsc);
 				} else {
@@ -352,22 +377,23 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchConstructorBeforeBody(long id, Object[] parameters) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				try {
-					RegisteredSensorConfig rsc = (RegisteredSensorConfig) constructorHooks.get(Long.valueOf(id));
+					RegisteredSensorConfig rsc = mappings.get(id);
 
-					if (rsc.startsInvocationSequence()) {
+					if (rsc.isStartsInvocation()) {
 						// The sensor configuration contains an invocation sequence sensor. We have
 						// to set it on the thread local map for later access. Additionally, we need
 						// to save the count of the called invocation sensors, as another nested one
 						// could be started, too.
 						invocationSequenceCount.increment();
 						if (null == invocationSequenceHolder.get()) {
-							invocationSequenceHolder.set(((IMethodSensor) rsc.getInvocationSequenceSensorTypeConfig().getSensorType()).getHook());
+							invocationSequenceHolder.set(invocationSequenceSensor.getHook());
 						}
 					} else if (null != invocationSequenceHolder.get()) {
 						// We are executing the following sensor types in an invocation sequence
@@ -381,9 +407,10 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 					}
 
 					// Now iterate over all registered sensor types and execute them
-					for (Map.Entry<Long, IHook> entry : rsc.getReverseMethodHooks().entrySet()) {
-						IConstructorHook constructorHook = (IConstructorHook) entry.getValue();
-						constructorHook.beforeConstructor(id, entry.getKey().longValue(), parameters, rsc);
+					// reverse execution (sensor with lowest priority first)
+					for (IMethodSensor methodSensor : rsc.getMethodSensorsReverse()) {
+						IConstructorHook constructorHook = (IConstructorHook) methodSensor.getHook();
+						constructorHook.beforeConstructor(id, methodSensor.getSensorTypeConfig().getId(), parameters, rsc);
 					}
 				} catch (Throwable throwable) { // NOPMD
 					log.error("An error happened in the Hook Dispatcher! (before constructor)", throwable);
@@ -397,13 +424,14 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void dispatchConstructorAfterBody(long id, Object object, Object[] parameters) {
 		if (!executionMarker.isActive()) {
 			try {
 				executionMarker.active();
 
 				try {
-					RegisteredSensorConfig rsc = (RegisteredSensorConfig) constructorHooks.get(Long.valueOf(id));
+					RegisteredSensorConfig rsc = mappings.get(id);
 
 					if (null != invocationSequenceHolder.get()) {
 						// Need to replace the core service with the one from the invocation
@@ -411,24 +439,25 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 						// record.
 						ICoreService invocCoreService = (ICoreService) invocationSequenceHolder.get();
 
-						for (Map.Entry<Long, IHook> entry : rsc.getMethodHooks().entrySet()) {
-							IConstructorHook constructorHook = (IConstructorHook) entry.getValue();
+						for (IMethodSensor methodSensor : rsc.getMethodSensors()) {
+							IConstructorHook constructorHook = (IConstructorHook) methodSensor.getHook();
 							// the invocation sequence sensor and the exception sensor need the
 							// original core service!
+							long sensorId = methodSensor.getSensorTypeConfig().getId();
 							if (invocCoreService == constructorHook) { // NOPMD
-								constructorHook.afterConstructor(coreService, id, entry.getKey().longValue(), object, parameters, rsc);
+								constructorHook.afterConstructor(coreService, id, sensorId, object, parameters, rsc);
 							} else {
-								constructorHook.afterConstructor(invocCoreService, id, entry.getKey().longValue(), object, parameters, rsc);
+								constructorHook.afterConstructor(invocCoreService, id, sensorId, object, parameters, rsc);
 							}
 						}
 					} else {
-						for (Map.Entry<Long, IHook> entry : rsc.getMethodHooks().entrySet()) {
-							IConstructorHook constructorHook = (IConstructorHook) entry.getValue();
-							constructorHook.afterConstructor(coreService, id, entry.getKey().longValue(), object, parameters, rsc);
+						for (IMethodSensor methodSensor : rsc.getMethodSensors()) {
+							IConstructorHook constructorHook = (IConstructorHook) methodSensor.getHook();
+							constructorHook.afterConstructor(coreService, id, methodSensor.getSensorTypeConfig().getId(), object, parameters, rsc);
 						}
 					}
 
-					if (rsc.startsInvocationSequence()) {
+					if (rsc.isStartsInvocation()) {
 						invocationSequenceCount.decrement();
 
 						if (0 == invocationSequenceCount.getCount()) {
@@ -453,17 +482,60 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Object dispatchSpecialMethodBeforeBody(long id, Object object, Object[] parameters) {
+		try {
+			SpecialSensorConfig ssc = specialMappings.get(id);
+
+			IMethodSensor methodSensor = ssc.getSensor();
+			ISpecialHook specialHook = (ISpecialHook) methodSensor.getHook();
+			Object result = specialHook.beforeBody(id, object, parameters, ssc);
+			if (null != result) {
+				return result;
+			}
+		} catch (Throwable throwable) { // NOPMD
+			log.error("An error happened in the Hook Dispatcher! (before special method)", throwable);
+		}
+
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Object dispatchSpecialMethodAfterBody(long id, Object object, Object[] parameters, Object returnValue) {
+		try {
+			SpecialSensorConfig ssc = specialMappings.get(id);
+
+			IMethodSensor methodSensor = ssc.getSensor();
+			ISpecialHook specialHook = (ISpecialHook) methodSensor.getHook();
+			Object result = specialHook.afterBody(id, object, parameters, returnValue, ssc);
+			if (null != result) {
+				return result;
+			}
+		} catch (Throwable throwable) { // NOPMD
+			log.error("An error happened in the Hook Dispatcher! (after special method)", throwable);
+		}
+
+		return null;
+	}
+
+	/**
 	 * Private inner class used to track the count of the started invocation sequences in one
 	 * thread. Thus it extends {@link ThreadLocal} to provide a unique number for every Thread.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private static class InvocationSequenceCount extends ThreadLocal<Long> {
 
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		protected Long initialValue() {
 			return Long.valueOf(0);
 		}
@@ -484,7 +556,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 
 		/**
 		 * Returns the current count.
-		 * 
+		 *
 		 * @return The count.
 		 */
 		public long getCount() {
@@ -496,15 +568,16 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	/**
 	 * ThreadLocal execution marker which is used to mark executions as already in progress to not
 	 * dispatch over and over again.
-	 * 
+	 *
 	 * @author Patrice Bouillet
-	 * 
+	 *
 	 */
 	private static class ExecutionMarker extends ThreadLocal<Boolean> {
 
 		/**
 		 * {@inheritDoc}
 		 */
+		@Override
 		protected Boolean initialValue() {
 			return Boolean.FALSE;
 		}
@@ -526,7 +599,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 		/**
 		 * Defines if our own execution is active, and thus we have to skip the whole processing
 		 * (because it could happen, that we'll never end then).
-		 * 
+		 *
 		 * @return if own execution is active.
 		 */
 		public boolean isActive() {

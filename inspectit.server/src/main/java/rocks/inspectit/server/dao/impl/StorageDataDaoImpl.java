@@ -25,6 +25,7 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import rocks.inspectit.server.dao.StorageDataDao;
+import rocks.inspectit.server.util.JpaUtil;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.SystemSensorData;
 import rocks.inspectit.shared.all.communication.data.SystemInformationData;
@@ -45,9 +46,9 @@ import rocks.inspectit.shared.cs.storage.label.type.impl.UseCaseLabelType;
 
 /**
  * DAO support for the storage purposes.
- * 
+ *
  * @author Ivan Senic
- * 
+ *
  */
 @Repository
 public class StorageDataDaoImpl implements StorageDataDao {
@@ -80,7 +81,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	 * <p>
 	 * Needs {@link PlatformTransactionManager} for instantiating the {@link TransactionTemplate} to
 	 * execute the initialization.
-	 * 
+	 *
 	 * @param transactionManager
 	 *            {@link PlatformTransactionManager}. Autowired by Spring.
 	 */
@@ -92,6 +93,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean saveLabel(AbstractStorageLabel<?> label) {
 		if (label.getStorageLabelType().isValueReusable()) {
 			List<?> exampleFind = loadAll(label.getClass());
@@ -100,7 +102,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 				if (null == labelType) {
 					return false;
 				}
-				if (labelType.getId() == 0 && !labelType.isMultiType()) {
+				if ((labelType.getId() == 0) && !labelType.isMultiType()) {
 					return false;
 				}
 				entityManager.persist(label);
@@ -113,15 +115,17 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void removeLabel(AbstractStorageLabel<?> label) {
 		if (label.getStorageLabelType().isValueReusable()) {
-			entityManager.remove(label);
+			JpaUtil.delete(entityManager, label);
 		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void removeLabels(Collection<AbstractStorageLabel<?>> labels) {
 		for (AbstractStorageLabel<?> label : labels) {
 			this.removeLabel(label);
@@ -131,6 +135,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public List<AbstractStorageLabel<?>> getAllLabels() {
 		Query query = entityManager.createNamedQuery(AbstractStorageLabel.FIND_ALL);
@@ -140,6 +145,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public <E> List<AbstractStorageLabel<E>> getAllLabelsForType(AbstractStorageLabelType<E> labelType) {
 		Query query = entityManager.createNamedQuery(AbstractStorageLabel.FIND_BY_LABEL_TYPE);
@@ -150,6 +156,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void saveLabelType(AbstractStorageLabelType<?> labelType) {
 		if (labelType.isMultiType()) {
 			entityManager.persist(labelType);
@@ -165,9 +172,10 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void removeLabelType(AbstractStorageLabelType<?> labelType) throws BusinessException {
 		if (getAllLabelsForType(labelType).isEmpty()) {
-			entityManager.remove(labelType);
+			JpaUtil.delete(entityManager, labelType);
 		} else {
 			throw new BusinessException("Delete label type " + labelType.getClass().getSimpleName() + ".", StorageErrorCodeEnum.LABEL_TYPE_CAN_NOT_BE_DELETED);
 		}
@@ -176,6 +184,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public <E extends AbstractStorageLabelType<?>> List<E> getLabelTypes(Class<E> labelTypeClass) {
 		return loadAll(labelTypeClass);
 	}
@@ -183,6 +192,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public List<AbstractStorageLabelType<?>> getAllLabelTypes() {
 		Query query = entityManager.createNamedQuery(AbstractStorageLabelType.FIND_ALL);
@@ -192,6 +202,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public List<DefaultData> getAllDefaultDataForAgent(long platformId, Date fromDate, Date toDate) {
 		List<DefaultData> results = new ArrayList<>();
 
@@ -216,7 +227,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 
 		Predicate platformIdPredicate = builder.equal(root.get("platformIdent"), platformId);
 		Predicate timestampPredicate = null;
-		if (null != fromDate && null != toDate) {
+		if ((null != fromDate) && (null != toDate)) {
 			timestampPredicate = builder.between(root.<Timestamp> get("timeStamp"), new Timestamp(fromDate.getTime()), new Timestamp(toDate.getTime()));
 		}
 
@@ -257,6 +268,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public List<SystemInformationData> getSystemInformationData(Collection<Long> agentIds) {
 		Query query = entityManager.createNamedQuery(SystemInformationData.FIND_LATEST_FOR_PLATFORM_IDS);
@@ -328,7 +340,7 @@ public class StorageDataDaoImpl implements StorageDataDao {
 
 	/**
 	 * Loads all entities of one class.
-	 * 
+	 *
 	 * @param <E>
 	 *            Type of entity.
 	 * @param clazz

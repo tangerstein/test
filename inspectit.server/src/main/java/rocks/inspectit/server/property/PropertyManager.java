@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.xml.sax.SAXException;
 
-import rocks.inspectit.server.jaxb.JAXBTransformator;
 import rocks.inspectit.server.util.ShutdownService;
 import rocks.inspectit.shared.all.util.ResourcesPathResolver;
 import rocks.inspectit.shared.cs.cmr.property.configuration.AbstractProperty;
@@ -35,6 +34,7 @@ import rocks.inspectit.shared.cs.cmr.property.configuration.validation.PropertyV
 import rocks.inspectit.shared.cs.cmr.property.update.AbstractPropertyUpdate;
 import rocks.inspectit.shared.cs.cmr.property.update.IPropertyUpdate;
 import rocks.inspectit.shared.cs.cmr.property.update.configuration.ConfigurationUpdate;
+import rocks.inspectit.shared.cs.jaxb.JAXBTransformator;
 
 /**
  * Properties manager bean that controls all properties specified in the configuration files and
@@ -231,7 +231,11 @@ public class PropertyManager {
 			loadConfigurationAndUpdates();
 		} catch (JAXBException | IOException | SAXException e) {
 			LOG.warn("|-Default CMR configuration can not be loaded.", e);
-			return new Properties();
+			throw new BeanInitializationException("Default CMR configuration can not be loaded.", e);
+		}
+
+		if (null == configuration) {
+			throw new BeanInitializationException("Default CMR configuration was not loaded. Aborting..");
 		}
 
 		// check if there is update file
@@ -245,7 +249,7 @@ public class PropertyManager {
 				SingleProperty<Object> property = configuration.forLogicalName(propertyUpdate.getPropertyLogicalName());
 
 				// if property does not exist or can not be update add to not valid
-				if (null == property || !property.canUpdate(propertyUpdate)) {
+				if ((null == property) || !property.canUpdate(propertyUpdate)) {
 					notValidList.add(propertyUpdate);
 					continue;
 				}
@@ -310,7 +314,7 @@ public class PropertyManager {
 	protected PropertyManager getPropertyManager() {
 		return this;
 	}
-	
+
 	/**
 	 * Initializes {@link #configDirFile}.
 	 */
@@ -370,8 +374,19 @@ public class PropertyManager {
 	 *             If {@link SAXException} occurs during schema parsing.
 	 */
 	void loadConfigurationAndUpdates() throws JAXBException, IOException, SAXException {
+		// first default configuration
 		LOG.info("|-Loading the default CMR configuration");
-		configuration = transformator.unmarshall(getDefaultConfigurationPath(), getConfigurationSchemaPath(), Configuration.class);
+		Path defaultConfigurationPath = getDefaultConfigurationPath();
+		if (Files.exists(defaultConfigurationPath)) {
+			configuration = transformator.unmarshall(defaultConfigurationPath, getConfigurationSchemaPath(), Configuration.class);
+		} else {
+			String path = defaultConfigurationPath.toAbsolutePath().toString();
+			LOG.warn("||-Default configuration file is not present on the path " + path);
+			throw new IOException("Default configuration file does not exist on the path " + path);
+		}
+
+		// then updates
+		LOG.info("|-Loading the CMR configuration updates");
 		configurationUpdate = transformator.unmarshall(getConfigurationUpdatePath(), getConfigurationUpdateSchemaPath(), ConfigurationUpdate.class);
 	}
 

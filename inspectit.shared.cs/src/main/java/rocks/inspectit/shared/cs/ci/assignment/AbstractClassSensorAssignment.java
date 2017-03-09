@@ -1,5 +1,7 @@
 package rocks.inspectit.shared.cs.ci.assignment;
 
+import java.util.Map;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -11,11 +13,12 @@ import rocks.inspectit.shared.cs.ci.sensor.ISensorConfig;
 
 /**
  * Class for class sensor assignment.
- * 
+ *
  * @author Ivan Senic
- * 
- * @param <T>Type of the sensor config that relates to the assignment.
- * 
+ *
+ * @param <T>
+ *            Type of the sensor config that relates to the assignment.
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlSeeAlso({ MethodSensorAssignment.class, ExceptionSensorAssignment.class })
@@ -30,14 +33,14 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 	/**
 	 * If superclass marker is set.
 	 */
-	@XmlAttribute(name = "superclass", required = true)
-	private boolean superclass;
+	@XmlAttribute(name = "superclass")
+	private Boolean superclass = Boolean.FALSE;
 
 	/**
 	 * If interface marker is set.
 	 */
-	@XmlAttribute(name = "interface", required = true)
-	private boolean interf;
+	@XmlAttribute(name = "interface")
+	private Boolean interf = Boolean.FALSE;
 
 	/**
 	 * Annotation class.
@@ -46,8 +49,15 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 	private String annotation;
 
 	/**
+	 * Return settings for the sensor assignment.
+	 *
+	 * @return Return settings for the sensor assignment.
+	 */
+	public abstract Map<String, Object> getSettings();
+
+	/**
 	 * Gets {@link #className}.
-	 * 
+	 *
 	 * @return {@link #className}
 	 */
 	public String getClassName() {
@@ -56,7 +66,7 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 
 	/**
 	 * Sets {@link #className}.
-	 * 
+	 *
 	 * @param className
 	 *            New value for {@link #className}
 	 */
@@ -66,45 +76,45 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 
 	/**
 	 * Gets {@link #superclass}.
-	 * 
+	 *
 	 * @return {@link #superclass}
 	 */
 	public boolean isSuperclass() {
-		return superclass;
+		return superclass.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #superclass}.
-	 * 
+	 *
 	 * @param superclass
 	 *            New value for {@link #superclass}
 	 */
 	public void setSuperclass(boolean superclass) {
-		this.superclass = superclass;
+		this.superclass = Boolean.valueOf(superclass);
 	}
 
 	/**
 	 * Gets {@link #interf}.
-	 * 
+	 *
 	 * @return {@link #interf}
 	 */
 	public boolean isInterf() {
-		return interf;
+		return interf.booleanValue();
 	}
 
 	/**
 	 * Sets {@link #interf}.
-	 * 
+	 *
 	 * @param interf
 	 *            New value for {@link #interf}
 	 */
 	public void setInterf(boolean interf) {
-		this.interf = interf;
+		this.interf = Boolean.valueOf(interf);
 	}
 
 	/**
 	 * Gets {@link #annotation}.
-	 * 
+	 *
 	 * @return {@link #annotation}
 	 */
 	public String getAnnotation() {
@@ -113,7 +123,7 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 
 	/**
 	 * Sets {@link #annotation}.
-	 * 
+	 *
 	 * @param annotation
 	 *            New value for {@link #annotation}
 	 */
@@ -136,10 +146,10 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((annotation == null) ? 0 : annotation.hashCode());
-		result = prime * result + ((className == null) ? 0 : className.hashCode());
-		result = prime * result + (interf ? 1231 : 1237);
-		result = prime * result + (superclass ? 1231 : 1237);
+		result = (prime * result) + ((this.annotation == null) ? 0 : this.annotation.hashCode());
+		result = (prime * result) + ((this.className == null) ? 0 : this.className.hashCode());
+		result = (prime * result) + ((this.interf == null) ? 0 : this.interf.hashCode());
+		result = (prime * result) + ((this.superclass == null) ? 0 : this.superclass.hashCode());
 		return result;
 	}
 
@@ -158,24 +168,32 @@ public abstract class AbstractClassSensorAssignment<T extends ISensorConfig> imp
 			return false;
 		}
 		AbstractClassSensorAssignment<?> other = (AbstractClassSensorAssignment<?>) obj;
-		if (annotation == null) {
+		if (this.annotation == null) {
 			if (other.annotation != null) {
 				return false;
 			}
-		} else if (!annotation.equals(other.annotation)) {
+		} else if (!this.annotation.equals(other.annotation)) {
 			return false;
 		}
-		if (className == null) {
+		if (this.className == null) {
 			if (other.className != null) {
 				return false;
 			}
-		} else if (!className.equals(other.className)) {
+		} else if (!this.className.equals(other.className)) {
 			return false;
 		}
-		if (interf != other.interf) {
+		if (this.interf == null) {
+			if (other.interf != null) {
+				return false;
+			}
+		} else if (!this.interf.equals(other.interf)) {
 			return false;
 		}
-		if (superclass != other.superclass) {
+		if (this.superclass == null) {
+			if (other.superclass != null) {
+				return false;
+			}
+		} else if (!this.superclass.equals(other.superclass)) {
 			return false;
 		}
 		return true;
