@@ -306,7 +306,7 @@ public class TraceOverviewInputController extends AbstractTableInputController i
 
 		List<MobilePeriodicMeasurement> measurements = mobilePeriodicMeasurementAccessService.getMobilePeriodicMeasurementInstances();
 		System.out.println(measurements.size());
-		System.out.println(measurements.get(0).getBatteryPower());
+		// System.out.println(measurements.get(0).getBatteryPower());
 
 		spanList.clear();
 		if (CollectionUtils.isNotEmpty(spans)) {
