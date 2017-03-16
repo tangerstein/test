@@ -206,6 +206,7 @@ public interface InspectITImages {
 	String IMG_JMS = InspectITConstants.ICON_PATH_FUGUE + "envelope.png";
 	String IMG_REFERENCE_CHILDOF = InspectITConstants.ICON_PATH_FUGUE + "arrow-return-180.png";
 	String IMG_REFERENCE_FOLLOWSFROM = InspectITConstants.ICON_PATH_FUGUE + "arrow-curve-000-left.png";
+	String IMG_IOS = InspectITConstants.ICON_PATH_FUGUE + "ios_obj.png";
 
 	// Images originally from Fugue set we modified - license Creative Commons v3.0
 	String IMG_HTTP_PARAMETER = InspectITConstants.ICON_PATH_FUGUE + "http-parameter.png";

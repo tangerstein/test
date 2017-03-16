@@ -22,7 +22,13 @@ public enum PropagationType {
 	/**
 	 * Propagation via Java Message Service.
 	 */
-	JMS;
+	JMS,
+	
+	
+	/**
+	 * Propagation via IOS client
+	 */
+	IOS;
 
 	/**
 	 * Returns result of {@link #valueOf(String)} if the given parameter is not <code>null</code>.

@@ -688,6 +688,8 @@ public final class ImageFormatter {
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_JMS);
 		case PROCESS:
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_ACTIVITY);
+		case IOS:
+			return InspectIT.getDefault().getImage(InspectITImages.IMG_IOS);
 		default:
 			return InspectIT.getDefault().getImage(InspectITImages.IMG_REMOTE);
 		}
