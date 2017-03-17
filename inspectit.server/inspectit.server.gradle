@@ -11,8 +11,8 @@ evaluationDependsOn(':inspectit.agent.java.sdk')
 defaultTasks 'releaseAndAnalyze'
 
 /** used by the eclipse buildship plugin */
-sourceCompatibility = '1.7'
-targetCompatibility = '1.7'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
 
 /** defined to have it included in Eclipse as source */
 sourceSets {
@@ -50,8 +50,8 @@ dependencies {
 
 /** Compile compatibility to 1.7 for all compile tasks */
 tasks.withType(JavaCompile) { 
-	sourceCompatibility = '1.7'
-	targetCompatibility = '1.7'
+	sourceCompatibility = '1.8'
+	targetCompatibility = '1.8'
 }
 
 /** 

@@ -4,11 +4,17 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.diagnoseit.standalone.Launcher;
+import org.diagnoseit.standalone.Launcher.RulePackage;
+import org.spec.research.open.xtrace.adapters.inspectit.source.InspectITTraceConverter;
+import org.spec.research.open.xtrace.api.core.Trace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,11 +38,15 @@ import rocks.inspectit.server.cache.impl.BufferElement;
 import rocks.inspectit.server.service.rest.error.JsonError;
 import rocks.inspectit.server.util.CacheIdGenerator;
 import rocks.inspectit.server.util.PlatformIdentCache;
+import rocks.inspectit.shared.all.cmr.model.PlatformIdent;
 import rocks.inspectit.shared.all.communication.DefaultData;
 import rocks.inspectit.shared.all.communication.data.InvocationSequenceData;
 import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
+import rocks.inspectit.shared.all.tracing.data.Span;
 import rocks.inspectit.shared.all.tracing.data.SpanIdent;
+import rocks.inspectit.shared.cs.cmr.service.IInvocationDataAccessService;
+import rocks.inspectit.shared.cs.cmr.service.ISpanService;
 
 /**
  * Restful service provider for detail information.
@@ -57,6 +67,12 @@ public class AgentRestfulService {
 	@Autowired
 	private CacheIdGenerator idGenerator;
 
+	@Autowired
+	private IInvocationDataAccessService dataAccessService;
+
+	@Autowired
+	private ISpanService spansService;
+
 	/**
 	 * Handling of all the exceptions happening in this controller.
 	 *
@@ -75,7 +91,7 @@ public class AgentRestfulService {
 
 		Gson gson = getGson();
 		MobileRoot mobileRoot = gson.fromJson(json, MobileRoot.class);
-
+		List<Span> abstractSpans = new LinkedList<Span>();
 		for (SpanImpl span : mobileRoot.spans) {
 			span.setTag("deviceID", mobileRoot.getDeviceID());
 			AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
@@ -83,6 +99,9 @@ public class AgentRestfulService {
 			abstractSpan.setMethodIdent(0);
 			abstractSpan.setSensorTypeIdent(0);
 			idGenerator.assignObjectAnId(abstractSpan);
+
+			// add span for diagnoseIT
+			abstractSpans.add(abstractSpan);
 
 			buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
 		}
@@ -97,6 +116,32 @@ public class AgentRestfulService {
 
 			buffer.put(new BufferElement<DefaultData>((DefaultData) measurement));
 		}
+		
+		// Get all PlatformIdents
+		List<PlatformIdent> platformIdentList = new ArrayList<PlatformIdent>();
+		Collection<PlatformIdent> platformIdents = platformCache.getCleanPlatformIdents();
+		for (PlatformIdent platIdent : platformIdents) {
+			platformIdentList.add(platIdent);
+		}
+
+		List<InvocationSequenceData> listSequences = dataAccessService.getInvocationSequenceOverview(0, -1, null);
+		List<InvocationSequenceData> listSequencesDetail = new LinkedList<InvocationSequenceData>();
+
+		// Get all invocs
+		for (InvocationSequenceData invocationSequenceData : listSequences) {
+			InvocationSequenceData invocDetail = dataAccessService.getInvocationSequenceDetail(invocationSequenceData);
+			// is already nested sequence?
+			if (invocDetail != null) {
+				listSequencesDetail.add(invocDetail);
+			}
+		}
+
+
+		InspectITTraceConverter converter = new InspectITTraceConverter();
+		Trace trace = converter.convertTraces(listSequencesDetail, platformIdentList, abstractSpans, mobileRoot.measurements);
+		
+		Launcher.startLauncher(trace, RulePackage.MobilePackage);
+
 	}
 
 	private Gson getGson() {
