@@ -9,6 +9,7 @@ import rocks.inspectit.ui.rcp.editor.composite.GridCompositeSubView;
 import rocks.inspectit.ui.rcp.editor.composite.SashCompositeSubView;
 import rocks.inspectit.ui.rcp.editor.composite.TabbedCompositeSubView;
 import rocks.inspectit.ui.rcp.editor.graph.GraphSubView;
+import rocks.inspectit.ui.rcp.editor.map.MapSubView;
 import rocks.inspectit.ui.rcp.editor.table.TableSubView;
 import rocks.inspectit.ui.rcp.editor.table.input.AggregatedTimerSummaryInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.AlertInvocInputController;
@@ -242,6 +243,7 @@ public final class SubViewFactory {
 		case TRACING:
 			SashCompositeSubView tracingSashSubView = new SashCompositeSubView();
 			tracingSashSubView.addSubView(new TableSubView(new TraceOverviewInputController()));
+			tracingSashSubView.addSubView(new MapSubView());
 			return tracingSashSubView;
 		case TRACING_DETAILS:
 			TabbedCompositeSubView invocTabbedSubView2 = new TabbedCompositeSubView();

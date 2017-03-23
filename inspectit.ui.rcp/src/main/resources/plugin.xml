@@ -20,8 +20,7 @@
          id="product"
          point="org.eclipse.core.runtime.products">
       <product
-            application="rocks.inspectit.ui.rcp.application"
-            name="inspectIT">
+            name="inspectIT" application="rocks.inspectit.ui.rcp.application">
          <property
                name="aboutText"
                value="%aboutText">
