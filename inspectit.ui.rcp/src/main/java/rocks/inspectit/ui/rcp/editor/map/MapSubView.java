@@ -1,8 +1,12 @@
 package rocks.inspectit.ui.rcp.editor.map;
 
+import java.awt.BorderLayout;
+import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import javax.swing.JPanel;
 
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.swt.SWT;
@@ -11,10 +15,16 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.openstreetmap.gui.jmapviewer.JMapViewer;
-import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
+import org.openstreetmap.gui.jmapviewer.events.JMVCommandEvent;
+import org.openstreetmap.gui.jmapviewer.events.JMVCommandEvent.COMMAND;
+import org.openstreetmap.gui.jmapviewer.interfaces.JMapViewerEventListener;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
 import rocks.inspectit.ui.rcp.editor.AbstractSubView;
+import rocks.inspectit.ui.rcp.editor.map.filter.FilterEventListener;
+import rocks.inspectit.ui.rcp.editor.map.input.MapInputController;
+import rocks.inspectit.ui.rcp.editor.map.model.FilterPanel;
+import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 
@@ -25,13 +35,20 @@ import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 public class MapSubView extends AbstractSubView {
 
 	private Composite swtAwtComponent;
+	private FilterPanel filter;
+	JMapViewer mapViewer;
+	private MapInputController mapInputController;
+
+	public MapSubView(MapInputController mapInputController) {
+		this.mapInputController = mapInputController;
+	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void init() {
-		// TODO Auto-generated method stub
+		mapInputController.setInputDefinition(getRootEditor().getInputDefinition());
 
 	}
 
@@ -42,16 +59,40 @@ public class MapSubView extends AbstractSubView {
 	public void createPartControl(Composite parent, FormToolkit toolkit) {
 		swtAwtComponent = new Composite(parent, SWT.EMBEDDED);
 		java.awt.Frame frame = SWT_AWT.new_Frame(swtAwtComponent);
-		JMapViewer map = new JMapViewer();
+		filter = new FilterPanel(null);
+		this.mapInputController.setView(this);
+		frame.setLayout(new BorderLayout());
+		mapViewer = new JMapViewer() {
 
-		// check below if this is needed !?
-		map.setAutoscrolls(true);
-		map.setInheritsPopupMenu(true);
-		map.setScrollWrapEnabled(true);
+			@Override
+			public String getToolTipText(MouseEvent e) {
+				List<InspectITMarker> temp = getInputController().getClusteredMarkers(this.getPosition(e.getX(), e.getY()));
+				if ((temp != null) && (temp.size() > 4)) {
+					return String.valueOf(temp.size());
+				}
+				return "";
+			}
+		};
+		mapViewer.setAutoscrolls(true);
+		mapViewer.setInheritsPopupMenu(true);
+		mapViewer.setScrollWrapEnabled(true);
+		mapViewer.setToolTipText("");
+		mapViewer.addJMVListener(new JMapViewerEventListener() {
 
-		MapMarker circle = new MapMarkerDot(48.745182, 9.106806);
-		map.setMapMarkerList(Collections.<MapMarker> singletonList(circle));
-		frame.add(map);
+			@Override
+			public void processCommand(JMVCommandEvent arg0) {
+				if (arg0.getCommand().equals(COMMAND.ZOOM)) {
+					zoomLevelChanged();
+				} else {
+					// this would be triggered if the map is moved!
+				}
+			}
+		});
+		zoomLevelChanged();
+		// this.add(mapInputController.getTestPanel(), BorderLayout.EAST);
+
+		frame.add(filter, BorderLayout.NORTH);
+		frame.add(mapViewer, BorderLayout.CENTER);
 	}
 
 	/**
@@ -86,8 +127,12 @@ public class MapSubView extends AbstractSubView {
 	 */
 	@Override
 	public void setDataInput(List<? extends Object> data) {
-		// TODO Auto-generated method stub
-
+		mapViewer.removeAllMapMarkers();
+		mapViewer.setMapMarkerList((List<MapMarker>) data);
+		mapViewer.updateUI();
+		System.out.println(data.size());
+		filter.revalidate();
+		mapViewer.revalidate();
 	}
 
 	/**
@@ -106,6 +151,31 @@ public class MapSubView extends AbstractSubView {
 	public ISelectionProvider getSelectionProvider() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	private MapInputController getInputController() {
+		return mapInputController;
+	}
+
+	private void zoomLevelChanged() {
+		System.out.println("zoom");
+		mapInputController.setZoomLevel(mapViewer.getZoom());
+	}
+
+
+	public void setValuePanel(JPanel filterValuePanel) {
+		this.filter.setValuePanel(filterValuePanel);
+		filter.revalidate();
+	}
+
+	public void setKeyAndValuePanel(Set<String> keys, JPanel filterValuePanel) {
+		this.filter.setKeyAndValuePanel(keys, filterValuePanel);
+		filter.revalidate();
+	}
+
+	public void setFilterEventListener(FilterEventListener listener) {
+		this.filter.setFilterEventListener(listener);
+		filter.revalidate();
 	}
 
 }
