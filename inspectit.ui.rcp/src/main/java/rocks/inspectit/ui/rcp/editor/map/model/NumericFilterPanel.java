@@ -8,20 +8,21 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import rocks.inspectit.ui.rcp.editor.map.filter.FilterEventListener;
+import rocks.inspectit.ui.rcp.editor.map.MapSubView.FilterValueObject;
 
 
-public class NumericFilterPanel extends JPanel implements ValueFilterPanel{
+public class NumericFilterPanel extends JPanel {
 
 	private JLabel lowerRangeValue;
 	private JLabel upperRangeValue;
 	private JSlider lowerBound;
 	private JSlider upperBound;
-	FilterEventListener listener;
+	FilterValueObject filterValueObject;
 
 	private NumericFilterPanel self;
 
-	public NumericFilterPanel(NumericRange numericRange) {
+	public NumericFilterPanel(FilterValueObject filterValueObject, NumericRange numericRange) {
+		this.filterValueObject = filterValueObject;
 		self = this;
 		this.setLayout(new FlowLayout(FlowLayout.CENTER));
 
@@ -88,9 +89,7 @@ public class NumericFilterPanel extends JPanel implements ValueFilterPanel{
 			lowerRangeValue.setText(lowerBound.getValue() + "");
 			// Only trigger reloading of the map after selection is done
 			if (!lowerBound.getValueIsAdjusting() && !upperBound.getValueIsAdjusting()) {
-				if (listener!=null) {
-					listener.NumericValueSelectionChanged(new NumericRange(lowerBound.getValue(), upperBound.getValue()));
-				}
+				filterValueObject.selectionChanged(new NumericRange(lowerBound.getValue(), upperBound.getValue()));
 			}
 
 		}
@@ -118,9 +117,7 @@ public class NumericFilterPanel extends JPanel implements ValueFilterPanel{
 			upperRangeValue.setText(upperBound.getValue() + "");
 			// Only trigger reloading of the map after selection is done
 			if (!lowerBound.getValueIsAdjusting() && !upperBound.getValueIsAdjusting()) {
-				if (listener!=null) {
-					listener.NumericValueSelectionChanged(new NumericRange(lowerBound.getValue(), upperBound.getValue()));
-				}
+				filterValueObject.selectionChanged(new NumericRange(lowerBound.getValue(), upperBound.getValue()));
 			}
 		}
 
@@ -132,11 +129,6 @@ public class NumericFilterPanel extends JPanel implements ValueFilterPanel{
 
 	private int getMinorTickSpacing(int lowerBound, int upperBound) {
 		return (upperBound - lowerBound) / 9;
-	}
-
-	@Override
-	public void setFilterEventListener(FilterEventListener listener) {
-		this.listener = listener;
 	}
 
 

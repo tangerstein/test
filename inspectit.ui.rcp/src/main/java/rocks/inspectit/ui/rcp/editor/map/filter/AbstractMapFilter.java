@@ -23,6 +23,9 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 		this.tagKey = tagKey;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void addFilterConstraint(T key, MarkerFilterElement element) {
 		if (key!=null) {
@@ -34,11 +37,17 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public List<Color> getAvailableColor() {
 		return this.colorList;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public MarkerFilterElement getFilter(T key) {
 		if (filterMap.isEmpty()) {
@@ -52,12 +61,17 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 		return new MarkerFilterElement(false);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Set<T> getKeys() {
 		return filterMap.keySet();
 	}
 
-
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public T getValue(T key) {
 		return (T) getFilter(key);

@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.swing.JPanel;
 
+import rocks.inspectit.ui.rcp.editor.map.MapSubView.FilterValueObject;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.NumericFilterPanel;
 import rocks.inspectit.ui.rcp.editor.map.model.NumericRange;
@@ -30,19 +31,27 @@ public class NumericMapFilter<T> extends AbstractMapFilter<T> {
 
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void addValue(Object value) {
 		Double temp = Double.parseDouble((String) value);
 		totalRange.updateBounds(temp);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public JPanel getPanel(FilterEventListener listener) {
-		NumericFilterPanel temp = new NumericFilterPanel(totalRange);
-		temp.setFilterEventListener(listener);
+	public JPanel getPanel(FilterValueObject filterValueObject) {
+		NumericFilterPanel temp = new NumericFilterPanel(filterValueObject, totalRange);
 		return temp;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void finalizeFilter() {
 		double temp = (totalRange.getUpperBound()-totalRange.getLowerBound())/5;
@@ -53,6 +62,9 @@ public class NumericMapFilter<T> extends AbstractMapFilter<T> {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public InspectITMarker applyFilter(InspectITMarker marker) {
 		Double temp = Double.parseDouble((String) marker.getTags().get(tagKey));
@@ -65,8 +77,11 @@ public class NumericMapFilter<T> extends AbstractMapFilter<T> {
 		return marker;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public void ChangeSelection(Object selection) {
+	public void changeSelection(Object selection) {
 		filteredRange = (NumericRange) selection;
 	}
 

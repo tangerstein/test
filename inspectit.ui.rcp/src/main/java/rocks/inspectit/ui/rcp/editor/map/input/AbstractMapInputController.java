@@ -5,146 +5,115 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JPanel;
-
+import org.eclipse.core.runtime.Assert;
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.interfaces.ICoordinate;
-import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
+import rocks.inspectit.shared.all.tracing.data.Span;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
 import rocks.inspectit.ui.rcp.editor.map.MapSubView;
-import rocks.inspectit.ui.rcp.editor.map.filter.FilterEventListener;
 import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
-import rocks.inspectit.ui.rcp.editor.map.filter.MarkerFilterElement;
 import rocks.inspectit.ui.rcp.editor.map.filter.NumericMapFilter;
 import rocks.inspectit.ui.rcp.editor.map.filter.StringMapFilter;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITClusterMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
+import rocks.inspectit.ui.rcp.editor.map.model.InspectITSpanMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.NumericRange;
 
 public abstract class AbstractMapInputController implements MapInputController {
 
+	/**
+	 * A constant string identifying the duration flag (should be put in some kind of constants.
+	 * file)
+	 */
 	static final String DURATION = "duration";
-	Map<Coordinate, List<InspectITMarker>> coordSys = new HashMap<Coordinate, List<InspectITMarker>>();
-	List<InspectITMarker> allDataMarkers = new ArrayList<InspectITMarker>();
-	int zoomLevel = 0;
-	int clusteringTreshhold = 4;
-	double clusteringCoefficient = 0.55;
-	Map<String, MapFilter> filterTypes;
-	String selectedTag = null;
-	private FilterEvent event;
 
+	/**
+	 * A map which holds the markers clustered to specific coordinate spaces.
+	 */
+	Map<Coordinate, List<InspectITMarker>> coordSys = new HashMap<Coordinate, List<InspectITMarker>>();
+
+	/**
+	 * A list of all available data markers.
+	 */
+	List<InspectITMarker> allDataMarkers = new ArrayList<InspectITMarker>();
+
+	/**
+	 * The current zoom level.
+	 */
+	int zoomLevel = 0;
+
+	/**
+	 * The current minimum amount of markers in a coordinate space in order to cluster.
+	 */
+	int clusteringTreshhold = 4;
+
+	/**
+	 * The current cluster coefficient.
+	 */
+	double clusteringCoefficient = 0.55;
+
+	/**
+	 * The current mapFilter.
+	 */
+	Map<String, MapFilter> filterTypes;
+
+	/**
+	 * The current selected tag.
+	 */
+	String selectedTag = null;
+
+
+	MapSubView subview;
 
 	/**
 	 * The input definition.
 	 */
-	private InputDefinition inputDefinition;
-
-	private MapSubView subview;
+	protected InputDefinition inputDefinition;
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void setInputDefinition(InputDefinition inputDefinition) {
-		// ToDo uncomment in Insptectit!
-		//Assert.isNotNull(inputDefinition);
-
+		Assert.isNotNull(inputDefinition);
 		this.inputDefinition = inputDefinition;
+	}
+
+	/**
+	 * Default constructor for this abstract map input controller.
+	 *
+	 */
+	public AbstractMapInputController() {
+		filterTypes = new HashMap<>();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void setView(MapSubView subview) {
-		// ToDo uncomment in Insptectit!
-		//Assert.isNotNull(inputDefinition);
-
-		this.subview = subview;
-		refreshFilter();
-
-	}
-
-	private class FilterEvent implements FilterEventListener {
-
-		@Override
-		public void keySelectionChanged(String key) {
-			selectedTag = key;
-			if ((key == "---") || (filterTypes.get(key) == null)) {
-				subview.setValuePanel(new JPanel());
-			} else {
-				subview.setValuePanel(filterTypes.get(key).getPanel(event));
-			}
-			subview.setDataInput(clusterMarkers());
-		}
-
-		@Override
-		public void StringvalueSelectionChanged(String value) {
-			System.out.println("changeSelection");
-			filterTypes.get(selectedTag).ChangeSelection(value);
-			subview.setDataInput(clusterMarkers());
-		}
-
-		@Override
-		public void NumericValueSelectionChanged(NumericRange value) {
-			System.out.println("changeSelectionNUmber");
-			filterTypes.get(selectedTag).ChangeSelection(value);
-			subview.setDataInput(clusterMarkers());
-		}
-
-	}
-
-	private void refreshFilter() {
-		if (this.subview == null) {
-			return;
-		}
-		if (filterTypes.get(this.selectedTag)!=null) {
-			this.subview.setKeyAndValuePanel(filterTypes.keySet(), filterTypes.get(this.selectedTag).getPanel(event));
-		} else {
-			this.subview.setKeyAndValuePanel(filterTypes.keySet(), new JPanel());
-		}
-		this.subview.setFilterEventListener(event);
-	}
-
-	public AbstractMapInputController() {
-		event = new FilterEvent();
-		filterTypes = new HashMap<>();
-	}
-
-
-	/**
-	 * Returns the input definition.
-	 *
-	 * @return The input definition.
-	 */
-	protected InputDefinition getInputDefinition() {
-		// ToDo uncomment in Insptectit!
-		//Assert.isNotNull(inputDefinition);
-
-		return inputDefinition;
-	}
-
-	@Override
 	public SubViewClassification getSubViewClassification() {
 		return this.getSubViewClassification();
 	}
 
+	/**
+	 * Creates and returns a circle marker with the given coordinate and radius.
+	 *
+	 * @param coord
+	 *            The coordinate the marker should be displayed at.
+	 * @param rad
+	 *            The radius for circle marker.
+	 * @return The created circle marker.
+	 */
 	private InspectITMarker getCircle(Coordinate coord, double rad) {
 		return new InspectITClusterMarker(null, coord, rad*clusteringCoefficient);
 	}
 
-	@Override
-	public void setMarkers(List<InspectITMarker> markers) {
-		System.out.println("setMarkers");
-		this.allDataMarkers = markers;
-		refreshFilters();
-		if (subview != null) {
-			this.subview.setDataInput(clusterMarkers());
-		}
-	}
-
-	private void refreshFilters() {
+	/**
+	 * refreshes the filter within the sub view controlled by this input controller.
+	 *
+	 */
+	protected void refreshFilters() {
 		filterTypes.clear();
 		for (InspectITMarker marker : this.allDataMarkers) {
 			Map<String, String> tags = marker.getTags();
@@ -158,7 +127,6 @@ public abstract class AbstractMapInputController implements MapInputController {
 		for (MapFilter t : filterTypes.values()) {
 			t.finalizeFilter();
 		}
-		refreshFilter();
 	}
 
 	private void addSomething(String key, String value) {
@@ -177,21 +145,28 @@ public abstract class AbstractMapInputController implements MapInputController {
 		filterTypes.put(key, filterType);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void resetClustering() {
 		coordSys = new HashMap<Coordinate, List<InspectITMarker>>();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public List<InspectITMarker> getClusteredMarkers(ICoordinate coordinate) {
 		return this.coordSys.get(calculateCoordinate(coordinate));
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void setZoomLevel(int zoomlevel) {
-		System.out.println("zoomAbstract");
 		this.zoomLevel = zoomlevel;
-		this.subview.setDataInput(clusterMarkers());
 	}
 
 
@@ -230,12 +205,11 @@ public abstract class AbstractMapInputController implements MapInputController {
 
 	}
 
-	private List<MapMarker> clusterMarkers() {
+	protected void clusterMarkers(List<? extends Span> collection) {
 		resetClustering();
-		System.out.println("CM: " + allDataMarkers.size());
-		List<MapMarker> clusteredMarkers = new ArrayList<MapMarker>();
-		for (int i=0;i<this.allDataMarkers.size();i++) {
-			InspectITMarker marker = this.allDataMarkers.get(i);
+		List<InspectITMarker> clusteredMarkers = new ArrayList<InspectITMarker>();
+		for (int i = 0; i < collection.size(); i++) {
+			InspectITMarker marker = createMarker(collection.get(i));
 			if ((filterTypes.get(selectedTag) != null) &&
 					(filterTypes.get(selectedTag).applyFilter(marker)==null)) {
 				continue;
@@ -258,15 +232,56 @@ public abstract class AbstractMapInputController implements MapInputController {
 				}
 			}
 		}
-		return clusteredMarkers;
+		this.allDataMarkers = clusteredMarkers;
 	}
 
-	private MarkerFilterElement getSpecificFilter(InspectITMarker marker) {
-		if ((this.selectedTag==null) || (this.selectedTag=="---")) {
-			return new MarkerFilterElement();
-		}
-		MapFilter type = filterTypes.get(this.selectedTag);
-		return (MarkerFilterElement) type.getValue(marker.getTags().get(this.selectedTag));
+	private InspectITMarker createMarker(Span span) {
+		Map<String, String> tags = span.getTags();
+		return new InspectITSpanMarker(span, new Coordinate(Double.parseDouble(tags.get("http.request.latitude")), Double.parseDouble(tags.get("http.request.longitude"))));
 	}
+
+	@Override
+	public Object getMapInput() {
+		return allDataMarkers;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, MapFilter> getMapFilter() {
+		return filterTypes;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void keySelectionChanged(String key) {
+		selectedTag = key;
+		doRefresh();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void stringvalueSelectionChanged(String value) {
+		System.out.println("changeSelection");
+		filterTypes.get(selectedTag).changeSelection(value);
+		doRefresh();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void numericValueSelectionChanged(NumericRange value) {
+		System.out.println("changeSelectionNUmber");
+		filterTypes.get(selectedTag).changeSelection(value);
+		doRefresh();
+	}
+
+
 
 }

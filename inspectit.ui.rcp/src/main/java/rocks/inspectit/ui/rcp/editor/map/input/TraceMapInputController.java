@@ -10,25 +10,48 @@ import java.util.Random;
 
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 
-import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
 import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
 import rocks.inspectit.shared.all.tracing.data.ServerSpan;
+import rocks.inspectit.shared.all.tracing.data.Span;
+import rocks.inspectit.shared.cs.cmr.service.ISpanService;
+import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITSpanMarker;
 
 
 public class TraceMapInputController extends AbstractMapInputController {
 
+	ISpanService spanService;
+	List<Span> temp;
+
 	public TraceMapInputController() {
 		// Generate Marker
 		// create Data
 		Random rand = new Random();
 		// create five deviceIds
-		long[] deviceIds = new long[] { rand.nextLong(), rand.nextLong(), rand.nextLong(), rand.nextLong(),
-				rand.nextLong() };
-		// final SpanService spanService = new SpanService(deviceIds);
-		setMarkers(setMarker(getSpans(100, deviceIds)));
-		final MobilePeriodicMeasurement mService = new MobilePeriodicMeasurement();
+		long[] deviceIds = new long[] { rand.nextLong(), rand.nextLong(), rand.nextLong(), rand.nextLong(), rand.nextLong() };
+		System.out.println(spanService == null);
+		temp = getSpans(100, deviceIds);
+		clusterMarkers(temp);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setInputDefinition(InputDefinition inputDefinition) {
+		super.setInputDefinition(inputDefinition);
+		spanService = inputDefinition.getRepositoryDefinition().getSpanService();
+		System.out.println(spanService == null);
+	}
+
+	@Override
+	public void doRefresh() {
+		// RootSpans not sufficient, need to get all Spans by traceID (by iterating over to
+		// rootspans)
+		// clusterMarkers((List<Span>) spanService.getRootSpans(-1, null, null, null));
+		clusterMarkers(temp);
+		refreshFilters();
 	}
 
 	static Coordinate coord = new Coordinate(46.00, 7.00);
@@ -62,10 +85,10 @@ public class TraceMapInputController extends AbstractMapInputController {
 		return markers;
 	}
 
-	List<AbstractSpan> spans;
+	List<Span> spans;
 	long[] deviceIds;
 
-	public List<AbstractSpan> getSpans(int number, long[] deviceIds) {
+	public List<Span> getSpans(int number, long[] deviceIds) {
 		// generate
 		this.deviceIds = deviceIds.clone();
 		spans = new ArrayList<>();

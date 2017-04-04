@@ -10,41 +10,36 @@ import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 
-import rocks.inspectit.ui.rcp.editor.map.filter.FilterEventListener;
+import rocks.inspectit.ui.rcp.editor.map.MapSubView.FilterValueObject;
 import rocks.inspectit.ui.rcp.editor.map.filter.MarkerFilterElement;
 
 
 
-public class StringFilterPanel<T> extends JPanel implements ValueFilterPanel {
+public class StringFilterPanel<T> extends JPanel {
 
-	FilterEventListener listener;
-
-	public StringFilterPanel(Set<T> keys, NavigableMap<T, MarkerFilterElement> map) {
+	/**
+	 * Default constructor which needs a set of keys and the corresponding map which maps values to
+	 * {@MarkerFilterElement}.
+	 *
+	 * @param keys
+	 *            The set of keys.
+	 * @param map
+	 *            The value to {@MarkerFilterElement} map.
+	 */
+	public StringFilterPanel(final FilterValueObject filterValueObject, Set<T> keys, NavigableMap<T, MarkerFilterElement> map) {
 		for (Object value : keys) {
 			JPanel newCboxPanel = new JPanel(new BorderLayout());
 			newCboxPanel.setBorder(new LineBorder(map.get(value).style().getBackColor(), 3));
 			JCheckBox newCbox = new JCheckBox(String.valueOf(value));
-			newCbox.addItemListener(new CheckboxItemListener());
+			newCbox.addItemListener(new ItemListener() {
+				@Override
+				public void itemStateChanged(ItemEvent e) {
+					filterValueObject.selectionChanged(((JCheckBox) e.getItem()).getText());
+				}
+			});
 			newCbox.setSelected(true);
 			newCboxPanel.add(newCbox, BorderLayout.CENTER);
 			this.add(newCboxPanel);
 		}
-	}
-
-	private class CheckboxItemListener implements ItemListener {
-
-
-		@Override
-		public void itemStateChanged(ItemEvent e) {
-			if (listener!=null) {
-				listener.StringvalueSelectionChanged(((JCheckBox) e.getItem()).getText());
-			}
-		}
-
-	}
-
-	@Override
-	public void setFilterEventListener(FilterEventListener listener) {
-		this.listener = listener;
 	}
 }

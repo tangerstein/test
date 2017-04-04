@@ -1,11 +1,16 @@
 package rocks.inspectit.ui.rcp.editor.map;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JComboBox;
 import javax.swing.JPanel;
 
 import org.eclipse.jface.viewers.ISelectionProvider;
@@ -21,10 +26,10 @@ import org.openstreetmap.gui.jmapviewer.interfaces.JMapViewerEventListener;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
 import rocks.inspectit.ui.rcp.editor.AbstractSubView;
-import rocks.inspectit.ui.rcp.editor.map.filter.FilterEventListener;
+import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
 import rocks.inspectit.ui.rcp.editor.map.input.MapInputController;
-import rocks.inspectit.ui.rcp.editor.map.model.FilterPanel;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
+import rocks.inspectit.ui.rcp.editor.map.model.NumericRange;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 
@@ -34,11 +39,38 @@ import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
  */
 public class MapSubView extends AbstractSubView {
 
+	/**
+	 * The Component holding the map and the filter panel.
+	 */
 	private Composite swtAwtComponent;
-	private FilterPanel filter;
+
+	private JComboBox<String> tagComboBox;
+	private JPanel filterValuePanel;
+	private String selection;
+
+	/**
+	 * The map filter panel.
+	 */
+	private JPanel filter;
+
+	Map<String, MapFilter> filterMap;
+
+	/**
+	 * The map frame.
+	 */
 	JMapViewer mapViewer;
+
+	/**
+	 * The referenced input controller.
+	 */
 	private MapInputController mapInputController;
 
+	/**
+	 * Default constructor which needs a map input controller to create all the content etc.
+	 *
+	 * @param mapInputController
+	 *            The map input controller.
+	 */
 	public MapSubView(MapInputController mapInputController) {
 		this.mapInputController = mapInputController;
 	}
@@ -49,7 +81,6 @@ public class MapSubView extends AbstractSubView {
 	@Override
 	public void init() {
 		mapInputController.setInputDefinition(getRootEditor().getInputDefinition());
-
 	}
 
 	/**
@@ -59,14 +90,19 @@ public class MapSubView extends AbstractSubView {
 	public void createPartControl(Composite parent, FormToolkit toolkit) {
 		swtAwtComponent = new Composite(parent, SWT.EMBEDDED);
 		java.awt.Frame frame = SWT_AWT.new_Frame(swtAwtComponent);
-		filter = new FilterPanel(null);
-		this.mapInputController.setView(this);
+		tagComboBox = new JComboBox<>();
+		filterValuePanel = new JPanel();
+		filter = new JPanel();
+		filter.setLayout(new FlowLayout(FlowLayout.LEFT));
+		filter.add(tagComboBox);
+		filter.add(filterValuePanel);
+		createKeyBox(null);
 		frame.setLayout(new BorderLayout());
 		mapViewer = new JMapViewer() {
 
 			@Override
 			public String getToolTipText(MouseEvent e) {
-				List<InspectITMarker> temp = getInputController().getClusteredMarkers(this.getPosition(e.getX(), e.getY()));
+				List<InspectITMarker> temp = mapInputController.getClusteredMarkers(this.getPosition(e.getX(), e.getY()));
 				if ((temp != null) && (temp.size() > 4)) {
 					return String.valueOf(temp.size());
 				}
@@ -93,6 +129,10 @@ public class MapSubView extends AbstractSubView {
 
 		frame.add(filter, BorderLayout.NORTH);
 		frame.add(mapViewer, BorderLayout.CENTER);
+		mapInputController.doRefresh();
+		mapViewer.setMapMarkerList((List<MapMarker>) mapInputController.getMapInput());
+		filterMap = mapInputController.getMapFilter();
+		createKeyBox(filterMap.keySet());
 	}
 
 	/**
@@ -110,7 +150,13 @@ public class MapSubView extends AbstractSubView {
 	@Override
 	public void doRefresh() {
 		// TODO Auto-generated method stub
-
+		mapInputController.doRefresh();
+		mapViewer.setMapMarkerList((List<MapMarker>) mapInputController.getMapInput());
+		filterMap = mapInputController.getMapFilter();
+		mapViewer.updateUI();
+		filter.updateUI();
+		filter.revalidate();
+		mapViewer.revalidate();
 	}
 
 	/**
@@ -127,12 +173,14 @@ public class MapSubView extends AbstractSubView {
 	 */
 	@Override
 	public void setDataInput(List<? extends Object> data) {
+		/*
 		mapViewer.removeAllMapMarkers();
 		mapViewer.setMapMarkerList((List<MapMarker>) data);
 		mapViewer.updateUI();
 		System.out.println(data.size());
 		filter.revalidate();
 		mapViewer.revalidate();
+		 */
 	}
 
 	/**
@@ -153,29 +201,55 @@ public class MapSubView extends AbstractSubView {
 		return null;
 	}
 
-	private MapInputController getInputController() {
-		return mapInputController;
-	}
-
+	/**
+	 * Function which is called upon the change of the zoom Level of the map. It propragates the
+	 * change to the mapInputController in order to adapt the data displayed data.
+	 *
+	 */
 	private void zoomLevelChanged() {
-		System.out.println("zoom");
 		mapInputController.setZoomLevel(mapViewer.getZoom());
+		doRefresh();
 	}
 
+	private void createKeyBox(Set<String> keys) {
+		tagComboBox.removeAllItems();
+		tagComboBox.addItem("---");
+		selection = "---";
+		if (keys != null) {
+			for (String tag : keys) {
+				tagComboBox.addItem(tag);
+			}
+		}
+		tagComboBox.addActionListener(new ActionListener() {
 
-	public void setValuePanel(JPanel filterValuePanel) {
-		this.filter.setValuePanel(filterValuePanel);
-		filter.revalidate();
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String selectedItem = (String) tagComboBox.getSelectedItem();
+				if ((selectedItem == null) || (selectedItem == selection)) {
+					return;
+				}
+				selection = selectedItem;
+				mapInputController.keySelectionChanged(selectedItem);
+				filterValuePanel.removeAll();
+				JPanel test = filterMap.get(selection).getPanel(new FilterValueObject());
+				filterValuePanel.add(test);
+				filterValuePanel.updateUI();
+				doRefresh();
+			}
+		});
 	}
 
-	public void setKeyAndValuePanel(Set<String> keys, JPanel filterValuePanel) {
-		this.filter.setKeyAndValuePanel(keys, filterValuePanel);
-		filter.revalidate();
+	public class FilterValueObject {
+		public void selectionChanged(String value) {
+			mapInputController.stringvalueSelectionChanged(value);
+			doRefresh();
+		}
+
+		public void selectionChanged(NumericRange value) {
+			mapInputController.numericValueSelectionChanged(value);
+			doRefresh();
+		}
 	}
 
-	public void setFilterEventListener(FilterEventListener listener) {
-		this.filter.setFilterEventListener(listener);
-		filter.revalidate();
-	}
 
 }

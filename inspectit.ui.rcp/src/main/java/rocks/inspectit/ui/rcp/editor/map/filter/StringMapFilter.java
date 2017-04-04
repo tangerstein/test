@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.swing.JPanel;
 
+import rocks.inspectit.ui.rcp.editor.map.MapSubView.FilterValueObject;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.StringFilterPanel;
 
@@ -38,30 +39,41 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 		colorList.add(new Color(255, 0, 199));
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void addValue(Object value) {
 		values.add((String) value);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public JPanel getPanel(FilterEventListener listener) {
+	public JPanel getPanel(FilterValueObject filterValueObject) {
 		System.out.println("continue!!!");
-		StringFilterPanel temp = new StringFilterPanel(this.getKeys(), filterMap);
+		StringFilterPanel temp = new StringFilterPanel(filterValueObject, this.getKeys(), filterMap);
 		System.out.println("continue???");
-		temp.setFilterEventListener(listener);
 		return temp;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void finalizeFilter() {
 		List<Color> colorList = getAvailableColor();
 		int index = 0;
-		for (String value : values) {
+		for (String value : this.values) {
 			addFilterConstraint((T) value, new MarkerFilterElement(colorList.get(index)));
 			index++;
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public InspectITMarker applyFilter(InspectITMarker marker) {
 		if (toHide.contains(marker.getTags().get(tagKey))) {
@@ -73,8 +85,11 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 		return marker;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public void ChangeSelection(Object selection) {
+	public void changeSelection(Object selection) {
 		String value = String.valueOf(selection);
 		if (toHide.contains(value)) {
 			toHide.remove(value);
