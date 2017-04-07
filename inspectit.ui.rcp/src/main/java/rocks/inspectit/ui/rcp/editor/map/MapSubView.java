@@ -162,10 +162,17 @@ public class MapSubView extends AbstractSubView {
 		mapInputController.doRefresh();
 		mapViewer.setMapMarkerList((List<MapMarker>) mapInputController.getMapInput());
 		filterMap = mapInputController.getMapFilter();
+		optionsMenu.removeAll();
+		optionsMenu.add(createOptionMenu(mapInputController.getSettings()));
+		filterValuePanel.removeAll();
+		if (!InspectITConstants.NOFILTER.equals(selection)) {
+			JPanel filterValues = filterMap.get(selection).getPanel(new FilterValueObject());
+			filterValuePanel.add(filterValues);
+		}
+		filterValuePanel.updateUI();
+		optionsMenu.updateUI();
 		mapViewer.updateUI();
 		filter.updateUI();
-		filter.revalidate();
-		mapViewer.revalidate();
 	}
 
 	/**
@@ -221,7 +228,6 @@ public class MapSubView extends AbstractSubView {
 				@Override
 				public void itemStateChanged(ItemEvent e) {
 					JCheckBoxMenuItem item = ((JCheckBoxMenuItem) e.getItem());
-					System.out.println(String.format("name: %s, value: %s", item.getText(), item.isSelected()));
 					mapInputController.settingChanged(item.getText(), item.isSelected());
 					doRefresh();
 				}
@@ -252,12 +258,6 @@ public class MapSubView extends AbstractSubView {
 				}
 				selection = selectedItem;
 				mapInputController.keySelectionChanged(selectedItem);
-				filterValuePanel.removeAll();
-				if (!InspectITConstants.NOFILTER.equals(selectedItem)) {
-					JPanel filterValues = filterMap.get(selection).getPanel(new FilterValueObject());
-					filterValuePanel.add(filterValues);
-				}
-				filterValuePanel.updateUI();
 				doRefresh();
 			}
 		});

@@ -53,6 +53,7 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 	@Override
 	public void setColored(boolean colored) {
 		this.isColored = colored;
+		initColors();
 	}
 
 	/**

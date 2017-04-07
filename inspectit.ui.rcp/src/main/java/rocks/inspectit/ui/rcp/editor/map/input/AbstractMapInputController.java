@@ -68,6 +68,7 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 */
 	public AbstractMapInputController() {
 		mapSettings = new MapSettings();
+		filterTypes = new HashMap<>();
 		resetFilters();
 	}
 
@@ -93,7 +94,6 @@ public abstract class AbstractMapInputController implements MapInputController {
 	}
 
 	private void resetFilters() {
-		filterTypes = new HashMap<>();
 		filterTypes.clear();
 		filterTypes.put(InspectITConstants.NOFILTER, new StringMapFilter<>(InspectITConstants.NOFILTER, mapSettings.isColoredMarkers()));
 	}
@@ -103,7 +103,8 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 *
 	 */
 	protected void refreshFilters(List<Span> data) {
-		if (mapSettings.isRefreshFilters()) {
+		if (mapSettings.isResetFilters()) {
+			resetFilters();
 			for (Span marker : data) {
 				Map<String, String> tags = marker.getTags();
 				addSomething(InspectITConstants.DURATION, String.valueOf(marker.getDuration()));
@@ -114,7 +115,8 @@ public abstract class AbstractMapInputController implements MapInputController {
 					addSomething(s, tags.get(s));
 				}
 			}
-			mapSettings.setRefreshFilters(false);
+			// filters are to be reset only once!
+			mapSettings.setResetFilters(false);
 		}
 		for (MapFilter t : filterTypes.values()) {
 			t.updateFilter();

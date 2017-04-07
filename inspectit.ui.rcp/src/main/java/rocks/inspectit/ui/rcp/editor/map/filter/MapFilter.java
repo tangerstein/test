@@ -98,6 +98,13 @@ public interface MapFilter<T> {
 	void changeSelection(Object selection);
 
 	/**
+	 * A function initializes the list of colors or alternatively a specific color with a specific
+	 * transparency
+	 *
+	 */
+	void initColors();
+
+	/**
 	 * A Function which takes a {@InspectItMarker} and applies the filter to it. In order to apply
 	 * the filter it maps the currently selected key within the filter to a value within the marker
 	 * and applies the corresponding marker settings defined by the {@MarkerFilterElement}.

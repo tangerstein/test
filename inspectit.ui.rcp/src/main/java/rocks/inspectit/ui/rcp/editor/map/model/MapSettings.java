@@ -24,7 +24,7 @@ public class MapSettings {
 	/**
 	 * A flag which determines if the filters have to be reset upon refresh
 	 */
-	boolean refreshFilters;
+	boolean resetFilters;
 
 	/**
 	 * The current cluster coefficient.
@@ -42,7 +42,7 @@ public class MapSettings {
 	boolean clusteredMarkers;
 
 	public enum settings {
-		clusteredMarkers, coloredMarkers, zoomLevel, clusteringTreshhold, refreshFilters, clusteringCoefficient;
+		clusteredMarkers, coloredMarkers, zoomLevel, clusteringTreshhold, resetFilters, clusteringCoefficient;
 
 		@Override
 		public String toString() {
@@ -60,8 +60,8 @@ public class MapSettings {
 			case clusteringTreshhold:
 				returnVal = "clusteringTreshhold";
 				break;
-			case refreshFilters:
-				returnVal = "refreshFilters";
+			case resetFilters:
+				returnVal = "resetFilters";
 				break;
 			case clusteringCoefficient:
 				returnVal = "clusteringCoefficient";
@@ -76,14 +76,14 @@ public class MapSettings {
 		Map<String, Boolean> map = new HashMap<>();
 		map.put(settings.clusteredMarkers.toString(), clusteredMarkers);
 		map.put(settings.coloredMarkers.toString(), coloredMarkers);
-		map.put(settings.refreshFilters.toString(), refreshFilters);
+		map.put(settings.resetFilters.toString(), resetFilters);
 		return map;
 	}
 
 	public MapSettings() {
 		zoomLevel = 0;
 		clusteringTreshhold = 5;
-		refreshFilters = true;
+		resetFilters = true;
 		clusteringCoefficient = 0.55;
 		coloredMarkers = true;
 		clusteredMarkers = true;
@@ -98,8 +98,8 @@ public class MapSettings {
 			zoomLevel = (int) value;
 		} else if (settings.clusteringTreshhold.toString().equals(name)) {
 			clusteringTreshhold = (int) value;
-		} else if (settings.refreshFilters.toString().equals(name)) {
-			refreshFilters = (boolean) value;
+		} else if (settings.resetFilters.toString().equals(name)) {
+			resetFilters = (boolean) value;
 		} else if (settings.clusteringCoefficient.toString().equals(name)) {
 			clusteringCoefficient = (double) value;
 		}
@@ -144,22 +144,22 @@ public class MapSettings {
 	}
 
 	/**
-	 * Gets {@link #refreshFilters}.
+	 * Gets {@link #resetFilters}.
 	 *
-	 * @return {@link #refreshFilters}
+	 * @return {@link #resetFilters}
 	 */
-	public boolean isRefreshFilters() {
-		return this.refreshFilters;
+	public boolean isResetFilters() {
+		return this.resetFilters;
 	}
 
 	/**
-	 * Sets {@link #refreshFilters}.
+	 * Sets {@link #resetFilters}.
 	 *
-	 * @param refreshFilters
-	 *            New value for {@link #refreshFilters}
+	 * @param resetFilters
+	 *            New value for {@link #resetFilters}
 	 */
-	public void setRefreshFilters(boolean refreshFilters) {
-		this.refreshFilters = refreshFilters;
+	public void setResetFilters(boolean resetFilters) {
+		this.resetFilters = resetFilters;
 	}
 
 	/**
