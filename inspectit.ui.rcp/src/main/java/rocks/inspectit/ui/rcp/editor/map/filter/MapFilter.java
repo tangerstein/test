@@ -20,7 +20,7 @@ public interface MapFilter<T> {
 	 * @param element
 	 *            The {@MarkerFilterElement} which is assigned to the given value (key).
 	 */
-	void addFilterConstraint(T key, MarkerFilterElement element);
+	void putFilterConstraint(T key, MarkerFilterElement element);
 
 	/**
 	 * A Function which retrieves a the {@MarkerFilterElement} mapped to the given value (called
@@ -48,6 +48,14 @@ public interface MapFilter<T> {
 	List<Color> getAvailableColor();
 
 	/**
+	 * A Function which sets the flag for colored or transparent (colored = false) markers
+	 *
+	 * @param colored
+	 *            The flag for colored (or transparent) markers.
+	 */
+	void setColored(boolean colored);
+
+	/**
 	 * A Function which creates and returns the filter Panel with the given {@FilterEventListener}.
 	 *
 	 * @param listener
@@ -57,11 +65,11 @@ public interface MapFilter<T> {
 	JPanel getPanel(FilterValueObject filterValueObject);
 
 	/**
-	 * A Function which finalizes the filter assigning colors to all stored values within this
-	 * filter.
+	 * A Function which finalizes the filter assigning colors or transparencies to all stored values
+	 * within this filter.
 	 *
 	 */
-	void finalizeFilter();
+	void updateFilter();
 
 	/**
 	 * A Function which returns the value mapped to the given key.

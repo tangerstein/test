@@ -8,6 +8,7 @@ import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
 
 import rocks.inspectit.shared.all.tracing.data.Span;
+import rocks.inspectit.ui.rcp.InspectITConstants;
 
 public class InspectITSpanMarker<T extends Span> extends MapMarkerDot implements InspectITMarker {
 
@@ -43,7 +44,7 @@ public class InspectITSpanMarker<T extends Span> extends MapMarkerDot implements
 	@Override
 	public Map<String, Object> getTags() {
 		Map<String, Object> map = new HashMap<>();
-		map.put("duration", String.valueOf(span.getDuration()));
+		map.put(InspectITConstants.DURATION, String.valueOf(span.getDuration()));
 		map.putAll(span.getTags());
 		return map;
 	}

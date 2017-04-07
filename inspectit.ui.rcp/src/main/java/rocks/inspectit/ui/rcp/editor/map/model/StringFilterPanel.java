@@ -30,14 +30,13 @@ public class StringFilterPanel<T> extends JPanel {
 		for (Object value : keys) {
 			JPanel newCboxPanel = new JPanel(new BorderLayout());
 			newCboxPanel.setBorder(new LineBorder(map.get(value).style().getBackColor(), 3));
-			JCheckBox newCbox = new JCheckBox(String.valueOf(value));
+			JCheckBox newCbox = new JCheckBox(String.valueOf(value), map.get(value).isVisible());
 			newCbox.addItemListener(new ItemListener() {
 				@Override
 				public void itemStateChanged(ItemEvent e) {
 					filterValueObject.selectionChanged(((JCheckBox) e.getItem()).getText());
 				}
 			});
-			newCbox.setSelected(true);
 			newCboxPanel.add(newCbox, BorderLayout.CENTER);
 			this.add(newCboxPanel);
 		}

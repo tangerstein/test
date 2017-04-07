@@ -21,36 +21,33 @@ public class NumericFilterPanel extends JPanel {
 
 	private NumericFilterPanel self;
 
-	public NumericFilterPanel(FilterValueObject filterValueObject, NumericRange numericRange) {
+	public NumericFilterPanel(FilterValueObject filterValueObject, NumericRange totalRange, NumericRange filteredRange) {
 		this.filterValueObject = filterValueObject;
 		self = this;
 		this.setLayout(new FlowLayout(FlowLayout.CENTER));
-
-		lowerBound = new JSlider(JSlider.HORIZONTAL);
-		lowerBound.setMinimum((int) numericRange.getLowerBound());
-		lowerBound.setMaximum((int) numericRange.getUpperBound());
-		lowerBound.setValue((int) numericRange.getLowerBound());
-		lowerBound.setMajorTickSpacing(getMajorTickSpacing((int) numericRange.getLowerBound(),
-				(int) numericRange.getUpperBound()));
-		lowerBound.setMinorTickSpacing(getMinorTickSpacing((int) numericRange.getLowerBound(),
-				(int) numericRange.getUpperBound()));
-		lowerBound.addChangeListener(new LowerSliderStateChangeListener());
-
-		upperBound = new JSlider(JSlider.HORIZONTAL);
-		upperBound.setMinimum((int) numericRange.getLowerBound());
-		upperBound.setMaximum((int) numericRange.getUpperBound());
-		upperBound.setValue((int) numericRange.getUpperBound());
-		upperBound.setMajorTickSpacing(getMajorTickSpacing((int) numericRange.getLowerBound(),
-				(int) numericRange.getUpperBound()));
-		upperBound.setMinorTickSpacing(getMinorTickSpacing((int) numericRange.getLowerBound(),
-				(int) numericRange.getUpperBound()));
-		upperBound.addChangeListener(new UpperSliderStateChangeListener());
+		lowerBound = initSlider(new LowerSliderStateChangeListener(), totalRange.getLowerBound(), totalRange.getUpperBound(), filteredRange.getLowerBound());
+		upperBound = initSlider(new UpperSliderStateChangeListener(), totalRange.getLowerBound(), totalRange.getUpperBound(), filteredRange.getUpperBound());
 
 		JPanel rangeValuePanel = createRangeValuePanel();
-
 		this.add(lowerBound);
 		this.add(upperBound);
 		this.add(rangeValuePanel);
+	}
+
+
+	private JSlider initSlider(ChangeListener listener, double min, double max, double value) {
+		JSlider slider = new JSlider(JSlider.HORIZONTAL);
+		adaptSlider(slider, min, max, value);
+		slider.addChangeListener(listener);
+		return slider;
+	}
+
+	private void adaptSlider(JSlider slider, double min, double max, double value) {
+		slider.setMinimum((int) min);
+		slider.setMaximum((int) max);
+		slider.setValue((int) value);
+		slider.setMajorTickSpacing(getMajorTickSpacing((int) min, (int) max));
+		slider.setMinorTickSpacing(getMinorTickSpacing((int) min, (int) max));
 	}
 
 	private JPanel createRangeValuePanel() {
@@ -70,20 +67,8 @@ public class NumericFilterPanel extends JPanel {
 
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			self.remove(upperBound);
-			int min = lowerBound.getValue();
-			int max = upperBound.getMaximum();
-			int value = upperBound.getValue();
-			upperBound = new JSlider(JSlider.HORIZONTAL);
-			upperBound.setMinimum(min);
-
-			upperBound.setMaximum(max);
-			upperBound.setValue(value);
-			upperBound.setMajorTickSpacing(getMajorTickSpacing(min, max));
-			upperBound.setMinorTickSpacing(getMinorTickSpacing(min, max));
-			upperBound.addChangeListener(new UpperSliderStateChangeListener());
-			self.add(upperBound, 1);
-
+			adaptSlider(upperBound, lowerBound.getValue(), upperBound.getMaximum(), upperBound.getValue());
+			upperBound.revalidate();
 			self.revalidate();
 
 			lowerRangeValue.setText(lowerBound.getValue() + "");
@@ -91,27 +76,15 @@ public class NumericFilterPanel extends JPanel {
 			if (!lowerBound.getValueIsAdjusting() && !upperBound.getValueIsAdjusting()) {
 				filterValueObject.selectionChanged(new NumericRange(lowerBound.getValue(), upperBound.getValue()));
 			}
-
 		}
 
 	}
 
 	private class UpperSliderStateChangeListener implements ChangeListener {
-
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			self.remove(lowerBound);
-			int min = lowerBound.getMinimum();
-			int max = upperBound.getValue();
-			int value = lowerBound.getValue();
-			lowerBound = new JSlider(JSlider.HORIZONTAL);
-			lowerBound.setMinimum(min);
-			lowerBound.setMaximum(max);
-			lowerBound.setValue(value);
-			lowerBound.setMajorTickSpacing(getMajorTickSpacing(min, max));
-			lowerBound.setMinorTickSpacing(getMinorTickSpacing(min, max));
-			lowerBound.addChangeListener(new LowerSliderStateChangeListener());
-			self.add(lowerBound,0);
+			adaptSlider(lowerBound, lowerBound.getMinimum(), upperBound.getValue(), lowerBound.getValue());
+			lowerBound.revalidate();
 			self.revalidate();
 
 			upperRangeValue.setText(upperBound.getValue() + "");

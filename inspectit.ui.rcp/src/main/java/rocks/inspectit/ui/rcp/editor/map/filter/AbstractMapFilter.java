@@ -12,9 +12,11 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 	protected String tagKey;
 	protected List<Color> colorList;
 	protected NavigableMap<T, MarkerFilterElement> filterMap;
+	boolean isColored;
 
 
-	public AbstractMapFilter(String tagKey) {
+	public AbstractMapFilter(String tagKey, boolean colored) {
+		this.isColored = colored;
 		colorList = new ArrayList<Color>();
 		colorList.add(new Color(227, 0, 116));
 		colorList.add(new Color(255, 0, 0));
@@ -27,9 +29,9 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void addFilterConstraint(T key, MarkerFilterElement element) {
-		if (key!=null) {
-			if (element!=null) {
+	public void putFilterConstraint(T key, MarkerFilterElement element) {
+		if (key != null) {
+			if (element != null) {
 				filterMap.put(key, element);
 			} else {
 				filterMap.put(key, new MarkerFilterElement());
@@ -43,6 +45,14 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 	@Override
 	public List<Color> getAvailableColor() {
 		return this.colorList;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setColored(boolean colored) {
+		this.isColored = colored;
 	}
 
 	/**

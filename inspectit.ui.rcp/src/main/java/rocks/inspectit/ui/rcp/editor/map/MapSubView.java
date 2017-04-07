@@ -4,13 +4,18 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
 import org.eclipse.jface.viewers.ISelectionProvider;
@@ -25,11 +30,11 @@ import org.openstreetmap.gui.jmapviewer.events.JMVCommandEvent.COMMAND;
 import org.openstreetmap.gui.jmapviewer.interfaces.JMapViewerEventListener;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
+import rocks.inspectit.ui.rcp.InspectITConstants;
 import rocks.inspectit.ui.rcp.editor.AbstractSubView;
 import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
 import rocks.inspectit.ui.rcp.editor.map.input.MapInputController;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
-import rocks.inspectit.ui.rcp.editor.map.model.NumericRange;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 
@@ -46,6 +51,7 @@ public class MapSubView extends AbstractSubView {
 
 	private JComboBox<String> tagComboBox;
 	private JPanel filterValuePanel;
+	private JMenuBar optionsMenu;
 	private String selection;
 
 	/**
@@ -92,9 +98,13 @@ public class MapSubView extends AbstractSubView {
 		java.awt.Frame frame = SWT_AWT.new_Frame(swtAwtComponent);
 		tagComboBox = new JComboBox<>();
 		filterValuePanel = new JPanel();
+		optionsMenu = new JMenuBar();
+		optionsMenu.add(createOptionMenu(mapInputController.getSettings()));
 		filter = new JPanel();
 		filter.setLayout(new FlowLayout(FlowLayout.LEFT));
+		filter.add(optionsMenu);
 		filter.add(tagComboBox);
+
 		filter.add(filterValuePanel);
 		createKeyBox(null);
 		frame.setLayout(new BorderLayout());
@@ -149,7 +159,6 @@ public class MapSubView extends AbstractSubView {
 	 */
 	@Override
 	public void doRefresh() {
-		// TODO Auto-generated method stub
 		mapInputController.doRefresh();
 		mapViewer.setMapMarkerList((List<MapMarker>) mapInputController.getMapInput());
 		filterMap = mapInputController.getMapFilter();
@@ -173,14 +182,7 @@ public class MapSubView extends AbstractSubView {
 	 */
 	@Override
 	public void setDataInput(List<? extends Object> data) {
-		/*
-		mapViewer.removeAllMapMarkers();
-		mapViewer.setMapMarkerList((List<MapMarker>) data);
-		mapViewer.updateUI();
-		System.out.println(data.size());
-		filter.revalidate();
-		mapViewer.revalidate();
-		 */
+
 	}
 
 	/**
@@ -202,7 +204,7 @@ public class MapSubView extends AbstractSubView {
 	}
 
 	/**
-	 * Function which is called upon the change of the zoom Level of the map. It propragates the
+	 * Function which is called upon the change of the zoom Level of the map. It propagates the
 	 * change to the mapInputController in order to adapt the data displayed data.
 	 *
 	 */
@@ -211,13 +213,33 @@ public class MapSubView extends AbstractSubView {
 		doRefresh();
 	}
 
+	private JMenu createOptionMenu(Map<String, Boolean> settings) {
+		JMenu menu = new JMenu("Options");
+		for (String name : settings.keySet()) {
+			JCheckBoxMenuItem cbMenuItem = new JCheckBoxMenuItem(name, settings.get(name));
+			cbMenuItem.addItemListener(new ItemListener() {
+				@Override
+				public void itemStateChanged(ItemEvent e) {
+					JCheckBoxMenuItem item = ((JCheckBoxMenuItem) e.getItem());
+					System.out.println(String.format("name: %s, value: %s", item.getText(), item.isSelected()));
+					mapInputController.settingChanged(item.getText(), item.isSelected());
+					doRefresh();
+				}
+			});
+			menu.add(cbMenuItem);
+		}
+		return menu;
+	}
+
 	private void createKeyBox(Set<String> keys) {
 		tagComboBox.removeAllItems();
-		tagComboBox.addItem("---");
-		selection = "---";
+		tagComboBox.addItem(InspectITConstants.NOFILTER);
+		selection = InspectITConstants.NOFILTER;
 		if (keys != null) {
 			for (String tag : keys) {
-				tagComboBox.addItem(tag);
+				if (!tag.equals(InspectITConstants.NOFILTER)) {
+					tagComboBox.addItem(tag);
+				}
 			}
 		}
 		tagComboBox.addActionListener(new ActionListener() {
@@ -231,8 +253,10 @@ public class MapSubView extends AbstractSubView {
 				selection = selectedItem;
 				mapInputController.keySelectionChanged(selectedItem);
 				filterValuePanel.removeAll();
-				JPanel test = filterMap.get(selection).getPanel(new FilterValueObject());
-				filterValuePanel.add(test);
+				if (!InspectITConstants.NOFILTER.equals(selectedItem)) {
+					JPanel filterValues = filterMap.get(selection).getPanel(new FilterValueObject());
+					filterValuePanel.add(filterValues);
+				}
 				filterValuePanel.updateUI();
 				doRefresh();
 			}
@@ -240,13 +264,9 @@ public class MapSubView extends AbstractSubView {
 	}
 
 	public class FilterValueObject {
-		public void selectionChanged(String value) {
-			mapInputController.stringvalueSelectionChanged(value);
-			doRefresh();
-		}
 
-		public void selectionChanged(NumericRange value) {
-			mapInputController.numericValueSelectionChanged(value);
+		public void selectionChanged(Object value) {
+			mapInputController.valueSelectionChanged(value);
 			doRefresh();
 		}
 	}

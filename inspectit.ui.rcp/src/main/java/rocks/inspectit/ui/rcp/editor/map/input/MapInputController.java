@@ -8,7 +8,6 @@ import org.openstreetmap.gui.jmapviewer.interfaces.ICoordinate;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
 import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
-import rocks.inspectit.ui.rcp.editor.map.model.NumericRange;
 import rocks.inspectit.ui.rcp.editor.root.SubViewClassificationController;
 
 /**
@@ -56,6 +55,16 @@ public interface MapInputController extends SubViewClassificationController {
 	Object getMapInput();
 
 	/**
+	 * @return
+	 */
+	Map<String, Boolean> getSettings();
+
+	/**
+	 * @return
+	 */
+	void settingChanged(String name, Object selected);
+
+	/**
 	 *
 	 */
 	void doRefresh();
@@ -67,14 +76,10 @@ public interface MapInputController extends SubViewClassificationController {
 
 	public void keySelectionChanged(String key);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void stringvalueSelectionChanged(String value);
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void numericValueSelectionChanged(NumericRange value);
+	public void valueSelectionChanged(Object value);
 
 }

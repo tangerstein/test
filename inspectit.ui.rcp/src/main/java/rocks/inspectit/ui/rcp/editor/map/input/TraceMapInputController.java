@@ -25,14 +25,12 @@ public class TraceMapInputController extends AbstractMapInputController {
 	List<Span> temp;
 
 	public TraceMapInputController() {
+		super();
 		// Generate Marker
-		// create Data
-		Random rand = new Random();
 		// create five deviceIds
-		long[] deviceIds = new long[] { rand.nextLong(), rand.nextLong(), rand.nextLong(), rand.nextLong(), rand.nextLong() };
-		System.out.println(spanService == null);
+		long[] deviceIds = new long[] { (long) (Math.random() * 1000), (long) (Math.random() * 1000), (long) (Math.random() * 1000), (long) (Math.random() * 1000), (long) (Math.random() * 1000),
+				(long) (Math.random() * 1000), (long) (Math.random() * 1000), (long) (Math.random() * 1000) };
 		temp = getSpans(100, deviceIds);
-		clusterMarkers(temp);
 	}
 
 	/**
@@ -42,7 +40,6 @@ public class TraceMapInputController extends AbstractMapInputController {
 	public void setInputDefinition(InputDefinition inputDefinition) {
 		super.setInputDefinition(inputDefinition);
 		spanService = inputDefinition.getRepositoryDefinition().getSpanService();
-		System.out.println(spanService == null);
 	}
 
 	@Override
@@ -50,8 +47,9 @@ public class TraceMapInputController extends AbstractMapInputController {
 		// RootSpans not sufficient, need to get all Spans by traceID (by iterating over to
 		// rootspans)
 		// clusterMarkers((List<Span>) spanService.getRootSpans(-1, null, null, null));
+		refreshFilters(temp);
 		clusterMarkers(temp);
-		refreshFilters();
+
 	}
 
 	static Coordinate coord = new Coordinate(46.00, 7.00);

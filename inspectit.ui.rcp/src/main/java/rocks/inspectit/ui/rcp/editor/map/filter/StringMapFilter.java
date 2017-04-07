@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.swing.JPanel;
 
+import rocks.inspectit.ui.rcp.InspectITConstants;
 import rocks.inspectit.ui.rcp.editor.map.MapSubView.FilterValueObject;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.StringFilterPanel;
@@ -15,12 +16,10 @@ import rocks.inspectit.ui.rcp.editor.map.model.StringFilterPanel;
 public class StringMapFilter<T> extends AbstractMapFilter<T> {
 
 	Set<String> values;
-	Set<String> toHide;
 
-	public StringMapFilter(String tagKey) {
-		super(tagKey);
+	public StringMapFilter(String tagKey, boolean colored) {
+		super(tagKey, colored);
 		values = new HashSet<>();
-		toHide = new HashSet<>();
 		initColors();
 	}
 
@@ -52,9 +51,7 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 	 */
 	@Override
 	public JPanel getPanel(FilterValueObject filterValueObject) {
-		System.out.println("continue!!!");
 		StringFilterPanel temp = new StringFilterPanel(filterValueObject, this.getKeys(), filterMap);
-		System.out.println("continue???");
 		return temp;
 	}
 
@@ -62,11 +59,11 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void finalizeFilter() {
+	public void updateFilter() {
 		List<Color> colorList = getAvailableColor();
 		int index = 0;
 		for (String value : this.values) {
-			addFilterConstraint((T) value, new MarkerFilterElement(colorList.get(index)));
+			putFilterConstraint((T) value, new MarkerFilterElement(colorList.get(index)));
 			index++;
 		}
 	}
@@ -76,10 +73,17 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 	 */
 	@Override
 	public InspectITMarker applyFilter(InspectITMarker marker) {
-		if (toHide.contains(marker.getTags().get(tagKey))) {
-			return null;
+		if (tagKey.equals(InspectITConstants.NOFILTER)) {
+			return adaptMarker(marker, new MarkerFilterElement());
 		}
-		MarkerFilterElement element = getFilter((T)marker.getTags().get(tagKey));
+		MarkerFilterElement elem = getFilter((T) marker.getTags().get(tagKey));
+		if (elem.isVisible) {
+			return adaptMarker(marker, elem);
+		}
+		return null;
+	}
+
+	private InspectITMarker adaptMarker(InspectITMarker marker, MarkerFilterElement element) {
 		marker.setStyle(element.style());
 		marker.setVisible(element.isVisible());
 		return marker;
@@ -90,12 +94,9 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 	 */
 	@Override
 	public void changeSelection(Object selection) {
-		String value = String.valueOf(selection);
-		if (toHide.contains(value)) {
-			toHide.remove(value);
-		} else {
-			toHide.add(value);
-		}
+		MarkerFilterElement element = getFilter((T) selection);
+		element.setVisible(!element.isVisible);
+		putFilterConstraint((T) selection, element);
 	}
 
 }

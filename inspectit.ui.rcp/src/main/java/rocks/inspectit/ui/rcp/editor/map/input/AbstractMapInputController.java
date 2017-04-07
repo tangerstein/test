@@ -10,23 +10,17 @@ import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.interfaces.ICoordinate;
 
 import rocks.inspectit.shared.all.tracing.data.Span;
+import rocks.inspectit.ui.rcp.InspectITConstants;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
-import rocks.inspectit.ui.rcp.editor.map.MapSubView;
 import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
 import rocks.inspectit.ui.rcp.editor.map.filter.NumericMapFilter;
 import rocks.inspectit.ui.rcp.editor.map.filter.StringMapFilter;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITClusterMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITSpanMarker;
-import rocks.inspectit.ui.rcp.editor.map.model.NumericRange;
+import rocks.inspectit.ui.rcp.editor.map.model.MapSettings;
 
 public abstract class AbstractMapInputController implements MapInputController {
-
-	/**
-	 * A constant string identifying the duration flag (should be put in some kind of constants.
-	 * file)
-	 */
-	static final String DURATION = "duration";
 
 	/**
 	 * A map which holds the markers clustered to specific coordinate spaces.
@@ -36,22 +30,7 @@ public abstract class AbstractMapInputController implements MapInputController {
 	/**
 	 * A list of all available data markers.
 	 */
-	List<InspectITMarker> allDataMarkers = new ArrayList<InspectITMarker>();
-
-	/**
-	 * The current zoom level.
-	 */
-	int zoomLevel = 0;
-
-	/**
-	 * The current minimum amount of markers in a coordinate space in order to cluster.
-	 */
-	int clusteringTreshhold = 4;
-
-	/**
-	 * The current cluster coefficient.
-	 */
-	double clusteringCoefficient = 0.55;
+	List<InspectITMarker> displayedMarkers = new ArrayList<InspectITMarker>();
 
 	/**
 	 * The current mapFilter.
@@ -59,12 +38,15 @@ public abstract class AbstractMapInputController implements MapInputController {
 	Map<String, MapFilter> filterTypes;
 
 	/**
+	 * The current mapFilter.
+	 */
+	MapSettings mapSettings;
+
+
+	/**
 	 * The current selected tag.
 	 */
-	String selectedTag = null;
-
-
-	MapSubView subview;
+	String selectedTag = InspectITConstants.NOFILTER;
 
 	/**
 	 * The input definition.
@@ -85,7 +67,8 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 *
 	 */
 	public AbstractMapInputController() {
-		filterTypes = new HashMap<>();
+		mapSettings = new MapSettings();
+		resetFilters();
 	}
 
 	/**
@@ -106,27 +89,37 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 * @return The created circle marker.
 	 */
 	private InspectITMarker getCircle(Coordinate coord, double rad) {
-		return new InspectITClusterMarker(null, coord, rad*clusteringCoefficient);
+		return new InspectITClusterMarker(null, coord, rad * mapSettings.getClusteringCoefficient());
+	}
+
+	private void resetFilters() {
+		filterTypes = new HashMap<>();
+		filterTypes.clear();
+		filterTypes.put(InspectITConstants.NOFILTER, new StringMapFilter<>(InspectITConstants.NOFILTER, mapSettings.isColoredMarkers()));
 	}
 
 	/**
 	 * refreshes the filter within the sub view controlled by this input controller.
 	 *
 	 */
-	protected void refreshFilters() {
-		filterTypes.clear();
-		for (InspectITMarker marker : this.allDataMarkers) {
-			Map<String, String> tags = marker.getTags();
-			for (String s : tags.keySet()) {
-				if (s.contains("latitude") || s.contains("longitude")) {
-					continue;
+	protected void refreshFilters(List<Span> data) {
+		if (mapSettings.isRefreshFilters()) {
+			for (Span marker : data) {
+				Map<String, String> tags = marker.getTags();
+				addSomething(InspectITConstants.DURATION, String.valueOf(marker.getDuration()));
+				for (String s : tags.keySet()) {
+					if (s.contains("latitude") || s.contains("longitude")) {
+						continue;
+					}
+					addSomething(s, tags.get(s));
 				}
-				addSomething(s, tags.get(s));
 			}
+			mapSettings.setRefreshFilters(false);
 		}
 		for (MapFilter t : filterTypes.values()) {
-			t.finalizeFilter();
+			t.updateFilter();
 		}
+
 	}
 
 	private void addSomething(String key, String value) {
@@ -136,9 +129,9 @@ public abstract class AbstractMapInputController implements MapInputController {
 		} else {
 			try {
 				Double.parseDouble(value);
-				filterType = new NumericMapFilter<Double>(key);
+				filterType = new NumericMapFilter<Double>(key, mapSettings.isColoredMarkers());
 			} catch (NumberFormatException e) {
-				filterType = new StringMapFilter<String>(key);
+				filterType = new StringMapFilter<String>(key, mapSettings.isColoredMarkers());
 			}
 		}
 		filterType.addValue(value);
@@ -166,15 +159,15 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 */
 	@Override
 	public void setZoomLevel(int zoomlevel) {
-		this.zoomLevel = zoomlevel;
+		mapSettings.setZoomLevel(zoomlevel);
 	}
 
 
 	private double calculateRadius() {
-		if (this.zoomLevel<2) {
+		if (mapSettings.getZoomLevel() < 2) {
 			return 15.00;
 		}
-		return 15/(Math.exp((this.zoomLevel*this.clusteringCoefficient)));
+		return 15 / (Math.exp((mapSettings.getZoomLevel() * mapSettings.getClusteringCoefficient())));
 
 	}
 
@@ -205,16 +198,22 @@ public abstract class AbstractMapInputController implements MapInputController {
 
 	}
 
-	protected void clusterMarkers(List<? extends Span> collection) {
+	protected void clusterMarkers(List<Span> data) {
 		resetClustering();
 		List<InspectITMarker> clusteredMarkers = new ArrayList<InspectITMarker>();
-		for (int i = 0; i < collection.size(); i++) {
-			InspectITMarker marker = createMarker(collection.get(i));
+		for (int i = 0; i < data.size(); i++) {
+			InspectITMarker marker = createMarker(data.get(i));
 			if ((filterTypes.get(selectedTag) != null) &&
 					(filterTypes.get(selectedTag).applyFilter(marker)==null)) {
 				continue;
 			}
+
 			Coordinate temp = calculateCoordinate(marker);
+			if (!mapSettings.isClusteredMarkers()) {
+				clusteredMarkers.add(marker);
+				continue;
+			}
+
 			if (coordSys.containsKey(temp)) {
 				coordSys.get(temp).add(marker);
 			} else{
@@ -222,17 +221,20 @@ public abstract class AbstractMapInputController implements MapInputController {
 				tempList.add(marker);
 				coordSys.put(temp, tempList);
 			}
+
 		}
-		for (Coordinate coord : coordSys.keySet()) {
-			if (coordSys.get(coord).size()>this.clusteringTreshhold) {
-				clusteredMarkers.add(getCircle(coord, calculateRadius()));
-			} else {
-				for (InspectITMarker mark : coordSys.get(coord)) {
-					clusteredMarkers.add(mark);
+		if (mapSettings.isClusteredMarkers()) {
+			for (Coordinate coord : coordSys.keySet()) {
+				if (coordSys.get(coord).size() > mapSettings.getClusteringTreshhold()) {
+					clusteredMarkers.add(getCircle(coord, calculateRadius()));
+				} else {
+					for (InspectITMarker mark : coordSys.get(coord)) {
+						clusteredMarkers.add(mark);
+					}
 				}
 			}
 		}
-		this.allDataMarkers = clusteredMarkers;
+		this.displayedMarkers = clusteredMarkers;
 	}
 
 	private InspectITMarker createMarker(Span span) {
@@ -242,7 +244,24 @@ public abstract class AbstractMapInputController implements MapInputController {
 
 	@Override
 	public Object getMapInput() {
-		return allDataMarkers;
+		return displayedMarkers;
+	}
+
+	@Override
+	public Map<String, Boolean> getSettings() {
+		return mapSettings.getSettings();
+	}
+
+	@Override
+	public void settingChanged(String name, Object selected) {
+		mapSettings.setSetting(name, selected);
+		applySettings();
+	}
+
+	private void applySettings() {
+		MapFilter temp = filterTypes.get(selectedTag);
+		temp.setColored(mapSettings.isColoredMarkers());
+		filterTypes.put(selectedTag, temp);
 	}
 
 	/**
@@ -259,27 +278,17 @@ public abstract class AbstractMapInputController implements MapInputController {
 	@Override
 	public void keySelectionChanged(String key) {
 		selectedTag = key;
-		doRefresh();
+		applySettings();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void stringvalueSelectionChanged(String value) {
-		System.out.println("changeSelection");
-		filterTypes.get(selectedTag).changeSelection(value);
-		doRefresh();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void numericValueSelectionChanged(NumericRange value) {
-		System.out.println("changeSelectionNUmber");
-		filterTypes.get(selectedTag).changeSelection(value);
-		doRefresh();
+	public void valueSelectionChanged(Object value) {
+		MapFilter temp = filterTypes.get(selectedTag);
+		temp.changeSelection(value);
+		filterTypes.put(selectedTag, temp);
 	}
 
 
