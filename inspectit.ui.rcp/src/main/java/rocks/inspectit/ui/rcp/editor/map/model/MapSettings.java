@@ -46,28 +46,21 @@ public class MapSettings {
 
 		@Override
 		public String toString() {
-			String returnVal = "";
 			switch (this) {
 			case clusteredMarkers:
-				returnVal = "clusteredMarkers";
-				break;
+				return "clusteredMarkers";
 			case coloredMarkers:
-				returnVal = "coloredMarkers";
-				break;
+				return "coloredMarkers";
 			case zoomLevel:
-				returnVal = "zoomLevel";
-				break;
+				return "zoomLevel";
 			case clusteringTreshhold:
-				returnVal = "clusteringTreshhold";
-				break;
+				return "clusteringTreshhold";
 			case resetFilters:
-				returnVal = "resetFilters";
-				break;
+				return "resetFilters";
 			case clusteringCoefficient:
-				returnVal = "clusteringCoefficient";
-				break;
+				return "clusteringCoefficient";
 			}
-			return returnVal;
+			return "";
 		}
 	}
 

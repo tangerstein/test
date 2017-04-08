@@ -34,13 +34,13 @@ public interface InspectITConstants {
 	String WIZBAN_ICON_PATH = ICON_PATH_ECLIPSE + "wizban/";
 
 	/**
-	 * Identifier for the duration attribute (for manually putting it into Span tags)
+	 * Identifier for the duration attribute (for manually putting it into Span tags).
 	 */
-	static final String DURATION = "duration";
+	String DURATION = "duration";
 
 	/**
-	 * Standard identifier for "no filtering"
+	 * Standard identifier for "no filtering".
 	 */
-	static final String NOFILTER = "No Filtering";
+	String NOFILTER = "No Filtering";
 
 }

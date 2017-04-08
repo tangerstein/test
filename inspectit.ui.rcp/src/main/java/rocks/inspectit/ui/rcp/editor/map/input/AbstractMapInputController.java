@@ -107,12 +107,12 @@ public abstract class AbstractMapInputController implements MapInputController {
 			resetFilters();
 			for (Span marker : data) {
 				Map<String, String> tags = marker.getTags();
-				addSomething(InspectITConstants.DURATION, String.valueOf(marker.getDuration()));
+				addFilterValue(InspectITConstants.DURATION, String.valueOf(marker.getDuration()));
 				for (String s : tags.keySet()) {
 					if (s.contains("latitude") || s.contains("longitude")) {
 						continue;
 					}
-					addSomething(s, tags.get(s));
+					addFilterValue(s, tags.get(s));
 				}
 			}
 			// filters are to be reset only once!
@@ -124,7 +124,7 @@ public abstract class AbstractMapInputController implements MapInputController {
 
 	}
 
-	private void addSomething(String key, String value) {
+	private void addFilterValue(String key, String value) {
 		MapFilter filterType;
 		if (filterTypes.containsKey(key)) {
 			filterType = filterTypes.get(key);
@@ -209,13 +209,11 @@ public abstract class AbstractMapInputController implements MapInputController {
 					(filterTypes.get(selectedTag).applyFilter(marker)==null)) {
 				continue;
 			}
-
-			Coordinate temp = calculateCoordinate(marker);
 			if (!mapSettings.isClusteredMarkers()) {
 				clusteredMarkers.add(marker);
 				continue;
 			}
-
+			Coordinate temp = calculateCoordinate(marker);
 			if (coordSys.containsKey(temp)) {
 				coordSys.get(temp).add(marker);
 			} else{

@@ -17,10 +17,7 @@ public abstract class AbstractMapFilter<T> implements MapFilter<T> {
 
 	public AbstractMapFilter(String tagKey, boolean colored) {
 		this.isColored = colored;
-		colorList = new ArrayList<Color>();
-		colorList.add(new Color(227, 0, 116));
-		colorList.add(new Color(255, 0, 0));
-		colorList.add(new Color(4, 37, 108));
+		colorList = new ArrayList<>();
 		filterMap = new TreeMap<>();
 		this.tagKey = tagKey;
 	}

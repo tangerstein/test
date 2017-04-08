@@ -68,7 +68,6 @@ public class StringMapFilter<T> extends AbstractMapFilter<T> {
 		if (this.values.size() <= colorList.size()) {
 			int index = 0;
 			for (String value : this.values) {
-				System.out.println(value);
 				MarkerFilterElement temp = new MarkerFilterElement(colorList.get(index));
 				if (toHide.contains(value)) {
 					temp.setVisible(false);
