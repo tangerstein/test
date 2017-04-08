@@ -20,6 +20,7 @@ import rocks.inspectit.ui.rcp.editor.table.input.HttpTimerDataInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.InvocOverviewInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.JmxSensorDataInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.MethodInvocInputController;
+import rocks.inspectit.ui.rcp.editor.table.input.MobilePeriodicMeasurementInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.MultiInvocDataInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.NavigationInvocOverviewInputController;
 import rocks.inspectit.ui.rcp.editor.table.input.SqlParameterAggregationInputControler;
@@ -248,10 +249,12 @@ public final class SubViewFactory {
 			return tracingSashSubView;
 		case TRACING_DETAILS:
 			TabbedCompositeSubView invocTabbedSubView2 = new TabbedCompositeSubView();
+			ISubView invocPeriodicMeasurements = new TableSubView(new MobilePeriodicMeasurementInputController());
 			ISubView invocDetails2 = new SteppingTreeSubView(new TraceInvocDetailsInputController());
 			ISubView invocSql2 = new TreeSubView(new SqlInvocInputController());
 			ISubView invocMethods2 = new TableSubView(new MethodInvocInputController());
 			ISubView invocExceptions2 = new TableSubView(new ExceptionSensorInvocInputController());
+			invocTabbedSubView2.addSubView(invocPeriodicMeasurements, "Periodic Measurement", InspectIT.getDefault().getImage(InspectITImages.IMG_INFO_CIRCLE_FRAME));
 			invocTabbedSubView2.addSubView(invocDetails2, "Call Hierarchy", InspectIT.getDefault().getImage(InspectITImages.IMG_INVOCATION));
 			invocTabbedSubView2.addSubView(invocSql2, "SQL", InspectIT.getDefault().getImage(InspectITImages.IMG_DATABASE));
 			invocTabbedSubView2.addSubView(invocMethods2, "Methods", InspectIT.getDefault().getImage(InspectITImages.IMG_METHOD_PUBLIC));
