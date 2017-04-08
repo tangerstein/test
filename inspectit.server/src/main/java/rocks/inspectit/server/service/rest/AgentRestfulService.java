@@ -103,7 +103,7 @@ public class AgentRestfulService {
 			// add span for diagnoseIT
 			abstractSpans.add(abstractSpan);
 
-			buffer.put(new BufferElement<DefaultData>((DefaultData) abstractSpan));
+			buffer.put(new BufferElement<DefaultData>(abstractSpan));
 		}
 
 		for (MobilePeriodicMeasurement measurement : mobileRoot.measurements) {
@@ -114,9 +114,9 @@ public class AgentRestfulService {
 
 			measurement.setTimeStamp(new Timestamp(measurement.getTimestamp()));
 
-			buffer.put(new BufferElement<DefaultData>((DefaultData) measurement));
+			buffer.put(new BufferElement<DefaultData>(measurement));
 		}
-		
+
 		// Get all PlatformIdents
 		List<PlatformIdent> platformIdentList = new ArrayList<PlatformIdent>();
 		Collection<PlatformIdent> platformIdents = platformCache.getCleanPlatformIdents();
@@ -139,8 +139,13 @@ public class AgentRestfulService {
 
 		InspectITTraceConverter converter = new InspectITTraceConverter();
 		Trace trace = converter.convertTraces(listSequencesDetail, platformIdentList, abstractSpans, mobileRoot.measurements);
-		
-		Launcher.startLauncher(trace, RulePackage.MobilePackage);
+
+		try {
+			Launcher.startLauncher(trace, RulePackage.MobilePackage);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
