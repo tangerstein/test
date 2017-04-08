@@ -140,12 +140,8 @@ public class AgentRestfulService {
 		InspectITTraceConverter converter = new InspectITTraceConverter();
 		Trace trace = converter.convertTraces(listSequencesDetail, platformIdentList, abstractSpans, mobileRoot.measurements);
 
-		try {
-			Launcher.startLauncher(trace, RulePackage.MobilePackage);
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
+		Launcher.startLauncher(trace, RulePackage.MobilePackage);
 
 	}
 
