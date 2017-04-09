@@ -38,7 +38,7 @@ public class MobilePeriodicMeasurement extends DefaultData {
 	/**
 	 * Constructor.
 	 * 
-	 * @param timestamp
+	 * @param timestamp in Micros
 	 * @param battery power
 	 * @param cpu usage
 	 * @param memory usage
@@ -66,10 +66,10 @@ public class MobilePeriodicMeasurement extends DefaultData {
 	}
 	
 	/**
-	 * @return timestamp
+	 * @return timestamp in Millis(!)
 	 */
 	public long getTimestamp() {
-		return timestamp;
+		return timestamp / 1000;
 	}
 	
 	/**
