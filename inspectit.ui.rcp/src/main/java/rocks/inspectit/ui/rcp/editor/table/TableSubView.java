@@ -158,6 +158,7 @@ public class TableSubView extends AbstractSubView implements ISearchExecutor {
 
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
+				System.out.println(event.getSelection());
 				ISubView tempView = getRootEditor().getSubView();
 				if (tempView != null) {
 					MapSubView mapView = (MapSubView) tempView.getSubViewWithInputController(TraceMapInputController.class);

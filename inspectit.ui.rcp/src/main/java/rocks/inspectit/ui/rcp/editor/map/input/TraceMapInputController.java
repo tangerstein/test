@@ -50,6 +50,13 @@ public class TraceMapInputController extends AbstractMapInputController {
 	@Override
 	public void setDataSelection(List<? extends Object> data) {
 		selection = (List<AbstractSpan>) data;
+		if (!selection.isEmpty()) {
+			List<AbstractSpan> list = new ArrayList<>();
+			for (Object rootSpan : data) {
+				list.addAll((List<AbstractSpan>) spanService.getSpans(((AbstractSpan) rootSpan).getSpanIdent().getTraceId()));
+			}
+			spans = list;
+		}
 		System.out.println(selection.size());
 	}
 

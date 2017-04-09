@@ -47,7 +47,7 @@ public class NumericMapFilter<T> extends AbstractMapFilter<T> {
 			Double temp = Double.parseDouble((String) value);
 			totalRange.updateBounds(temp);
 		} catch (NumberFormatException e) {
-			e.printStackTrace();
+			// e.printStackTrace();
 		}
 
 	}
