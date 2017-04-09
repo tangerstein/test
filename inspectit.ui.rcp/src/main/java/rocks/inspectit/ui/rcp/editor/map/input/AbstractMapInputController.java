@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.Assert;
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.interfaces.ICoordinate;
 
-import rocks.inspectit.shared.all.tracing.data.Span;
+import rocks.inspectit.shared.all.tracing.data.AbstractSpan;
 import rocks.inspectit.ui.rcp.InspectITConstants;
 import rocks.inspectit.ui.rcp.editor.inputdefinition.InputDefinition;
 import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
@@ -67,6 +68,7 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 *
 	 */
 	public AbstractMapInputController() {
+		displayedMarkers = new ArrayList<>();
 		mapSettings = new MapSettings();
 		filterTypes = new HashMap<>();
 		resetFilters();
@@ -102,17 +104,18 @@ public abstract class AbstractMapInputController implements MapInputController {
 	 * refreshes the filter within the sub view controlled by this input controller.
 	 *
 	 */
-	protected void refreshFilters(List<Span> data) {
+	protected void refreshFilters(List<AbstractSpan> data) {
 		if (mapSettings.isResetFilters()) {
 			resetFilters();
-			for (Span marker : data) {
+			for (AbstractSpan marker : data) {
 				Map<String, String> tags = marker.getTags();
 				addFilterValue(InspectITConstants.DURATION, String.valueOf(marker.getDuration()));
-				for (String s : tags.keySet()) {
-					if (s.contains("latitude") || s.contains("longitude")) {
+				for (Entry<String, String> s : tags.entrySet()) {
+					String key = s.getKey();
+					if (key.contains("latitude") || key.contains("longitude")) {
 						continue;
 					}
-					addFilterValue(s, tags.get(s));
+					addFilterValue(key, s.getValue());
 				}
 			}
 			// filters are to be reset only once!
@@ -200,11 +203,14 @@ public abstract class AbstractMapInputController implements MapInputController {
 
 	}
 
-	protected void clusterMarkers(List<Span> data) {
+	protected void clusterMarkers(List<AbstractSpan> data) {
 		resetClustering();
 		List<InspectITMarker> clusteredMarkers = new ArrayList<InspectITMarker>();
 		for (int i = 0; i < data.size(); i++) {
 			InspectITMarker marker = createMarker(data.get(i));
+			if (marker == null) {
+				continue;
+			}
 			if ((filterTypes.get(selectedTag) != null) &&
 					(filterTypes.get(selectedTag).applyFilter(marker)==null)) {
 				continue;
@@ -237,9 +243,15 @@ public abstract class AbstractMapInputController implements MapInputController {
 		this.displayedMarkers = clusteredMarkers;
 	}
 
-	private InspectITMarker createMarker(Span span) {
+	private InspectITMarker createMarker(AbstractSpan span) {
 		Map<String, String> tags = span.getTags();
-		return new InspectITSpanMarker(span, new Coordinate(Double.parseDouble(tags.get("http.request.latitude")), Double.parseDouble(tags.get("http.request.longitude"))));
+		if (tags.containsKey("http.request.latitude") && tags.containsKey("http.request.longitude")) {
+			return new InspectITSpanMarker(span, new Coordinate(Double.parseDouble(tags.get("http.request.latitude")), Double.parseDouble(tags.get("http.request.longitude"))));
+		} else if (tags.containsKey("http.response.latitude") && tags.containsKey("http.response.longitude")) {
+			return new InspectITSpanMarker(span, new Coordinate(Double.parseDouble(tags.get("http.response.latitude")), Double.parseDouble(tags.get("http.response.longitude"))));
+		} else {
+			return null;
+		}
 	}
 
 	@Override
@@ -290,7 +302,5 @@ public abstract class AbstractMapInputController implements MapInputController {
 		temp.changeSelection(value);
 		filterTypes.put(selectedTag, temp);
 	}
-
-
 
 }

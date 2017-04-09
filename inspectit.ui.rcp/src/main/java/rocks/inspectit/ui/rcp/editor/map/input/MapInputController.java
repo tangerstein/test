@@ -26,6 +26,10 @@ public interface MapInputController extends SubViewClassificationController {
 	 */
 	void setInputDefinition(InputDefinition inputDefinition);
 
+	void setData(List<? extends Object> data);
+
+	void setDataSelection(List<? extends Object> data);
+
 	/**
 	 * Gets the (clustered) markers at the given coordinate.
 	 *

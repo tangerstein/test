@@ -7,6 +7,15 @@ import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
 import rocks.inspectit.shared.all.tracing.data.Span;
 
+/**
+ * Interface used by all Markers used for the Map.
+ *
+ * @param <T>
+ *            The generic parameter has to be a type extending Span
+ *
+ * @author Christopher Völker, Simon Lehmann
+ *
+ */
 public interface InspectITMarker<T extends Span> extends MapMarker {
 
 	/**
@@ -25,10 +34,10 @@ public interface InspectITMarker<T extends Span> extends MapMarker {
 	void setStyle(Style style);
 
 	/**
-	 * Sets the visibility of this marker indicated by the given true or false.
+	 * Sets the visibility of this marker indicated by the given boolean value.
 	 *
 	 * @param visible
-	 *            The desired visibility for the marker.
+	 *            The visibility for the marker.
 	 */
 	void setVisible(Boolean visible);
 

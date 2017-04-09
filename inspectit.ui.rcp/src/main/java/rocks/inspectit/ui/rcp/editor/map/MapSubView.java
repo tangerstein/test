@@ -10,6 +10,8 @@ import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -32,9 +34,11 @@ import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
 import rocks.inspectit.ui.rcp.InspectITConstants;
 import rocks.inspectit.ui.rcp.editor.AbstractSubView;
+import rocks.inspectit.ui.rcp.editor.ISubView;
 import rocks.inspectit.ui.rcp.editor.map.filter.MapFilter;
 import rocks.inspectit.ui.rcp.editor.map.input.MapInputController;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
+import rocks.inspectit.ui.rcp.editor.map.model.MapSettings;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
 
@@ -106,7 +110,6 @@ public class MapSubView extends AbstractSubView {
 		filter.add(tagComboBox);
 
 		filter.add(filterValuePanel);
-		createKeyBox(null);
 		frame.setLayout(new BorderLayout());
 		mapViewer = new JMapViewer() {
 
@@ -142,7 +145,7 @@ public class MapSubView extends AbstractSubView {
 		mapInputController.doRefresh();
 		mapViewer.setMapMarkerList((List<MapMarker>) mapInputController.getMapInput());
 		filterMap = mapInputController.getMapFilter();
-		createKeyBox(filterMap.keySet());
+		refreshKeyBox();
 	}
 
 	/**
@@ -165,7 +168,7 @@ public class MapSubView extends AbstractSubView {
 		optionsMenu.removeAll();
 		optionsMenu.add(createOptionMenu(mapInputController.getSettings()));
 		filterValuePanel.removeAll();
-		if (!InspectITConstants.NOFILTER.equals(selection)) {
+		if ((selection != null) && !InspectITConstants.NOFILTER.equals(selection)) {
 			JPanel filterValues = filterMap.get(selection).getPanel(new FilterValueObject());
 			filterValuePanel.add(filterValues);
 		}
@@ -189,7 +192,15 @@ public class MapSubView extends AbstractSubView {
 	 */
 	@Override
 	public void setDataInput(List<? extends Object> data) {
+		mapInputController.setData(data);
+		refreshKeyBox();
+		doRefresh();
+	}
 
+	public void setSelection(List<? extends Object> data) {
+		mapInputController.setDataSelection(data);
+		mapInputController.settingChanged(MapSettings.settings.coloredMarkers.toString(), false);
+		doRefresh();
 	}
 
 	/**
@@ -207,6 +218,17 @@ public class MapSubView extends AbstractSubView {
 	@Override
 	public ISelectionProvider getSelectionProvider() {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public ISubView getSubViewWithInputController(Class<?> inputControllerClass) {
+		if (Objects.equals(inputControllerClass, mapInputController.getClass())) {
+			return this;
+		}
 		return null;
 	}
 
@@ -237,14 +259,15 @@ public class MapSubView extends AbstractSubView {
 		return menu;
 	}
 
-	private void createKeyBox(Set<String> keys) {
+	private void refreshKeyBox() {
 		tagComboBox.removeAllItems();
+		// add this manually in order to have it as first entry
 		tagComboBox.addItem(InspectITConstants.NOFILTER);
 		selection = InspectITConstants.NOFILTER;
-		if (keys != null) {
-			for (String tag : keys) {
-				if (!tag.equals(InspectITConstants.NOFILTER)) {
-					tagComboBox.addItem(tag);
+		if (filterMap.entrySet() != null) {
+			for (Entry<String, MapFilter> tag : filterMap.entrySet()) {
+				if (!tag.getKey().equals(InspectITConstants.NOFILTER)) {
+					tagComboBox.addItem(tag.getKey());
 				}
 			}
 		}

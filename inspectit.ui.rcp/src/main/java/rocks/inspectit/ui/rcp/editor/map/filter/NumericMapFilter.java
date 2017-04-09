@@ -43,8 +43,13 @@ public class NumericMapFilter<T> extends AbstractMapFilter<T> {
 	 */
 	@Override
 	public void addValue(Object value) {
-		Double temp = Double.parseDouble((String) value);
-		totalRange.updateBounds(temp);
+		try {
+			Double temp = Double.parseDouble((String) value);
+			totalRange.updateBounds(temp);
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	/**

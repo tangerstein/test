@@ -9,6 +9,15 @@ import javax.swing.JPanel;
 import rocks.inspectit.ui.rcp.editor.map.MapSubView.FilterValueObject;
 import rocks.inspectit.ui.rcp.editor.map.model.InspectITMarker;
 
+/**
+ * Interface used by all Markers used for the Map.
+ *
+ * @param <T>
+ *            A generic parameter serving as key for the mapping
+ *
+ * @author Christopher Völker, Simon Lehmann
+ *
+ */
 public interface MapFilter<T> {
 
 	/**
@@ -48,7 +57,7 @@ public interface MapFilter<T> {
 	List<Color> getAvailableColor();
 
 	/**
-	 * A Function which sets the flag for colored or transparent (colored = false) markers
+	 * A Function which sets the flag for colored or transparent (colored = false) markers.
 	 *
 	 * @param colored
 	 *            The flag for colored (or transparent) markers.
@@ -58,8 +67,8 @@ public interface MapFilter<T> {
 	/**
 	 * A Function which creates and returns the filter Panel with the given {@FilterEventListener}.
 	 *
-	 * @param listener
-	 *            The {@FilterEventListener} to be used within the filter Panel.
+	 * @param filterValueObject
+	 *            The {FilterValueObject} to be used within the filter Panel.
 	 * @return The created filter Panel.
 	 */
 	JPanel getPanel(FilterValueObject filterValueObject);
@@ -99,7 +108,7 @@ public interface MapFilter<T> {
 
 	/**
 	 * A function initializes the list of colors or alternatively a specific color with a specific
-	 * transparency
+	 * transparency.
 	 *
 	 */
 	void initColors();
@@ -113,6 +122,6 @@ public interface MapFilter<T> {
 	 *            The marker to which the filter is to be applied.
 	 * @return The marker containing the information defined by the {@MarkerFilterElement}.
 	 */
-	InspectITMarker applyFilter(InspectITMarker marker);
+	InspectITMarker<?> applyFilter(InspectITMarker<?> marker);
 
 }

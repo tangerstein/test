@@ -15,7 +15,10 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.jface.viewers.IDoubleClickListener;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
@@ -38,6 +41,8 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import rocks.inspectit.ui.rcp.editor.AbstractSubView;
 import rocks.inspectit.ui.rcp.editor.ISubView;
+import rocks.inspectit.ui.rcp.editor.map.MapSubView;
+import rocks.inspectit.ui.rcp.editor.map.input.TraceMapInputController;
 import rocks.inspectit.ui.rcp.editor.preferences.IPreferenceGroup;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceEventCallback.PreferenceEvent;
 import rocks.inspectit.ui.rcp.editor.preferences.PreferenceId;
@@ -146,6 +151,20 @@ public class TableSubView extends AbstractSubView implements ISearchExecutor {
 			@Override
 			public void doubleClick(DoubleClickEvent event) {
 				tableInputController.doubleClick(event);
+			}
+		});
+		// This listener is only for propagating selections to the MapSubView
+		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISubView tempView = getRootEditor().getSubView();
+				if (tempView != null) {
+					MapSubView mapView = (MapSubView) tempView.getSubViewWithInputController(TraceMapInputController.class);
+					if (mapView != null) {
+						mapView.setSelection(((IStructuredSelection) event.getSelection()).toList());
+					}
+				}
 			}
 		});
 		tableViewer.setComparator(tableInputController.getComparator());
@@ -290,6 +309,15 @@ public class TableSubView extends AbstractSubView implements ISearchExecutor {
 								if (tableInputController.getSubViewClassification() == SubViewClassification.MASTER) {
 									Object input = tableInputController.getTableInput();
 									tableViewer.setInput(input);
+									ISubView tempView = getRootEditor().getSubView();
+									MapSubView temp = null;
+									if (tempView != null) {
+										temp = (MapSubView) tempView.getSubViewWithInputController(TraceMapInputController.class);
+									}
+									if (temp != null) {
+										temp.setDataInput((List<? extends Object>) input);
+									}
+
 									if (tableViewer.getTable().isVisible()) {
 										tableViewer.refresh();
 
