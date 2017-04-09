@@ -21,6 +21,8 @@ import rocks.inspectit.shared.all.communication.comparator.DefaultDataComparator
 import rocks.inspectit.shared.all.communication.comparator.IDataComparator;
 import rocks.inspectit.shared.all.communication.comparator.ResultComparator;
 import rocks.inspectit.shared.all.communication.data.MobilePeriodicMeasurement;
+import rocks.inspectit.shared.all.tracing.data.PropagationType;
+import rocks.inspectit.shared.all.tracing.data.Span;
 import rocks.inspectit.shared.cs.cmr.service.IMobilePeriodicMeasurementAccessService;
 import rocks.inspectit.ui.rcp.InspectIT;
 import rocks.inspectit.ui.rcp.InspectITImages;
@@ -113,6 +115,8 @@ public class MobilePeriodicMeasurementInputController extends AbstractTableInput
 	 * List of mobile periodic measurements to be displayed.
 	 */
 	private Collection<MobilePeriodicMeasurement> measurementList = new ArrayList<>();
+
+	private Span selection;
 
 	/**
 	 * {@inheritDoc}
@@ -223,10 +227,45 @@ public class MobilePeriodicMeasurementInputController extends AbstractTableInput
 	 * Loads data from the service with current filters.
 	 */
 	protected void loadDataFromService() {
+		if (null != selection) {
+			if (PropagationType.IOS.equals(selection.getPropagationType())) {
+				long fromTimestamp = selection.getTimeStamp().getTime();
+				long toTimestamp = (long) (fromTimestamp + selection.getDuration());
+				measurementList = mobilePeriodicMeasurementAccessService.getMobilePeriodicMeasurementInstances(Long.parseLong(selection.getTags().get("deviceID")), fromTimestamp, toTimestamp);
+				System.out.println(measurementList.size());
+				return;
+			}
+		}
 		measurementList = mobilePeriodicMeasurementAccessService.getMobilePeriodicMeasurementInstances();
-		System.out.println(measurementList.size());
 	}
-	
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean canOpenInput(List<? extends Object> data) {
+		if (!data.isEmpty()) {
+			selection = (Span) data.get(0);
+			// Job job = new Job("Test") {
+			// @Override
+			// protected IStatus run(IProgressMonitor monitor) {
+			// try {
+			// doRefresh(monitor, null);
+			// } catch (Throwable throwable) { // NOPMD
+			// throw new RuntimeException("Unknown exception occurred trying to refresh the view.",
+			// throwable);
+			// } finally {
+			// // jobInSchedule = false;
+			// }
+			//
+			// return Status.OK_STATUS;
+			// }
+			// };
+			// job.schedule();
+		}
+		return false;
+	}
+
 	/**
 	 * Label provider for the view.
 	 *
