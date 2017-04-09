@@ -103,6 +103,7 @@ END OF TERMS AND CONDITIONS
    </license>
 
    <plugins>
+   	<plugin id="JMapViewer"/>
       <plugin id="ch.qos.logback.classic"/>
       <plugin id="ch.qos.logback.core"/>
       <plugin id="com.esotericsoftware.kryo"/>
