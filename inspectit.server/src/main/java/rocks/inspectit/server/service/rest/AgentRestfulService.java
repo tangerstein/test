@@ -5,12 +5,16 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.math3.analysis.function.Abs;
 import org.diagnoseit.standalone.Launcher;
 import org.diagnoseit.standalone.Launcher.RulePackage;
 import org.spec.research.open.xtrace.adapters.inspectit.source.InspectITTraceConverter;
@@ -91,7 +95,8 @@ public class AgentRestfulService {
 
 		Gson gson = getGson();
 		MobileRoot mobileRoot = gson.fromJson(json, MobileRoot.class);
-		List<Span> abstractSpans = new LinkedList<Span>();
+		HashMap<Long, List<AbstractSpan>> spansFromMobileRoot = new HashMap<Long, List<AbstractSpan>>();
+
 		for (SpanImpl span : mobileRoot.spans) {
 			span.setTag("deviceID", mobileRoot.getDeviceID());
 			AbstractSpan abstractSpan = SpanTransformer.transformSpan(span);
@@ -100,8 +105,12 @@ public class AgentRestfulService {
 			abstractSpan.setSensorTypeIdent(0);
 			idGenerator.assignObjectAnId(abstractSpan);
 
-			// add span for diagnoseIT
-			abstractSpans.add(abstractSpan);
+			long traceId = abstractSpan.getSpanIdent().getTraceId();
+
+			if (!spansFromMobileRoot.containsKey(traceId)) {
+				spansFromMobileRoot.put(traceId, new ArrayList<AbstractSpan>());
+			}
+			spansFromMobileRoot.get(traceId).add(abstractSpan);
 
 			buffer.put(new BufferElement<DefaultData>(abstractSpan));
 		}
@@ -135,111 +144,69 @@ public class AgentRestfulService {
 				listSequencesDetail.add(invocDetail);
 			}
 		}
-
-
+		
+		if(timeoutFound(spansFromMobileRoot)){
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else{
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		InspectITTraceConverter converter = new InspectITTraceConverter();
-		Trace trace = converter.convertTraces(listSequencesDetail, platformIdentList, abstractSpans, mobileRoot.measurements);
 
+		// convert spans and trigger diagnoseIT
+		for (Entry<Long, List<AbstractSpan>> entry : spansFromMobileRoot.entrySet()) {
+			HashSet<Span> abstractSpans = new HashSet<Span>();
+			abstractSpans.addAll(spansService.getSpans(entry.getKey()));
+			abstractSpans.addAll(entry.getValue());
+			Trace trace = converter.convertTraces(listSequencesDetail, platformIdentList,
+					new ArrayList<Span>(abstractSpans), mobileRoot.measurements);
+			Launcher.startLauncher(trace, RulePackage.MobilePackage);
+		}
 
-		Launcher.startLauncher(trace, RulePackage.MobilePackage);
+	}
 
+	private boolean timeoutFound(HashMap<Long, List<AbstractSpan>> spansFromMobileRoot) {
+		for (Entry<Long, List<AbstractSpan>> entry : spansFromMobileRoot.entrySet()) {
+			for(AbstractSpan span: entry.getValue()){
+				String timeout = span.getTags().get("http.request.timeout");
+				if(timeout != null && timeout.equals("true")){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private Gson getGson() {
-		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(DefaultData.class, new TypeSelector<DefaultData>() {
+		GsonFireBuilder builder = new GsonFireBuilder().registerTypeSelector(DefaultData.class,
+				new TypeSelector<DefaultData>() {
 
-			@Override
-			public Class<? extends DefaultData> getClassForElement(JsonElement readElement) {
-				String type = readElement.getAsJsonObject().get("type").getAsString();
+					@Override
+					public Class<? extends DefaultData> getClassForElement(JsonElement readElement) {
+						String type = readElement.getAsJsonObject().get("type").getAsString();
 
-				if (type.equals("MobilePeriodicMeasurement")) {
-					return MobilePeriodicMeasurement.class;
-				} else {
-					/*
-					 * returning null will trigger Gson's default behavior
-					 */
-					return null;
-				}
-			}
-		});
+						if (type.equals("MobilePeriodicMeasurement")) {
+							return MobilePeriodicMeasurement.class;
+						} else {
+							/*
+							 * returning null will trigger Gson's default
+							 * behavior
+							 */
+							return null;
+						}
+					}
+				});
 		Gson gson = builder.createGson();
 		return gson;
-	}
-
-	/**
-	 * Test method
-	 */
-	@RequestMapping(method = POST, value = "/defaultJSON")
-	@ResponseBody
-	public MobileRoot getNewMobileBeacon() {
-
-		MobileRoot root = new MobileRoot();
-		root.deviceID = 4242123456784242l;
-
-		TracerImpl tracerImpl = new TracerImpl();
-		SpanBuilderImpl usecaseBuilder = tracerImpl.buildSpan("Load screen");
-		SpanImpl spanUsecase = usecaseBuilder.withTag("span.kind", "client").start();
-
-		SpanBuilderImpl remoteBuilder = tracerImpl.buildSpan(null);
-		SpanImpl spanRemoteCall = remoteBuilder.asChildOf(spanUsecase.context()).start();
-		spanRemoteCall.setTag("span.kind", "server");
-
-		// Global information
-		spanRemoteCall.setTag("http.url", "localhost:8080/callRest");
-
-		// Request information
-		spanRemoteCall.setTag("http.request.ssid", "1234-5678");
-		spanRemoteCall.setTag("http.request.networkConnection", "4G");
-		spanRemoteCall.setTag("http.request.networkProvider", "MyProvider");
-		spanRemoteCall.setTag("http.request.timeout", "false");
-		spanRemoteCall.setTag("http.request.longitude", "48.421");
-		spanRemoteCall.setTag("http.request.latitude", "13.12345");
-		spanRemoteCall.setTag("http.request.responseCode", "200");
-
-		// Response information
-		spanRemoteCall.setTag("http.response.ssid", "1234-5678");
-		spanRemoteCall.setTag("http.response.networkConnection", "4G");
-		spanRemoteCall.setTag("http.response.networkProvider", "MyProvider");
-		spanRemoteCall.setTag("http.response.timeout", "false");
-		spanRemoteCall.setTag("http.response.longitude", "48.321");
-		spanRemoteCall.setTag("http.response.latitude", "13.52345");
-
-		List<MobilePeriodicMeasurement> measurements = new ArrayList<MobilePeriodicMeasurement>();
-		measurements.add(new MobilePeriodicMeasurement(2423234524L, 12, 81.236218F, 83.24683246F, 12.12f));
-		measurements.add(new MobilePeriodicMeasurement(2423234525L, 23, 96.99F, 10.500000F, 22.12f));
-		measurements.add(new MobilePeriodicMeasurement(2423234726L, 34, 81.236218F, 70.24683246F, 12.12f));
-		measurements.add(new MobilePeriodicMeasurement(2423234727L, 45, 80.99F, 11.500000F, 13.12f));
-		measurements.add(new MobilePeriodicMeasurement(2423244828L, 56, 83.236218F, 82.24683246F, 12.12f));
-		measurements.add(new MobilePeriodicMeasurement(2423244829L, 67, 97.99F, 11.400000F, 15.12f));
-
-		root.spans.add(spanUsecase);
-		root.spans.add(spanRemoteCall);
-		root.measurements = measurements;
-
-		return root;
-	}
-
-	/**
-	 * Test method
-	 */
-	@RequestMapping(method = POST, value = "/createRemoteCall")
-	@ResponseBody
-	public void createRemoteCall() {
-		InvocationSequenceData remoteCall = new InvocationSequenceData();
-		remoteCall.setPlatformIdent(-1);
-		remoteCall.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
-		remoteCall.setId(42);
-		// RemoteCall ID which will be set by the header
-		remoteCall.setSpanIdent(new SpanIdent(1, 0, 0));
-
-		InvocationSequenceData remoteCall2 = new InvocationSequenceData();
-		remoteCall2.setPlatformIdent(-1);
-		remoteCall2.setTimeStamp(new Timestamp(1000000000 + (new Random()).nextInt(1000)));
-		remoteCall2.setId(43);
-		remoteCall2.setSpanIdent(new SpanIdent(2, 0, 0));
-		// buffer.put(new BufferElement<InvocationSequenceData>(remoteCall));
-		// buffer.put(new BufferElement<InvocationSequenceData>(remoteCall2));
-
 	}
 
 	/**
